@@ -40,6 +40,7 @@ type Response struct {
 	DelegateTo []Role   // Agents to involve next
 	Files      []string // Files to create
 	Raw        string   // Original unprocessed output
+	IsComplete bool     // Agent signals task is complete (no further delegation needed)
 }
 
 // NewAgent creates a new agent with the given role
@@ -123,7 +124,22 @@ If you create files, they will be created in the project directory.`, a.SystemPr
 	// Parse delegation instructions
 	response.DelegateTo = parseDelegations(output)
 
+	// Check for completion signal
+	response.IsComplete = parseCompletionSignal(output)
+
 	return response, nil
+}
+
+// parseCompletionSignal checks if the agent signaled completion
+func parseCompletionSignal(output string) bool {
+	lines := strings.Split(output, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "COMPLETE:") || strings.HasPrefix(line, "TASK_COMPLETE:") {
+			return true
+		}
+	}
+	return false
 }
 
 // parseDelegations extracts delegate instructions from agent response

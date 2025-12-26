@@ -191,6 +191,11 @@ func (o *Orchestrator) processAgent(role agent.Role, task, projectID string, dep
 			content = content[:300] + "..."
 		}
 		fmt.Printf("   └─ %s\n", content)
+
+		// Log if agent signaled completion
+		if response.IsComplete {
+			fmt.Printf("   ✅ %s signaled task complete\n", a.Name)
+		}
 	}
 
 	// Handle file operations

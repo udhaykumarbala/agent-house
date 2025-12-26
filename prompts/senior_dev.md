@@ -107,4 +107,13 @@ DELEGATE:
 - junior_dev: [tasks suitable for junior, like tests or simple components]
 ```
 
-Valid agents: pm, ux, ui, security, architect, junior_dev
+Valid agents: junior_dev (you can only delegate to junior developers)
+
+## Completion Signal
+
+When you have completed your work and do NOT need to delegate to anyone else:
+```
+COMPLETE: Task finished - all files created and implementation complete.
+```
+
+If you create all necessary files yourself and don't need junior help, use COMPLETE instead of DELEGATE.

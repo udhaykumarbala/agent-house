@@ -221,9 +221,20 @@ func (o *Orchestrator) processAgent(role agent.Role, task, projectID string, dep
 		})
 	}
 
-	// Handle delegations
-	if len(response.DelegateTo) > 0 {
-		for _, delegateRole := range response.DelegateTo {
+	// Handle delegations (filter by hierarchy)
+	validDelegations := agent.FilterValidDelegations(role, response.DelegateTo)
+
+	// Log filtered delegations
+	if o.config.Verbose && len(response.DelegateTo) != len(validDelegations) {
+		for _, d := range response.DelegateTo {
+			if !agent.CanDelegateTo(role, d) {
+				fmt.Printf("   ⚠️  Ignoring invalid delegation: %s cannot delegate to %s\n", role, d)
+			}
+		}
+	}
+
+	if len(validDelegations) > 0 {
+		for _, delegateRole := range validDelegations {
 			// Create delegation message
 			delegateMsg := message.NewMessage(
 				message.TypeDelegate,

@@ -22,8 +22,8 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		ProjectDir:  "./projects/default",
-		MaxDepth:    5,
-		MaxTurns:    20,
+		MaxDepth:    3,  // Reduced from 5 to prevent deep chains
+		MaxTurns:    8,  // Reduced from 20 to limit runaway tasks
 		EnableFiles: true,
 		Verbose:     true,
 	}

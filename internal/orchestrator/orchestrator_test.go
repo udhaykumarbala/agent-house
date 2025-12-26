@@ -21,20 +21,20 @@ func TestNewOrchestrator(t *testing.T) {
 		t.Error("Store not set correctly")
 	}
 
-	if orch.config.MaxDepth != 5 {
-		t.Errorf("Expected MaxDepth 5, got %d", orch.config.MaxDepth)
+	if orch.config.MaxDepth != 3 {
+		t.Errorf("Expected MaxDepth 3, got %d", orch.config.MaxDepth)
 	}
 }
 
 func TestDefaultConfig(t *testing.T) {
 	config := DefaultConfig()
 
-	if config.MaxDepth != 5 {
-		t.Errorf("Expected MaxDepth 5, got %d", config.MaxDepth)
+	if config.MaxDepth != 3 {
+		t.Errorf("Expected MaxDepth 3, got %d", config.MaxDepth)
 	}
 
-	if config.MaxTurns != 20 {
-		t.Errorf("Expected MaxTurns 20, got %d", config.MaxTurns)
+	if config.MaxTurns != 8 {
+		t.Errorf("Expected MaxTurns 8, got %d", config.MaxTurns)
 	}
 
 	if !config.EnableFiles {

@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#4A90E2">
+    <meta name="description" content="Track your daily water intake">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Water Intake Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4A90E2;
+            --primary-light: #E8F4FD;
+            --success: #34C759;
+            --text: #1A1A2E;
+            --text-light: #6B7280;
+            --bg: #F8FAFC;
+            --white: #FFFFFF;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 20px 16px;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .date {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        /* Progress Circle */
+        .progress-section {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 32px 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .progress-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 24px;
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-bg {
+            fill: none;
+            stroke: var(--primary-light);
+            stroke-width: 12;
+        }
+
+        .progress-ring-fill {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease, stroke 0.3s ease;
+        }
+
+        .progress-ring-fill.complete {
+            stroke: var(--success);
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .progress-current {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.1;
+        }
+
+        .progress-goal {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .progress-percent {
+            font-size: 13px;
+            color: var(--primary);
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* Quick Add Buttons */
+        .quick-add {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .quick-btn {
+            background: var(--primary-light);
+            border: none;
+            border-radius: 12px;
+            padding: 14px 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .quick-btn:hover {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .quick-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Custom Add */
+        .custom-add {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .custom-add-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 12px;
+        }
+
+        .custom-add-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .custom-input {
+            flex: 1;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .custom-input:focus {
+            border-color: var(--primary);
+        }
+
+        .add-btn {
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-btn:hover {
+            background: #3A7BC8;
+        }
+
+        .add-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Settings Card */
+        .settings-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+
+        .setting-label {
+            font-size: 15px;
+            color: var(--text);
+        }
+
+        .setting-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .weight-input {
+            width: 70px;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 15px;
+            text-align: center;
+            outline: none;
+        }
+
+        .weight-input:focus {
+            border-color: var(--primary);
+        }
+
+        .unit-toggle {
+            display: flex;
+            background: #E5E7EB;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .unit-btn {
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .unit-btn.active {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .recommendation {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #E5E7EB;
+            font-size: 13px;
+            color: var(--text-light);
+            text-align: center;
+        }
+
+        /* History */
+        .history-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .history-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .reset-btn {
+            background: none;
+            border: none;
+            color: #EF4444;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .reset-btn:hover {
+            background: #FEE2E2;
+        }
+
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-time {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .history-amount {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .empty-history {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 14px;
+            padding: 20px 0;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text);
+            color: var(--white);
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Animations */
+        @keyframes ripple {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--primary);
+            animation: ripple 0.6s ease-out;
+            pointer-events: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 380px) {
+            .quick-add {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .progress-container {
+                width: 160px;
+                height: 160px;
+            }
+            
+            .progress-current {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>💧 Water Tracker</h1>
+            <p class="date" id="currentDate"></p>
+        </header>
+
+        <section class="progress-section">
+            <div class="progress-container">
+                <svg class="progress-ring" width="200" height="200">
+                    <circle class="progress-ring-bg" cx="100" cy="100" r="88"/>
+                    <circle class="progress-ring-fill" id="progressRing" cx="100" cy="100" r="88"/>
+                </svg>
+                <div class="progress-text">
+                    <div class="progress-current" id="currentIntake">0 ml</div>
+                    <div class="progress-goal" id="goalText">of 2000 ml</div>
+                    <div class="progress-percent" id="percentText">0%</div>
+                </div>
+            </div>
+
+            <div class="quick-add">
+                <button class="quick-btn" data-amount="150">+150ml</button>
+                <button class="quick-btn" data-amount="250">+250ml</button>
+                <button class="quick-btn" data-amount="350">+350ml</button>
+                <button class="quick-btn" data-amount="500">+500ml</button>
+            </div>
+        </section>
+
+        <section class="custom-add">
+            <div class="custom-add-title">Custom Amount</div>
+            <div class="custom-add-row">
+                <input type="number" class="custom-input" id="customAmount" placeholder="ml" min="1" max="2000">
+                <button class="add-btn" id="addCustomBtn">Add</button>
+            </div>
+        </section>
+
+        <section class="settings-card">
+            <div class="setting-row">
+                <span class="setting-label">Your Weight</span>
+                <div class="setting-value">
+                    <input type="number" class="weight-input" id="weightInput" min="20" max="300">
+                    <div class="unit-toggle">
+                        <button class="unit-btn" data-unit="kg">kg</button>
+                        <button class="unit-btn" data-unit="lbs">lbs</button>
+                    </div>
+                </div>
+            </div>
+            <div class="recommendation" id="recommendation">
+                Enter your weight for personalized recommendation
+            </div>
+        </section>
+
+        <section class="history-card">
+            <div class="history-header">
+                <span class="history-title">Today's Log</span>
+                <button class="reset-btn" id="resetBtn">Reset Day</button>
+            </div>
+            <div class="history-list" id="historyList">
+                <div class="empty-history">No entries yet</div>
+            </div>
+        </section>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // State Management
+        const state = {
+            weight: 0,
+            unit: 'kg',
+            goal: 2000,
+            intake: 0,
+            history: [],
+            lastDate: null
+        };
+
+        // DOM Elements
+        const elements = {
+            currentDate: document.getElementById('currentDate'),
+            progressRing: document.getElementById('progressRing'),
+            currentIntake: document.getElementById('currentIntake'),
+            goalText: document.getElementById('goalText'),
+            percentText: document.getElementById('percentText'),
+            customAmount: document.getElementById('customAmount'),
+            addCustomBtn: document.getElementById('addCustomBtn'),
+            weightInput: document.getElementById('weightInput'),
+            recommendation: document.getElementById('recommendation'),
+            historyList: document.getElementById('historyList'),
+            resetBtn: document.getElementById('resetBtn'),
+            toast: document.getElementById('toast'),
+            unitBtns: document.querySelectorAll('.unit-btn'),
+            quickBtns: document.querySelectorAll('.quick-btn')
+        };
+
+        // Constants
+        const STORAGE_KEY = 'waterTrackerData';
+        const CIRCUMFERENCE = 2 * Math.PI * 88;
+
+        // Initialize
+        function init() {
+            loadState();
+            checkDayReset();
+            updateDate();
+            updateUI();
+            bindEvents();
+        }
+
+        // Local Storage
+        function loadState() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                Object.assign(state, parsed);
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        // Check if it's a new day
+        function checkDayReset() {
+            const today = new Date().toDateString();
+            if (state.lastDate && state.lastDate !== today) {
+                state.intake = 0;
+                state.history = [];
+            }
+            state.lastDate = today;
+            saveState();
+        }
+
+        // Update current date display
+        function updateDate() {
+            const options = { weekday: 'long', month: 'short', day: 'numeric' };
+            elements.currentDate.textContent = new Date().toLocaleDateString('en-US', options);
+        }
+
+        // Calculate recommended intake based on weight
+        function calculateGoal(weight, unit) {
+            if (!weight || weight <= 0) return 2000;
+            
+            // Convert to kg if needed
+            const weightInKg = unit === 'lbs' ? weight * 0.453592 : weight;
+            
+            // 30-35ml per kg of body weight (using 33ml as middle ground)
+            return Math.round(weightInKg * 33);
+        }
+
+        // Update all UI elements
+        function updateUI() {
+            // Update weight input
+            elements.weightInput.value = state.weight || '';
+            
+            // Update unit toggle
+            elements.unitBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.unit === state.unit);
+            });
+
+            // Update progress ring
+            const progress = Math.min(state.intake / state.goal, 1);
+            const offset = CIRCUMFERENCE - (progress * CIRCUMFERENCE);
+            elements.progressRing.style.strokeDasharray = `${CIRCUMFERENCE} ${CIRCUMFERENCE}`;
+            elements.progressRing.style.strokeDashoffset = offset;
+
+            elements.progressRing.classList.toggle('complete', progress >= 1);
+
+            // Update text displays
+            elements.currentIntake.textContent = `${state.intake} ml`;
+            elements.goalText.textContent = `of ${state.goal} ml`;
+            elements.percentText.textContent = `${Math.round(progress * 100)}%`;
+
+            // Update recommendation text
+            if (state.weight > 0) {
+                elements.recommendation.textContent = 
+                    `Based on ${state.weight}${state.unit}, drink ${state.goal}ml daily`;
+            } else {
+                elements.recommendation.textContent = 'Enter your weight for personalized recommendation';
+            }
+
+            // Update history
+            renderHistory();
+        }
+
+        // Render history list
+        function renderHistory() {
+            if (state.history.length === 0) {
+                elements.historyList.innerHTML = '<div class="empty-history">No entries yet</div>';
+                return;
+            }
+
+            elements.historyList.innerHTML = state.history
+                .slice()
+                .reverse()
+                .map(entry => `
+                    <div class="history-item">
+                        <span class="history-time">${entry.time}</span>
+                        <span class="history-amount">+${entry.amount} ml</span>
+                    </div>
+                `).join('');
+        }
+
+        // Add water intake
+        function addWater(amount) {
+            if (!amount || amount <= 0) return;
+
+            state.intake += amount;
+            state.history.push({
+                amount: amount,
+                time: new Date().toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                })
+            });
+
+            saveState();
+            updateUI();
+            showToast(`+${amount}ml added`);
+
+            // Check goal completion
+            if (state.intake >= state.goal && state.intake - amount < state.goal) {
+                setTimeout(() => showToast('🎉 Daily goal reached!'), 1000);
+            }
+        }
+
+        // Update weight and recalculate goal
+        function updateWeight(weight) {
+            state.weight = weight;
+            state.goal = calculateGoal(weight, state.unit);
+            saveState();
+            updateUI();
+        }
+
+        // Update unit
+        function updateUnit(unit) {
+            if (state.unit === unit) return;
+
+            // Convert existing weight
+            if (state.weight > 0) {
+                if (unit === 'lbs') {
+                    state.weight = Math.round(state.weight * 2.20462);
+                } else {
+                    state.weight = Math.round(state.weight / 2.20462);
+                }
+            }
+
+            state.unit = unit;
+            state.goal = calculateGoal(state.weight, unit);
+            saveState();
+            updateUI();
+        }
+
+        // Reset daily intake
+
+        function resetDay() {
+            if (!confirm('Reset today\'s water intake?')) return;
+            
+            state.intake = 0;
+            state.history = [];
+            saveState();
+            updateUI();
+            showToast('Day reset');
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            elements.toast.textContent = message;
+            elements.toast.classList.add('show');
+            
+            setTimeout(() => {
+                elements.toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // Event bindings
+        function bindEvents() {
+            // Quick add buttons
+            elements.quickBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    addWater(parseInt(btn.dataset.amount));
+                });
+            });
+
+            // Custom add
+            elements.addCustomBtn.addEventListener('click', () => {
+                const amount = parseInt(elements.customAmount.value);
+                if (amount > 0) {
+                    addWater(amount);
+                    elements.customAmount.value = '';
+                }
+            });
+
+            elements.customAmount.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    elements.addCustomBtn.click();
+                }
+            });
+
+            // Weight input
+            elements.weightInput.addEventListener('change', (e) => {
+                updateWeight(parseFloat(e.target.value) || 0);
+            });
+
+            // Unit toggle
+            elements.unitBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    updateUnit(btn.dataset.unit);
+                });
+            });
+
+            // Reset button
+            elements.resetBtn.addEventListener('click', resetDay);
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>

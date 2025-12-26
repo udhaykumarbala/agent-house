@@ -1,0 +1,20 @@
+# Logs
+logs/
+*.log
+
+# Projects output (optional - uncomment to include)
+# projects/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Go binaries
+agent-house
+*.exe
+
+# Claude local settings
+.claude/

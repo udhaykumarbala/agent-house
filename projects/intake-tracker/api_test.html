@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Tracker - API Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #333; }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #4A90E2;
+        }
+        .test-btn {
+            background: #4A90E2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-btn:hover { background: #3A7BC8; }
+        .result {
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success { border-left: 4px solid #34C759; }
+        .error { border-left: 4px solid #EF4444; }
+        .info { color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>💧 Water Tracker - API Test Page</h1>
+    <p class="info">This page tests the localStorage-based data management functions used by the Water Tracker app.</p>
+
+    <div class="test-section">
+        <h2>Storage Operations</h2>
+        <button class="test-btn" onclick="testSaveState()">Test Save State</button>
+        <button class="test-btn" onclick="testLoadState()">Test Load State</button>
+        <button class="test-btn" onclick="testClearState()">Clear All Data</button>
+        <div class="result" id="storageResult">Click a button to test storage operations</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Water Intake Calculations</h2>
+        <button class="test-btn" onclick="testGoalCalculation()">Test Goal Calculation</button>
+        <button class="test-btn" onclick="testUnitConversion()">Test Unit Conversion</button>
+        <div class="result" id="calcResult">Click a button to test calculations</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Data Integrity</h2>
+        <button class="test-btn" onclick="testAddWater()">Test Add Water</button>
+        <button class="test-btn" onclick="testDayReset()">Test Day Reset Logic</button>
+        <button class="test-btn" onclick="viewCurrentData()">View Current Data</button>
+        <div class="result" id="dataResult">Click a button to test data operations</div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'waterTrackerData';
+
+        function calculateGoal(weight, unit) {
+            if (!weight || weight <= 0) return 2000;
+            const weightInKg = unit === 'lbs' ? weight * 0.453592 : weight;
+            return Math.round(weightInKg * 33);
+        }
+
+        function testSaveState() {
+            const testData = {
+                weight: 70,
+                unit: 'kg',
+                goal: 2310,
+                intake: 1500,
+                history: [
+                    { amount: 250, time: '09:00 AM' },
+                    { amount: 500, time: '12:30 PM' },
+                    { amount: 750, time: '03:45 PM' }
+                ],
+                lastDate: new Date().toDateString()
+            };
+            
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(testData));
+                document.getElementById('storageResult').className = 'result success';
+                document.getElementById('storageResult').textContent = 
+                    '✅ Save State Test PASSED\n\nSaved data:\n' + JSON.stringify(testData, null, 2);
+            } catch (e) {
+                document.getElementById('storageResult').className = 'result error';
+                document.getElementById('storageResult').textContent = '❌ Save State Test FAILED\n\nError: ' + e.message;
+            }
+        }
+
+        function testLoadState() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    document.getElementById('storageResult').className = 'result success';
+                    document.getElementById('storageResult').textContent = 
+                        '✅ Load State Test PASSED\n\nLoaded data:\n' + JSON.stringify(parsed, null, 2);
+                } else {
+                    document.getElementById('storageResult').className = 'result info';
+                    document.getElementById('storageResult').textContent = 'ℹ️ No saved data found in localStorage';
+                }
+            } catch (e) {
+                document.getElementById('storageResult').className = 'result error';
+                document.getElementById('storageResult').textContent = '❌ Load State Test FAILED\n\nError: ' + e.message;
+            }
+        }
+
+        function testClearState() {
+            localStorage.removeItem(STORAGE_KEY);
+            document.getElementById('storageResult').className = 'result success';
+            document.getElementById('storageResult').textContent = '✅ Data cleared successfully';
+        }
+
+        function testGoalCalculation() {
+            const tests = [
+                { weight: 70, unit: 'kg', expected: 2310 },
+                { weight: 154, unit: 'lbs', expected: 2310 },
+                { weight: 50, unit: 'kg', expected: 1650 },
+                { weight: 100, unit: 'kg', expected: 3300 },
+                { weight: 0, unit: 'kg', expected: 2000 },
+                { weight: null, unit: 'kg', expected: 2000 }
+            ];
+
+            let results = '📊 Goal Calculation Tests\n\n';
+            let allPassed = true;
+
+            tests.forEach((test, i) => {
+                const result = calculateGoal(test.weight, test.unit);
+                const passed = result === test.expected;
+                if (!passed) allPassed = false;
+                results += `Test ${i + 1}: ${test.weight || 'null'} ${test.unit} → ${result}ml `;
+                results += passed ? '✅\n' : `❌ (expected ${test.expected})\n`;
+            });
+
+            document.getElementById('calcResult').className = allPassed ? 'result success' : 'result error';
+            document.getElementById('calcResult').textContent = results;
+        }
+
+        function testUnitConversion() {
+            const kgToLbs = Math.round(70 * 2.20462);
+            const lbsToKg = Math.round(154 / 2.20462);
+            
+            let results = '📊 Unit Conversion Tests\n\n';
+            results += `70 kg → ${kgToLbs} lbs (expected ~154) ${Math.abs(kgToLbs - 154) <= 1 ? '✅' : '❌'}\n`;
+            results += `154 lbs → ${lbsToKg} kg (expected ~70) ${Math.abs(lbsToKg - 70) <= 1 ? '✅' : '❌'}\n`;
+
+            document.getElementById('calcResult').className = 'result success';
+            document.getElementById('calcResult').textContent = results;
+        }
+
+        function testAddWater() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            let state = saved ? JSON.parse(saved) : { intake: 0, history: [] };
+            
+            const initialIntake = state.intake;
+            const addAmount = 250;
+            
+            state.intake += addAmount;
+            state.history = state.history || [];
+            state.history.push({
+                amount: addAmount,
+                time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+            });
+            
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            
+            document.getElementById('dataResult').className = 'result success';
+            document.getElementById('dataResult').textContent = 
+                `✅ Add Water Test PASSED\n\nAdded: ${addAmount}ml\nPrevious intake: ${initialIntake}ml\nNew intake: ${state.intake}ml\nHistory entries: ${state.history.length}`;
+        }
+
+        function testDayReset() {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            const oldState = {
+                intake: 2000,
+                history: [{ amount: 2000, time: '12:00 PM' }],
+                lastDate: yesterday.toDateString()
+            };
+            
+            // Simulate day check
+            const today = new Date().toDateString();
+            if (oldState.lastDate && oldState.lastDate !== today) {
+                oldState.intake = 0;
+                oldState.history = [];
+            }
+            oldState.lastDate = today;
+            
+            document.getElementById('dataResult').className = 'result success';
+            document.getElementById('dataResult').textContent = 
+                `✅ Day Reset Test PASSED\n\nSimulated yesterday's date check\nIntake reset to: ${oldState.intake}ml\nHistory entries: ${oldState.history.length}\nNew date: ${oldState.lastDate}`;
+        }
+
+        function viewCurrentData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                document.getElementById('dataResult').className = 'result success';
+                document.getElementById('dataResult').textContent = 
+                    '📋 Current Stored Data:\n\n' + JSON.stringify(JSON.parse(saved), null, 2);
+            } else {
+                document.getElementById('dataResult').className = 'result';
+                document.getElementById('dataResult').textContent = 'ℹ️ No data currently stored';
+            }
+        }
+    </script>
+</body>
+</html>

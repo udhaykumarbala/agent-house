@@ -1,0 +1,253 @@
+openapi: 3.0.3
+info:
+  title: Water Intake Tracker API
+  description: |
+    Local Storage API specification for the Water Intake Tracker application.
+    
+    This application uses browser localStorage for data persistence.
+    No backend server is required - all data operations occur client-side.
+  version: 1.0.0
+  contact:
+    name: Water Tracker App
+
+servers:
+  - url: localStorage://waterTrackerData
+    description: Browser Local Storage
+
+paths:
+  /state:
+    get:
+      summary: Load application state
+      description: Retrieves the complete application state from localStorage
+      operationId: loadState
+      tags:
+        - State Management
+      responses:
+        '200':
+          description: State loaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppState'
+        '404':
+          description: No saved state found (first-time user)
+          
+    put:
+      summary: Save application state
+      description: Persists the complete application state to localStorage
+      operationId: saveState
+      tags:
+        - State Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppState'
+      responses:
+        '200':
+          description: State saved successfully
+          
+    delete:
+      summary: Clear application state
+      description: Removes all saved data from localStorage
+      operationId: clearState
+      tags:
+        - State Management
+      responses:
+        '200':
+          description: State cleared successfully
+
+  /intake:
+    post:
+      summary: Add water intake
+      description: Adds water intake amount to current total and history
+      operationId: addWater
+      tags:
+        - Water Tracking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntakeEntry'
+      responses:
+        '200':
+          description: Intake added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntakeResponse'
+
+  /goal:
+    get:
+      summary: Calculate recommended daily goal
+      description: Calculates daily water intake goal based on user weight
+      operationId: calculateGoal
+      tags:
+        - Calculations
+      parameters:
+        - name: weight
+          in: query
+          required: true
+          schema:
+            type: number
+            minimum: 20
+            maximum: 300
+          description: User's body weight
+        - name: unit
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [kg, lbs]
+          description: Weight unit
+      responses:
+        '200':
+          description: Goal calculated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalResponse'
+
+  /day/reset:
+    post:
+      summary: Reset daily intake
+      description: Resets current day's intake to zero and clears history
+      operationId: resetDay
+      tags:
+        - Water Tracking
+      responses:
+        '200':
+          description: Day reset successfully
+
+  /day/check:
+    get:
+      summary: Check for new day
+      description: Checks if it's a new day and auto-resets if needed
+      operationId: checkDayReset
+      tags:
+        - Water Tracking
+      responses:
+        '200':
+          description: Check completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DayCheckResponse'
+
+components:
+  schemas:
+    AppState:
+      type: object
+      description: Complete application state
+      properties:
+        weight:
+          type: number
+          description: User's weight
+          example: 70
+        unit:
+          type: string
+          enum: [kg, lbs]
+          description: Weight unit preference
+          example: kg
+        goal:
+          type: integer
+          description: Daily water intake goal in ml
+          example: 2310
+        intake:
+          type: integer
+          description: Current day's water intake in ml
+          example: 1500
+        history:
+          type: array
+          description: Today's intake log
+          items:
+            $ref: '#/components/schemas/HistoryEntry'
+        lastDate:
+          type: string
+          description: Last recorded date (for day reset check)
+          example: "Fri Dec 27 2024"
+      required:
+        - weight
+        - unit
+        - goal
+        - intake
+        - history
+        - lastDate
+
+    HistoryEntry:
+      type: object
+      description: Single intake log entry
+      properties:
+        amount:
+          type: integer
+          description: Amount of water in ml
+          example: 250
+        time:
+          type: string
+          description: Formatted time of intake
+          example: "09:15 AM"
+      required:
+        - amount
+        - time
+
+    IntakeEntry:
+      type: object
+      description: Water intake to add
+      properties:
+        amount:
+          type: integer
+          minimum: 1
+          maximum: 2000
+          description: Amount in ml
+          example: 250
+      required:
+        - amount
+
+    IntakeResponse:
+      type: object
+      description: Response after adding intake
+      properties:
+        newTotal:
+          type: integer
+          description: Updated total intake
+          example: 1750
+        goalReached:
+          type: boolean
+          description: Whether daily goal was just reached
+          example: false
+
+    GoalResponse:
+      type: object
+      description: Calculated daily goal
+      properties:
+        goal:
+          type: integer
+          description: Recommended daily intake in ml
+          example: 2310
+        formula:
+          type: string
+          description: Calculation formula used
+          example: "weight_kg * 33"
+
+    DayCheckResponse:
+      type: object
+      description: Day reset check result
+      properties:
+        wasReset:
+          type: boolean
+          description: Whether a reset occurred
+          example: false
+        currentDate:
+          type: string
+          description: Current date string
+          example: "Fri Dec 27 2024"
+
+tags:
+  - name: State Management
+    description: Load, save, and clear application state
+  - name: Water Tracking
+    description: Track daily water intake
+  - name: Calculations
+    description: Goal and conversion calculations

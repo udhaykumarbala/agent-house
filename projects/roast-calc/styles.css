@@ -1,0 +1,226 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --black: #1a1a1a;
+    --white: #fefefe;
+    --yellow: #FFE600;
+    --pink: #FF6B9D;
+    --blue: #00D4FF;
+    --green: #7CFF6B;
+    --orange: #FF8C42;
+    --purple: #B388FF;
+    --red: #FF5252;
+    --border-width: 4px;
+    --shadow-offset: 6px;
+}
+
+body {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: var(--yellow);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background-image: 
+        linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),
+        linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 400px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--black);
+    text-transform: uppercase;
+    letter-spacing: -2px;
+    text-shadow: 4px 4px 0 var(--pink);
+    transform: rotate(-2deg);
+}
+
+.tagline {
+    font-size: 0.9rem;
+    color: var(--black);
+    background-color: var(--blue);
+    display: inline-block;
+    padding: 5px 15px;
+    border: var(--border-width) solid var(--black);
+    transform: rotate(1deg);
+    margin-top: 10px;
+}
+
+.calculator {
+    background-color: var(--white);
+    border: var(--border-width) solid var(--black);
+    box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--black);
+    padding: 20px;
+}
+
+.display {
+    margin-bottom: 20px;
+}
+
+.input-display {
+    background-color: var(--black);
+    color: var(--green);
+    font-size: 2.5rem;
+    font-weight: bold;
+    padding: 15px 20px;
+    text-align: right;
+    border: var(--border-width) solid var(--black);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.roast-display {
+    background-color: var(--pink);
+    color: var(--black);
+    font-size: 1rem;
+    font-weight: bold;
+    padding: 15px;
+    text-align: center;
+    border: var(--border-width) solid var(--black);
+    border-top: none;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.4;
+}
+
+.keypad {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.btn {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.5rem;
+    font-weight: bold;
+    padding: 20px;
+    border: var(--border-width) solid var(--black);
+    cursor: pointer;
+    transition: all 0.1s ease;
+    text-transform: uppercase;
+}
+
+.btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--black);
+}
+
+.btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+}
+
+.btn-number {
+    background-color: var(--white);
+    color: var(--black);
+}
+
+.btn-number:hover {
+    background-color: var(--blue);
+}
+
+.btn-operator {
+    background-color: var(--purple);
+    color: var(--black);
+}
+
+.btn-operator:hover {
+    background-color: var(--green);
+}
+
+.btn-orange {
+    background-color: var(--orange);
+}
+
+.btn-orange:hover {
+    background-color: var(--yellow);
+}
+
+.btn-clear {
+    background-color: var(--red);
+    color: var(--white);
+}
+
+.btn-clear:hover {
+    background-color: var(--pink);
+    color: var(--black);
+}
+
+.btn-equals {
+    background-color: var(--green);
+    color: var(--black);
+}
+
+.btn-equals:hover {
+    background-color: var(--blue);
+}
+
+.btn-zero {
+    grid-column: span 2;
+}
+
+.footer {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.footer p {
+    font-size: 0.75rem;
+    color: var(--black);
+    background-color: var(--green);
+    display: inline-block;
+    padding: 5px 10px;
+    border: 2px solid var(--black);
+    transform: rotate(-1deg);
+}
+
+
+/* Animation for roast display */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px) rotate(-1deg); }
+    75% { transform: translateX(5px) rotate(1deg); }
+}
+
+.roast-display.shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 420px) {
+    .header h1 {
+        font-size: 2.5rem;
+    }
+    
+    .btn {
+        padding: 15px;
+        font-size: 1.2rem;
+    }
+    
+    .input-display {
+        font-size: 2rem;
+    }
+}

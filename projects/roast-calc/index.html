@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROAST CALC - The Calculator That Judges You</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>ROAST CALC</h1>
+            <p class="tagline">The calculator that judges your life choices</p>
+        </header>
+        
+        <main class="calculator">
+            <div class="display">
+                <div class="input-display" id="inputDisplay">0</div>
+                <div class="roast-display" id="roastDisplay">Press some buttons, I dare you...</div>
+            </div>
+            
+            <div class="keypad">
+                <button class="btn btn-clear" onclick="clearDisplay()">AC</button>
+                <button class="btn btn-operator" onclick="appendOperator('±')">±</button>
+                <button class="btn btn-operator" onclick="appendOperator('%')">%</button>
+                <button class="btn btn-operator btn-orange" onclick="appendOperator('÷')">÷</button>
+                
+                <button class="btn btn-number" onclick="appendNumber('7')">7</button>
+                <button class="btn btn-number" onclick="appendNumber('8')">8</button>
+                <button class="btn btn-number" onclick="appendNumber('9')">9</button>
+                <button class="btn btn-operator btn-orange" onclick="appendOperator('×')">×</button>
+                
+                <button class="btn btn-number" onclick="appendNumber('4')">4</button>
+                <button class="btn btn-number" onclick="appendNumber('5')">5</button>
+                <button class="btn btn-number" onclick="appendNumber('6')">6</button>
+                <button class="btn btn-operator btn-orange" onclick="appendOperator('-')">−</button>
+                
+                <button class="btn btn-number" onclick="appendNumber('1')">1</button>
+                <button class="btn btn-number" onclick="appendNumber('2')">2</button>
+                <button class="btn btn-number" onclick="appendNumber('3')">3</button>
+                <button class="btn btn-operator btn-orange" onclick="appendOperator('+')">+</button>
+                
+                <button class="btn btn-number btn-zero" onclick="appendNumber('0')">0</button>
+                <button class="btn btn-number" onclick="appendDecimal()">.</button>
+                <button class="btn btn-equals" onclick="calculate()">=</button>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <p>* No actual math was performed in the making of this roast *</p>
+        </footer>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

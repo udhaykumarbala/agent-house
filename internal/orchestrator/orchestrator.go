@@ -87,10 +87,11 @@ func (o *Orchestrator) ProcessTask(projectID, task string) (*Result, error) {
 	o.turns = 0
 
 	result := &Result{
-		ProjectID: projectID,
-		StartTime: time.Now(),
-		Messages:  make([]*message.Message, 0),
-		Files:     make([]FileResult, 0),
+		ProjectID:    projectID,
+		StartTime:    time.Now(),
+		Messages:     make([]*message.Message, 0),
+		Files:        make([]FileResult, 0),
+		VisitedRoles: make(map[agent.Role]bool),
 	}
 
 	// Create initial task message
@@ -140,6 +141,16 @@ func (o *Orchestrator) processAgent(role agent.Role, task, projectID string, dep
 		return nil
 	}
 
+	// Check if agent already visited (prevent circular delegation)
+	if result.VisitedRoles[role] {
+		if o.config.Verbose {
+			fmt.Printf("⚠️  Skipping %s - already processed (preventing circular delegation)\n", role)
+		}
+		return nil
+	}
+
+	// Mark agent as visited
+	result.VisitedRoles[role] = true
 	o.turns++
 
 	// Get agent
@@ -288,14 +299,15 @@ func getAgentEmoji(role agent.Role) string {
 
 // Result holds the outcome of a task
 type Result struct {
-	ProjectID  string
-	StartTime  time.Time
-	EndTime    time.Time
-	Duration   time.Duration
-	TotalTurns int
-	Messages   []*message.Message
-	Files      []FileResult
-	Error      error
+	ProjectID    string
+	StartTime    time.Time
+	EndTime      time.Time
+	Duration     time.Duration
+	TotalTurns   int
+	Messages     []*message.Message
+	Files        []FileResult
+	Error        error
+	VisitedRoles map[agent.Role]bool // Track visited agents to prevent circular delegation
 }
 
 // FileResult tracks a file operation result

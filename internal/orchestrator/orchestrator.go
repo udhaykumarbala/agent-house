@@ -92,6 +92,7 @@ func (o *Orchestrator) ProcessTask(projectID, task string) (*Result, error) {
 		Messages:     make([]*message.Message, 0),
 		Files:        make([]FileResult, 0),
 		VisitedRoles: make(map[agent.Role]bool),
+		CreatedFiles: make(map[string]string),
 	}
 
 	// Create initial task message
@@ -198,13 +199,23 @@ func (o *Orchestrator) processAgent(role agent.Role, task, projectID string, dep
 		}
 	}
 
-	// Handle file operations
+	// Handle file operations (with deduplication)
 	for _, fr := range fileResults {
+		// Check if file was already created by another agent
+		if prevAgent, exists := result.CreatedFiles[fr.Path]; exists {
+			if o.config.Verbose {
+				fmt.Printf("   ⚠️  Skipping %s - already created by %s\n", fr.Path, prevAgent)
+			}
+			continue
+		}
+
 		fileMsg := message.NewMessage(message.TypeFileCreate, string(role), "filesystem", fr.Path)
 		fileMsg.Metadata.ProjectID = projectID
 		fileMsg.Metadata.FilePath = fr.Path
 
 		if fr.Success {
+			// Track the file creation
+			result.CreatedFiles[fr.Path] = string(role)
 			if o.config.Verbose {
 				fmt.Printf("   📄 Created: %s\n", fr.Path)
 			}
@@ -324,6 +335,7 @@ type Result struct {
 	Files        []FileResult
 	Error        error
 	VisitedRoles map[agent.Role]bool // Track visited agents to prevent circular delegation
+	CreatedFiles map[string]string   // Track created files (path -> agent) to prevent duplicates
 }
 
 // FileResult tracks a file operation result

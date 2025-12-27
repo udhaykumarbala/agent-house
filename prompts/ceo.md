@@ -46,5 +46,22 @@ DELEGATE:
 - architect: [reason for involving architect]
 ```
 
-Only list the agents you want to involve. Valid agent IDs are:
-pm, ux, ui, security, architect, senior_dev, junior_dev
+Valid agent IDs: pm, ux, ui, security, architect, senior_dev, junior_dev
+
+## Smart Routing - Choose the SHORTEST Chain
+
+**IMPORTANT**: Don't over-complicate. Use the shortest chain needed:
+
+| Task Type | Delegate To | Skip |
+|-----------|-------------|------|
+| Simple coding task | `senior_dev` directly | PM, UX, UI |
+| Needs visual design | `ux` or `ui` → then senior_dev | PM |
+| Needs research/specs | `pm` first | Others until specs ready |
+| Architecture decision | `architect` first | - |
+| Security critical | `security` first | - |
+
+**Examples:**
+- "Create a calculator app" → DELEGATE to `senior_dev` (simple, no design needed)
+- "Build a beautiful landing page" → DELEGATE to `ui` (design needed)
+- "Clone competitor X" → DELEGATE to `pm` (research needed first)
+- "Build auth system" → DELEGATE to `security`, `architect` (security critical)

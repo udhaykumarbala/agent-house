@@ -283,7 +283,70 @@ func (o *Orchestrator) processAgent(role agent.Role, task, projectID string, dep
 		}
 	}
 
+	// Handle review escalations (filter by hierarchy)
+	validReviews := agent.FilterValidReviews(role, response.ReviewTo)
+
+	// Log filtered reviews
+	if o.config.Verbose && len(response.ReviewTo) != len(validReviews) {
+		for _, r := range response.ReviewTo {
+			if !agent.CanReviewTo(role, r) {
+				fmt.Printf("   ⚠️  Ignoring invalid review: %s cannot escalate to %s\n", role, r)
+			}
+		}
+	}
+
+	if len(validReviews) > 0 {
+		for _, reviewRole := range validReviews {
+			// Create review message
+			reviewMsg := message.NewMessage(
+				message.TypeDelegate, // Use delegate type, could add TypeReview later
+				string(role),
+				string(reviewRole),
+				fmt.Sprintf("Review request from %s", a.Name),
+			)
+			reviewMsg.Metadata.ProjectID = projectID
+			o.store.Add(reviewMsg)
+			o.notify(reviewMsg)
+			result.Messages = append(result.Messages, reviewMsg)
+
+			if o.config.Verbose {
+				fmt.Printf("   ↑ Review request to %s\n", reviewRole)
+			}
+
+			// Build review context
+			context := buildReviewContext(a, response, task)
+
+			// Process review (doesn't count against visited since it's upward)
+			err := o.processAgent(reviewRole, context, projectID, depth+1, result)
+			if err != nil {
+				errorMsg := message.NewMessage(message.TypeError, string(reviewRole), "orchestrator", err.Error())
+				errorMsg.Metadata.ProjectID = projectID
+				o.store.Add(errorMsg)
+				o.notify(errorMsg)
+			}
+		}
+	}
+
 	return nil
+}
+
+// buildReviewContext creates context for a review escalation
+func buildReviewContext(from *agent.Agent, response *agent.Response, originalTask string) string {
+	return fmt.Sprintf(`%s is requesting your review/decision.
+
+ORIGINAL TASK:
+%s
+
+THEIR WORK:
+%s
+
+Please review and provide your decision or approval.
+If approved, you can signal COMPLETE.
+If changes needed, provide feedback.`,
+		from.Name,
+		originalTask,
+		response.Content,
+	)
 }
 
 // buildDelegationContext creates context for a delegated agent

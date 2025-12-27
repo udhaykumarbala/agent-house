@@ -37,7 +37,8 @@ type Agent struct {
 // Response from an agent
 type Response struct {
 	Content    string
-	DelegateTo []Role   // Agents to involve next
+	DelegateTo []Role   // Downward delegation - pass work to
+	ReviewTo   []Role   // Upward escalation - get decisions from
 	Files      []string // Files to create
 	Raw        string   // Original unprocessed output
 	IsComplete bool     // Agent signals task is complete (no further delegation needed)
@@ -124,6 +125,9 @@ If you create files, they will be created in the project directory.`, a.SystemPr
 	// Parse delegation instructions
 	response.DelegateTo = parseDelegations(output)
 
+	// Parse review escalations
+	response.ReviewTo = parseReviews(output)
+
 	// Check for completion signal
 	response.IsComplete = parseCompletionSignal(output)
 
@@ -140,6 +144,45 @@ func parseCompletionSignal(output string) bool {
 		}
 	}
 	return false
+}
+
+// parseReviews extracts review escalation instructions from agent response
+func parseReviews(output string) []Role {
+	var reviews []Role
+
+	// Look for REVIEW: block
+	lines := strings.Split(output, "\n")
+	inReviewBlock := false
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		if strings.HasPrefix(line, "REVIEW:") {
+			inReviewBlock = true
+			continue
+		}
+
+		if inReviewBlock {
+			// End of block if we hit empty line or non-list item
+			if line == "" || line == "```" {
+				break
+			}
+
+			// Parse "- agent: reason" format
+			if strings.HasPrefix(line, "- ") || strings.HasPrefix(line, "* ") {
+				parts := strings.SplitN(line[2:], ":", 2)
+				if len(parts) >= 1 {
+					agentID := strings.TrimSpace(parts[0])
+					role := Role(agentID)
+					if isValidRole(role) {
+						reviews = append(reviews, role)
+					}
+				}
+			}
+		}
+	}
+
+	return reviews
 }
 
 // parseDelegations extracts delegate instructions from agent response

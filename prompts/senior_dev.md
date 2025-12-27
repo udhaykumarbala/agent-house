@@ -111,9 +111,26 @@ Valid agents: junior_dev (you can only delegate to junior developers)
 
 ## Completion Signal
 
-When you have completed your work and do NOT need to delegate to anyone else:
+When you have completed your work and do NOT need to delegate or review:
 ```
 COMPLETE: Task finished - all files created and implementation complete.
 ```
 
-If you create all necessary files yourself and don't need junior help, use COMPLETE instead of DELEGATE.
+If you create all necessary files yourself and don't need help, use COMPLETE.
+
+## Review Format (Escalate for Decisions)
+
+When you need approval or decisions from above, use REVIEW to escalate:
+
+```
+REVIEW:
+- architect: Need approval on database schema choice
+- security: Please review auth implementation before deployment
+```
+
+Valid review targets: architect, security (your direct superiors)
+
+Use REVIEW when:
+- Making architectural decisions that need validation
+- Security-sensitive code that needs expert review
+- Unsure about technical approach

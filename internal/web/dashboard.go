@@ -393,6 +393,176 @@ var dashboardHTML = `<!DOCTYPE html>
         }
 
         /* ===================================
+           QA FEEDBACK PANEL
+        =================================== */
+        .qa-feedback-panel {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: var(--space-6);
+            margin: var(--space-4) 0;
+        }
+
+        .qa-feedback-panel .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-4);
+        }
+
+        .qa-feedback-panel .panel-header h3 {
+            margin: 0;
+            color: var(--color-text-primary);
+            font-size: var(--text-lg);
+            font-weight: 600;
+        }
+
+        .qa-status-banner {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-4);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--space-4);
+            border: 2px solid transparent;
+        }
+
+        .qa-status-banner.approved {
+            background: rgba(46, 204, 113, 0.15);
+            border-color: var(--color-status-success);
+        }
+
+        .qa-status-banner.rejected {
+            background: rgba(231, 76, 60, 0.15);
+            border-color: var(--color-status-error);
+        }
+
+        .qa-status-banner .status-icon {
+            font-size: 32px;
+            line-height: 1;
+        }
+
+        .qa-status-banner .status-text {
+            font-size: var(--text-xl);
+            font-weight: bold;
+            color: var(--color-text-primary);
+            flex: 1;
+        }
+
+        .qa-status-banner .reviewer-info {
+            font-size: var(--text-sm);
+            color: var(--color-text-secondary);
+        }
+
+        .qa-feedback-content {
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+        }
+
+        .failed-criteria {
+            margin-top: var(--space-4);
+        }
+
+        .failed-criteria h4 {
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-3);
+            font-size: var(--text-base);
+            font-weight: 600;
+        }
+
+        .criterion-item {
+            display: flex;
+            gap: var(--space-3);
+            padding: var(--space-3);
+            background: var(--color-bg-tertiary);
+            border-left: 3px solid var(--color-status-error);
+            border-radius: var(--radius-sm);
+            margin-bottom: var(--space-2);
+        }
+
+        .criterion-item .icon {
+            font-size: 20px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .criterion-item .content {
+            flex: 1;
+        }
+
+        .criterion-item strong {
+            color: var(--color-text-primary);
+            display: block;
+            margin-bottom: var(--space-1);
+        }
+
+        .criterion-item p {
+            margin: var(--space-1) 0;
+            font-size: var(--text-sm);
+        }
+
+        .file-link {
+            color: var(--color-status-info);
+            text-decoration: none;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: var(--text-xs);
+            display: inline-block;
+            margin-top: var(--space-1);
+            padding: 2px 6px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: var(--radius-sm);
+        }
+
+        .file-link:hover {
+            background: rgba(52, 152, 219, 0.2);
+            text-decoration: underline;
+        }
+
+        .required-fixes {
+            margin-top: var(--space-4);
+        }
+
+        .required-fixes h4 {
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-3);
+            font-size: var(--text-base);
+            font-weight: 600;
+        }
+
+        .required-fixes ol {
+            margin: 0;
+            padding-left: var(--space-6);
+        }
+
+        .required-fixes li {
+            color: var(--color-text-secondary);
+            margin-bottom: var(--space-2);
+            line-height: 1.6;
+        }
+
+        .feedback-actions {
+            margin-top: var(--space-4);
+            display: flex;
+            gap: var(--space-3);
+        }
+
+        .btn-secondary {
+            background: var(--color-bg-tertiary);
+            border: 1px solid var(--color-border);
+            color: var(--color-text-primary);
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: var(--text-sm);
+            transition: all var(--transition-fast);
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-bg-elevated);
+            border-color: var(--color-border-focus);
+        }
+
+        /* ===================================
            HEADER
         =================================== */
         .header {
@@ -1644,6 +1814,29 @@ var dashboardHTML = `<!DOCTYPE html>
                     </div>
                 </section>
 
+                <!-- QA Feedback Panel -->
+                <section class="qa-feedback-panel" id="qaFeedbackPanel" style="display: none;" role="region" aria-label="QA review feedback">
+                    <div class="panel-header">
+                        <h3 id="qaFeedbackTitle">QA Review</h3>
+                        <span id="qaIterationBadge" class="iteration-badge" style="display: none;"></span>
+                    </div>
+
+                    <div class="qa-status-banner" id="qaStatusBanner" role="status">
+                        <div class="status-icon" id="qaStatusIcon" aria-hidden="true"></div>
+                        <div class="status-text" id="qaStatusText"></div>
+                        <div class="reviewer-info" id="qaReviewerInfo"></div>
+                    </div>
+
+                    <div class="qa-feedback-content" id="qaFeedbackContent">
+                        <!-- Feedback will be inserted here by JavaScript -->
+                    </div>
+
+                    <div class="feedback-actions" id="qaFeedbackActions" style="display: none;">
+                        <button class="btn-secondary" onclick="showFullFeedback()">View Full Feedback</button>
+                        <button class="btn-secondary" onclick="showIterationHistory()">View Iteration History</button>
+                    </div>
+                </section>
+
                 <!-- Task Input -->
                 <div class="task-input-area">
                     <form class="task-form" id="taskForm">
@@ -2233,7 +2426,16 @@ var dashboardHTML = `<!DOCTYPE html>
             contextSections: document.querySelectorAll('.context-section'),
             agentOrgChart: document.getElementById('agentOrgChart'),
             devPhasesSection: document.getElementById('devPhasesSection'),
-            devPhasesTimeline: document.getElementById('devPhasesTimeline')
+            devPhasesTimeline: document.getElementById('devPhasesTimeline'),
+            qaFeedbackPanel: document.getElementById('qaFeedbackPanel'),
+            qaFeedbackTitle: document.getElementById('qaFeedbackTitle'),
+            qaIterationBadge: document.getElementById('qaIterationBadge'),
+            qaStatusBanner: document.getElementById('qaStatusBanner'),
+            qaStatusIcon: document.getElementById('qaStatusIcon'),
+            qaStatusText: document.getElementById('qaStatusText'),
+            qaReviewerInfo: document.getElementById('qaReviewerInfo'),
+            qaFeedbackContent: document.getElementById('qaFeedbackContent'),
+            qaFeedbackActions: document.getElementById('qaFeedbackActions')
         };
 
         // ===================================
@@ -2368,6 +2570,198 @@ var dashboardHTML = `<!DOCTYPE html>
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // ===================================
+        // QA FEEDBACK PANEL
+        // ===================================
+        async function updateQAFeedback(projectId) {
+            if (!projectId || !elements.qaFeedbackPanel) return;
+
+            try {
+                const response = await fetch('/api/qa-reviews?project=' + projectId);
+                const history = await response.json();
+
+                if (!history.reviews || history.reviews.length === 0) {
+                    elements.qaFeedbackPanel.style.display = 'none';
+                    return;
+                }
+
+                // Get latest review
+                const latest = history.reviews[history.reviews.length - 1];
+
+                // Show panel
+                elements.qaFeedbackPanel.style.display = 'block';
+
+                // Update title
+                elements.qaFeedbackTitle.textContent = 'QA Review - Phase ' + latest.phase_index + ': ' + latest.phase_name;
+
+                // Update iteration badge
+                if (latest.iteration > 1) {
+                    elements.qaIterationBadge.textContent = 'Iteration ' + latest.iteration + '/3';
+                    elements.qaIterationBadge.className = 'iteration-badge' + (latest.iteration >= 3 ? ' warning' : '');
+                    elements.qaIterationBadge.style.display = 'inline-block';
+                } else {
+                    elements.qaIterationBadge.style.display = 'none';
+                }
+
+                // Update status banner
+                if (latest.status === 'approved') {
+                    elements.qaStatusBanner.className = 'qa-status-banner approved';
+                    elements.qaStatusIcon.textContent = '✅';
+                    elements.qaStatusText.textContent = 'QA APPROVED';
+                } else if (latest.status === 'rejected') {
+                    elements.qaStatusBanner.className = 'qa-status-banner rejected';
+                    elements.qaStatusIcon.textContent = '❌';
+                    elements.qaStatusText.textContent = 'QA REJECTED';
+                } else {
+                    elements.qaStatusBanner.className = 'qa-status-banner';
+                    elements.qaStatusIcon.textContent = '⏳';
+                    elements.qaStatusText.textContent = 'QA PENDING';
+                }
+
+                // Update reviewer info
+                const reviewTime = timeAgo(latest.reviewed_at);
+                elements.qaReviewerInfo.textContent = 'Reviewer: ' + latest.reviewer.toUpperCase() + ' | ' + reviewTime;
+
+                // Update feedback content
+                elements.qaFeedbackContent.innerHTML = formatQAFeedback(latest);
+
+                // Show action buttons if there's detailed feedback
+                if (latest.feedback || (latest.failed_criteria && latest.failed_criteria.length > 0)) {
+                    elements.qaFeedbackActions.style.display = 'flex';
+                }
+
+            } catch (error) {
+                console.error('Failed to fetch QA feedback:', error);
+                elements.qaFeedbackPanel.style.display = 'none';
+            }
+        }
+
+        function formatQAFeedback(review) {
+            var html = '';
+
+            // Failed criteria section
+            if (review.failed_criteria && review.failed_criteria.length > 0) {
+                html += '<div class="failed-criteria">';
+                html += '<h4>Failed Criteria:</h4>';
+
+                review.failed_criteria.forEach(function(criterion) {
+                    // Try to parse criterion as "title: description"
+                    var parts = criterion.split(':');
+                    var title = parts[0] || criterion;
+                    var description = parts.slice(1).join(':').trim();
+
+                    html += '<div class="criterion-item">';
+                    html += '<span class="icon">❌</span>';
+                    html += '<div class="content">';
+                    html += '<strong>' + escapeHtml(title) + '</strong>';
+                    if (description) {
+                        html += '<p>' + escapeHtml(description) + '</p>';
+                    }
+
+                    // Try to extract file references from description
+                    var fileMatch = description.match(/(\w+\.(js|css|html|ts|tsx|go|md))(:(\d+))?/);
+                    if (fileMatch) {
+                        html += '<a href="#" class="file-link" onclick="openFile(\'' + fileMatch[1] + '\', ' + (fileMatch[4] || 'null') + '); return false;">' + fileMatch[0] + '</a>';
+                    }
+
+                    html += '</div>';
+                    html += '</div>';
+                });
+
+                html += '</div>';
+            }
+
+            // Required fixes section (parse from feedback text)
+            if (review.feedback) {
+                var fixes = extractRequiredFixes(review.feedback);
+                if (fixes.length > 0) {
+                    html += '<div class="required-fixes">';
+                    html += '<h4>Required Fixes:</h4>';
+                    html += '<ol>';
+                    fixes.forEach(function(fix) {
+                        html += '<li>' + escapeHtml(fix) + '</li>';
+                    });
+                    html += '</ol>';
+                    html += '</div>';
+                }
+
+                // Show raw feedback if no structured data
+                if (!review.failed_criteria || review.failed_criteria.length === 0) {
+                    html += '<div style="margin-top: 16px;">';
+                    html += '<h4>Feedback:</h4>';
+                    html += '<pre style="white-space: pre-wrap; font-family: inherit; color: var(--color-text-secondary);">' + escapeHtml(review.feedback) + '</pre>';
+                    html += '</div>';
+                }
+            }
+
+            return html || '<p style="color: var(--color-text-secondary);">No detailed feedback available.</p>';
+        }
+
+        function extractRequiredFixes(feedback) {
+            var fixes = [];
+            if (!feedback) return fixes;
+
+            // Look for numbered list items (1. or 1) format)
+            var lines = feedback.split('\n');
+            var inFixesSection = false;
+
+            lines.forEach(function(line) {
+                line = line.trim();
+
+                // Detect "REQUIRED FIXES" section
+                if (line.match(/REQUIRED FIXES|FIXES NEEDED|TO FIX/i)) {
+                    inFixesSection = true;
+                    return;
+                }
+
+                // Stop at next section
+                if (inFixesSection && line.match(/^[A-Z\s]{3,}:/)) {
+                    inFixesSection = false;
+                }
+
+                // Extract numbered items
+                if (inFixesSection) {
+                    var match = line.match(/^(\d+[\.\)])\s*(.+)/);
+                    if (match) {
+                        fixes.push(match[2]);
+                    }
+                }
+            });
+
+            return fixes;
+        }
+
+        function timeAgo(timestamp) {
+            if (!timestamp) return 'recently';
+
+            var date = new Date(timestamp);
+            var seconds = Math.floor((new Date() - date) / 1000);
+
+            if (seconds < 60) return seconds + 's ago';
+            if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+            if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+            return Math.floor(seconds / 86400) + 'd ago';
+        }
+
+        function openFile(filename, lineNumber) {
+            // Placeholder for file viewer integration
+            console.log('Open file:', filename, 'line:', lineNumber);
+            announce('Opening file: ' + filename + (lineNumber ? ' line ' + lineNumber : ''));
+            // TODO: Integrate with file tree or code viewer
+        }
+
+        function showFullFeedback() {
+            // Placeholder for modal with complete feedback
+            console.log('Show full feedback modal');
+            // TODO: Implement modal with full QA review details
+        }
+
+        function showIterationHistory() {
+            // Placeholder for iteration history view
+            console.log('Show iteration history');
+            // TODO: Implement iteration timeline modal
         }
 
         // ===================================
@@ -3094,6 +3488,7 @@ var dashboardHTML = `<!DOCTYPE html>
                 fetchTasks();
                 fetchMessages();
                 updateDevelopmentPhases(state.projectId);
+                updateQAFeedback(state.projectId);
 
                 // Show toast
                 showToast('Project Switched', 'Now viewing: ' + state.projectId, 'info');
@@ -3326,6 +3721,7 @@ var dashboardHTML = `<!DOCTYPE html>
             setInterval(fetchPhase, 3000);
             setInterval(fetchProjects, 30000); // Refresh projects every 30 seconds
             setInterval(function() { updateDevelopmentPhases(state.projectId); }, 5000); // Refresh dev phases every 5 seconds
+            setInterval(function() { updateQAFeedback(state.projectId); }, 5000); // Refresh QA feedback every 5 seconds
         }
 
         // Start app

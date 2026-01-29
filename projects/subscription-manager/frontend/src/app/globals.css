@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #FF7A5C;
+    --color-primary-hover: #FF6347;
+    --color-primary-pressed: #E85C3A;
+    --color-background: #FAFAFA;
+    --color-surface: #FFFFFF;
+    --color-surface-elevated: #FFFFFF;
+    --color-text-primary: #1A1A1E;
+    --color-text-secondary: #6B6B73;
+    --color-text-tertiary: #9CA3AF;
+    --color-border: #E5E5E8;
+    --color-success: #059669;
+    --color-error: #DC2626;
+    --color-warning: #D97706;
+  }
+
+  .dark {
+    --color-primary: #FF8A6C;
+    --color-primary-hover: #FF9A7C;
+    --color-primary-pressed: #FF7A5C;
+    --color-background: #0F0F12;
+    --color-surface: #1A1A1E;
+    --color-surface-elevated: #252529;
+    --color-text-primary: #FAFAFA;
+    --color-text-secondary: #A1A1AA;
+    --color-text-tertiary: #6B6B73;
+    --color-border: #2A2A2F;
+    --color-success: #10B981;
+    --color-error: #EF4444;
+    --color-warning: #F59E0B;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-text-primary;
+    @apply dark:bg-dark-background dark:text-dark-text-primary;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+
+  /* Tabular numbers for prices */
+  .tabular-nums {
+    font-feature-settings: 'tnum' 1;
+  }
+}
+
+@layer utilities {
+  /* Safe area padding for iOS */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* Hide scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Touch action for better mobile UX */
+  .touch-pan-y {
+    touch-action: pan-y;
+  }
+}
+
+/* Focus visible outline */
+:focus-visible {
+  @apply outline-none ring-2 ring-primary/30 ring-offset-2;
+}
+
+/* Prevent text selection on touch */
+button,
+a {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Input zoom prevention on iOS */
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='number'],
+input[type='date'],
+select,
+textarea {
+  font-size: 16px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

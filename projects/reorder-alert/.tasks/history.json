@@ -1,0 +1,14 @@
+{
+  "projectId": "reorder-alert",
+  "tasks": [
+    {
+      "taskId": "task_1766823767150079000",
+      "summary": "Inventory Reorder Alert System - Track stock le...",
+      "createdAt": "2025-12-27T13:52:47.150083+05:30",
+      "completedAt": "2025-12-27T13:53:14.841728+05:30",
+      "status": "completed",
+      "turns": 1,
+      "filesCreated": 0
+    }
+  ]
+}

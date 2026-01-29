@@ -185,3 +185,23 @@ func (s *Store) LoadFromFile(path string) error {
 
 	return nil
 }
+
+// GetByTaskID returns messages for a specific task
+func (s *Store) GetByTaskID(taskID string) []*Message {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var result []*Message
+	for _, msg := range s.messages {
+		if msg.Metadata.TaskID == taskID {
+			result = append(result, msg)
+		}
+	}
+
+	// Sort by timestamp
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Timestamp.Before(result[j].Timestamp)
+	})
+
+	return result
+}

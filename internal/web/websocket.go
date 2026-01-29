@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"pty-claude-test/internal/agentask"
 	"pty-claude-test/internal/message"
 )
 
@@ -18,11 +19,20 @@ var upgrader = websocket.Upgrader{
 
 // Hub manages WebSocket connections
 type Hub struct {
-	clients    map[*Client]bool
-	broadcast  chan *message.Message
-	register   chan *Client
-	unregister chan *Client
-	mu         sync.RWMutex
+	clients         map[*Client]bool
+	broadcast       chan *message.Message
+	agentTaskEvents chan *AgentTaskEvent
+	register        chan *Client
+	unregister      chan *Client
+	mu              sync.RWMutex
+}
+
+// AgentTaskEvent represents an event related to agent tasks
+type AgentTaskEvent struct {
+	EventType string                  `json:"event_type"` // task_started, task_progress, task_completed, task_failed
+	TaskID    string                  `json:"task_id"`
+	AgentRole string                  `json:"agent_role"`
+	Data      map[string]interface{}  `json:"data"`
 }
 
 // Client represents a WebSocket client
@@ -35,10 +45,11 @@ type Client struct {
 // NewHub creates a new WebSocket hub
 func NewHub() *Hub {
 	return &Hub{
-		clients:    make(map[*Client]bool),
-		broadcast:  make(chan *message.Message),
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
+		clients:         make(map[*Client]bool),
+		broadcast:       make(chan *message.Message),
+		agentTaskEvents: make(chan *AgentTaskEvent, 100),
+		register:        make(chan *Client),
+		unregister:      make(chan *Client),
 	}
 }
 
@@ -80,6 +91,26 @@ func (h *Hub) Run() {
 				}
 			}
 			h.mu.RUnlock()
+
+		case event := <-h.agentTaskEvents:
+			data, err := json.Marshal(map[string]interface{}{
+				"type":  "agent_task_event",
+				"event": event,
+			})
+			if err != nil {
+				continue
+			}
+
+			h.mu.RLock()
+			for client := range h.clients {
+				select {
+				case client.send <- data:
+				default:
+					close(client.send)
+					delete(h.clients, client)
+				}
+			}
+			h.mu.RUnlock()
 		}
 	}
 }
@@ -87,6 +118,66 @@ func (h *Hub) Run() {
 // Broadcast sends a message to all connected clients
 func (h *Hub) Broadcast(msg *message.Message) {
 	h.broadcast <- msg
+}
+
+// BroadcastAgentTaskEvent sends an agent task event to all connected clients
+func (h *Hub) BroadcastAgentTaskEvent(event *AgentTaskEvent) {
+	select {
+	case h.agentTaskEvents <- event:
+	default:
+		log.Printf("Warning: Agent task event channel full, dropping event")
+	}
+}
+
+// BroadcastTaskStarted broadcasts a task started event
+func (h *Hub) BroadcastTaskStarted(task *agentask.AgentTask) {
+	h.BroadcastAgentTaskEvent(&AgentTaskEvent{
+		EventType: "task_started",
+		TaskID:    task.ID,
+		AgentRole: string(task.AgentRole),
+		Data: map[string]interface{}{
+			"title":       task.Title,
+			"task_type":   task.TaskType,
+			"description": task.Description,
+		},
+	})
+}
+
+// BroadcastTaskProgress broadcasts a task progress event
+func (h *Hub) BroadcastTaskProgress(task *agentask.AgentTask) {
+	h.BroadcastAgentTaskEvent(&AgentTaskEvent{
+		EventType: "task_progress",
+		TaskID:    task.ID,
+		AgentRole: string(task.AgentRole),
+		Data: map[string]interface{}{
+			"progress": task.Progress,
+		},
+	})
+}
+
+// BroadcastTaskCompleted broadcasts a task completed event
+func (h *Hub) BroadcastTaskCompleted(task *agentask.AgentTask) {
+	h.BroadcastAgentTaskEvent(&AgentTaskEvent{
+		EventType: "task_completed",
+		TaskID:    task.ID,
+		AgentRole: string(task.AgentRole),
+		Data: map[string]interface{}{
+			"duration": task.Duration.String(),
+			"outputs":  task.Outputs,
+		},
+	})
+}
+
+// BroadcastTaskFailed broadcasts a task failed event
+func (h *Hub) BroadcastTaskFailed(task *agentask.AgentTask) {
+	h.BroadcastAgentTaskEvent(&AgentTaskEvent{
+		EventType: "task_failed",
+		TaskID:    task.ID,
+		AgentRole: string(task.AgentRole),
+		Data: map[string]interface{}{
+			"error": task.Error,
+		},
+	})
 }
 
 // ClientCount returns the number of connected clients

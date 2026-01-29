@@ -1,0 +1,522 @@
+openapi: 3.0.3
+info:
+  title: SubTrack API
+  description: REST API for SubTrack subscription management application
+  version: 1.0.0
+  contact:
+    name: SubTrack Team
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+  - url: https://api.subtrack.app/v1
+    description: Production server
+
+tags:
+  - name: Auth
+    description: Authentication endpoints
+  - name: Subscriptions
+    description: Subscription management
+  - name: Analytics
+    description: Spending analytics
+  - name: User
+    description: User management
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterInput'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+          headers:
+            Set-Cookie:
+              description: Session cookie
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout user
+      responses:
+        '200':
+          description: Logout successful
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /subscriptions:
+    get:
+      tags: [Subscriptions]
+      summary: List all subscriptions
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: List of subscriptions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Subscription'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Subscriptions]
+      summary: Create subscription
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionInput'
+      responses:
+        '201':
+          description: Subscription created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /subscriptions/{id}:
+    get:
+      tags: [Subscriptions]
+      summary: Get subscription by ID
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Subscription details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Subscriptions]
+      summary: Update subscription
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionInput'
+      responses:
+        '200':
+          description: Subscription updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Subscriptions]
+      summary: Delete subscription
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Subscription deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /analytics/summary:
+    get:
+      tags: [Analytics]
+      summary: Get spending summary
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: Spending summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Summary'
+
+  /analytics/upcoming:
+    get:
+      tags: [Analytics]
+      summary: Get upcoming renewals
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        '200':
+          description: Upcoming renewals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpcomingResponse'
+
+  /user/preferences:
+    put:
+      tags: [User]
+      summary: Update user preferences
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferences'
+      responses:
+        '200':
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+
+  /user/account:
+    delete:
+      tags: [User]
+      summary: Delete user account
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: Account deleted
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: session
+
+  schemas:
+    RegisterInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 12
+          maxLength: 128
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    UserResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        emailVerified:
+          type: boolean
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+        createdAt:
+          type: string
+          format: date-time
+
+    UserPreferences:
+      type: object
+      properties:
+        currency:
+          type: string
+          default: USD
+        theme:
+          type: string
+          enum: [light, dark, system]
+          default: system
+        reminderDays:
+          type: integer
+          default: 3
+        emailNotifications:
+          type: boolean
+          default: true
+
+    SubscriptionInput:
+      type: object
+      required: [name, price, billingCycle, nextBillingDate]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        price:
+          type: number
+          minimum: 0
+          maximum: 999999.99
+        currency:
+          type: string
+          default: USD
+        billingCycle:
+          type: string
+          enum: [weekly, monthly, yearly, custom]
+        customDays:
+          type: integer
+        nextBillingDate:
+          type: string
+          format: date
+        category:
+          type: string
+          enum: [entertainment, productivity, lifestyle, utilities, news, education, finance, health, other]
+        icon:
+          type: string
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+        notes:
+          type: string
+        reminderDays:
+          type: integer
+          minimum: 0
+          maximum: 30
+
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        currency:
+          type: string
+        billingCycle:
+          type: string
+        customDays:
+          type: integer
+        nextBillingDate:
+          type: string
+          format: date
+        category:
+          type: string
+        icon:
+          type: string
+        color:
+          type: string
+        notes:
+          type: string
+        isActive:
+          type: boolean
+        reminderDays:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SubscriptionResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Subscription'
+
+    Summary:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            totalMonthly:
+              type: number
+            totalYearly:
+              type: number
+            activeCount:
+              type: integer
+            byCategory:
+              type: object
+              additionalProperties:
+                type: number
+            dueSoon:
+              type: integer
+            dueSoonAmount:
+              type: number
+
+    UpcomingResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            groups:
+              type: array
+              items:
+                type: object
+                properties:
+                  label:
+                    type: string
+                  subscriptions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Subscription'
+                  total:
+                    type: number
+            total:
+              type: number
+            daysSpan:
+              type: integer
+
+    Meta:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        perPage:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+
+  responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

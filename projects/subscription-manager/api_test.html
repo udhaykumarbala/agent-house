@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SubTrack API Test</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #FAFAFA;
+      color: #1A1A1E;
+    }
+    h1 { color: #FF7A5C; }
+    h2 { color: #6B6B73; border-bottom: 1px solid #E5E5E8; padding-bottom: 8px; }
+    .section { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    input, select, textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #E5E5E8;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #FF7A5C;
+      box-shadow: 0 0 0 2px rgba(255, 122, 92, 0.2);
+    }
+    button {
+      background: #FF7A5C;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+    button:hover { background: #FF6347; }
+    button.secondary { background: white; color: #1A1A1E; border: 1px solid #E5E5E8; }
+    button.secondary:hover { background: #F5F5F5; }
+    button.danger { background: #DC2626; }
+    button.danger:hover { background: #B91C1C; }
+    .response {
+      background: #0F0F12;
+      color: #FAFAFA;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .status.success { background: #ECFDF5; color: #059669; }
+    .status.error { background: #FEF2F2; color: #DC2626; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { font-size: 12px; color: #6B6B73; display: block; margin-bottom: 4px; }
+    .endpoint-info { font-size: 12px; color: #6B6B73; margin-bottom: 16px; }
+    .endpoint-info code { background: #E5E5E8; padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>SubTrack API Test</h1>
+  <p>API Base URL: <input type="text" id="baseUrl" value="http://localhost:8080/api/v1" style="width: 300px;"></p>
+
+  <!-- Auth Section -->
+  <div class="section">
+    <h2>Authentication</h2>
+
+    <h3>Register</h3>
+    <div class="endpoint-info"><code>POST /auth/register</code></div>
+    <div class="grid">
+      <div>
+        <label>Email</label>
+        <input type="email" id="regEmail" placeholder="you@example.com">
+      </div>
+      <div>
+        <label>Password (min 12 chars)</label>
+        <input type="password" id="regPassword" placeholder="Enter password">
+      </div>
+    </div>
+    <button onclick="register()">Register</button>
+
+    <h3>Login</h3>
+    <div class="endpoint-info"><code>POST /auth/login</code></div>
+    <div class="grid">
+      <div>
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="you@example.com">
+      </div>
+      <div>
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="Enter password">
+      </div>
+    </div>
+    <button onclick="login()">Login</button>
+    <button class="secondary" onclick="logout()">Logout</button>
+    <button class="secondary" onclick="getMe()">Get Current User</button>
+  </div>
+
+  <!-- Subscriptions Section -->
+  <div class="section">
+    <h2>Subscriptions</h2>
+
+    <h3>Create Subscription</h3>
+    <div class="endpoint-info"><code>POST /subscriptions</code></div>
+    <div class="grid">
+      <div>
+        <label>Name</label>
+        <input type="text" id="subName" placeholder="Netflix">
+      </div>
+      <div>
+        <label>Price</label>
+        <input type="number" id="subPrice" placeholder="15.49" step="0.01">
+      </div>
+      <div>
+        <label>Billing Cycle</label>
+        <select id="subCycle">
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+          <option value="weekly">Weekly</option>
+        </select>
+      </div>
+      <div>
+        <label>Next Billing Date</label>
+        <input type="date" id="subDate">
+      </div>
+      <div>
+        <label>Category</label>
+        <select id="subCategory">
+          <option value="entertainment">Entertainment</option>
+          <option value="productivity">Productivity</option>
+          <option value="lifestyle">Lifestyle</option>
+          <option value="utilities">Utilities</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <button onclick="createSubscription()">Create Subscription</button>
+
+    <h3>List Subscriptions</h3>
+    <div class="endpoint-info"><code>GET /subscriptions</code></div>
+    <button onclick="listSubscriptions()">List All</button>
+
+    <h3>Get/Update/Delete Subscription</h3>
+    <div class="endpoint-info"><code>GET/PUT/DELETE /subscriptions/:id</code></div>
+    <label>Subscription ID</label>
+    <input type="text" id="subId" placeholder="UUID">
+    <button onclick="getSubscription()">Get</button>
+    <button onclick="updateSubscription()">Update (uses form above)</button>
+    <button class="danger" onclick="deleteSubscription()">Delete</button>
+  </div>
+
+  <!-- Analytics Section -->
+  <div class="section">
+    <h2>Analytics</h2>
+    <div class="endpoint-info"><code>GET /analytics/summary</code> | <code>GET /analytics/upcoming</code></div>
+    <button onclick="getSummary()">Get Summary</button>
+    <button onclick="getUpcoming()">Get Upcoming (30 days)</button>
+  </div>
+
+  <!-- Response Section -->
+  <div class="section">
+    <h2>Response</h2>
+    <div id="status"></div>
+    <div class="response" id="response">// Response will appear here</div>
+  </div>
+
+  <script>
+    const getBaseUrl = () => document.getElementById('baseUrl').value;
+
+    async function makeRequest(method, endpoint, body = null) {
+      const url = `${getBaseUrl()}${endpoint}`;
+      const options = {
+        method,
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      };
+      if (body) options.body = JSON.stringify(body);
+
+      try {
+        const res = await fetch(url, options);
+        const data = await res.json();
+
+        document.getElementById('status').innerHTML =
+          `<span class="status ${res.ok ? 'success' : 'error'}">${res.status} ${res.statusText}</span> ${method} ${endpoint}`;
+        document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+
+        return { ok: res.ok, data };
+      } catch (err) {
+        document.getElementById('status').innerHTML = `<span class="status error">Error</span>`;
+        document.getElementById('response').textContent = err.message;
+      }
+    }
+
+    // Auth
+    function register() {
+      makeRequest('POST', '/auth/register', {
+        email: document.getElementById('regEmail').value,
+        password: document.getElementById('regPassword').value,
+      });
+    }
+
+    function login() {
+      makeRequest('POST', '/auth/login', {
+        email: document.getElementById('loginEmail').value,
+        password: document.getElementById('loginPassword').value,
+      });
+    }
+
+    function logout() { makeRequest('POST', '/auth/logout'); }
+    function getMe() { makeRequest('GET', '/auth/me'); }
+
+    // Subscriptions
+    function createSubscription() {
+      makeRequest('POST', '/subscriptions', {
+        name: document.getElementById('subName').value,
+        price: parseFloat(document.getElementById('subPrice').value),
+        billingCycle: document.getElementById('subCycle').value,
+        nextBillingDate: document.getElementById('subDate').value,
+        category: document.getElementById('subCategory').value,
+      });
+    }
+
+    function listSubscriptions() { makeRequest('GET', '/subscriptions'); }
+
+    function getSubscription() {
+      makeRequest('GET', `/subscriptions/${document.getElementById('subId').value}`);
+    }
+
+    function updateSubscription() {
+      makeRequest('PUT', `/subscriptions/${document.getElementById('subId').value}`, {
+        name: document.getElementById('subName').value,
+        price: parseFloat(document.getElementById('subPrice').value),
+        billingCycle: document.getElementById('subCycle').value,
+        nextBillingDate: document.getElementById('subDate').value,
+        category: document.getElementById('subCategory').value,
+      });
+    }
+
+    function deleteSubscription() {
+      makeRequest('DELETE', `/subscriptions/${document.getElementById('subId').value}`);
+    }
+
+    // Analytics
+    function getSummary() { makeRequest('GET', '/analytics/summary'); }
+    function getUpcoming() { makeRequest('GET', '/analytics/upcoming?days=30'); }
+
+    // Set default date
+    document.getElementById('subDate').value = new Date().toISOString().split('T')[0];
+  </script>
+</body>
+</html>

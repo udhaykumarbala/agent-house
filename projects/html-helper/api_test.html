@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTML Helper - No API Testing Required</title>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #1A1A2E;
+      color: #FFFFFF;
+    }
+    h1 {
+      background: linear-gradient(135deg, #FF2E63 0%, #00D9FF 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .info-box {
+      background: #16213E;
+      border: 2px solid #2A3B62;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .code {
+      background: #0D1117;
+      color: #00D9FF;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .success {
+      color: #00FF9D;
+    }
+    ul {
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+  <h1>HTML Helper - Frontend-Only Application</h1>
+
+  <div class="info-box">
+    <h2>ℹ️ No API Testing Required</h2>
+    <p>
+      HTML Helper is a <strong>pure frontend application</strong> with no backend API.
+      All functionality runs entirely in the browser.
+    </p>
+  </div>
+
+  <div class="info-box">
+    <h2>🛠️ Technology Stack</h2>
+    <ul>
+      <li><strong>Frontend:</strong> Vite + TypeScript + Tailwind CSS</li>
+      <li><strong>Storage:</strong> LocalForage (IndexedDB/localStorage)</li>
+      <li><strong>Security:</strong> DOMPurify + Sandboxed Iframes</li>
+      <li><strong>Animations:</strong> Anime.js</li>
+      <li><strong>Code Editor:</strong> CodeMirror 6</li>
+    </ul>
+  </div>
+
+  <div class="info-box">
+    <h2>✅ Testing the Application</h2>
+    <p>To test HTML Helper locally:</p>
+    <ol>
+      <li>Install dependencies: <span class="code">npm install</span></li>
+      <li>Start dev server: <span class="code">npm run dev</span></li>
+      <li>Open browser to: <span class="code success">http://localhost:3000</span></li>
+      <li>Try the interactive demo on the landing page</li>
+      <li>Click "Start Learning" to begin lessons</li>
+    </ol>
+  </div>
+
+  <div class="info-box">
+    <h2>🔍 Features to Test</h2>
+    <ul>
+      <li><strong>Landing Page:</strong> Interactive HTML demo with live preview</li>
+      <li><strong>Code Editor:</strong> Type HTML and see real-time rendering</li>
+      <li><strong>Validation:</strong> Click "Check Answer" to validate your code</li>
+      <li><strong>Animations:</strong> Watch for confetti on lesson completion</li>
+      <li><strong>Progress:</strong> Your progress saves automatically in browser</li>
+      <li><strong>Achievements:</strong> Unlock badges as you complete lessons</li>
+      <li><strong>Lesson Map:</strong> Click menu to see all 15 lessons</li>
+    </ul>
+  </div>
+
+  <div class="info-box">
+    <h2>🔒 Security Features</h2>
+    <ul>
+      <li><strong>HTML Sanitization:</strong> DOMPurify removes malicious code</li>
+      <li><strong>Sandboxed Execution:</strong> Code runs in isolated iframe</li>
+      <li><strong>Rate Limiting:</strong> Max 50 executions per minute</li>
+      <li><strong>Timeout Protection:</strong> 5-second execution limit</li>
+      <li><strong>No Server:</strong> All processing happens client-side</li>
+    </ul>
+  </div>
+
+  <div class="info-box">
+    <h2>📊 Performance</h2>
+    <ul>
+      <li>Bundle Size: &lt; 150KB gzipped</li>
+      <li>First Contentful Paint: &lt; 1.5s on 3G</li>
+      <li>Animation FPS: 60 FPS target</li>
+      <li>Lighthouse Score: &gt; 95 target</li>
+    </ul>
+  </div>
+
+  <div class="info-box">
+    <h2>🚀 Deployment</h2>
+    <p>
+      This application can be deployed to any static hosting service:
+    </p>
+    <ul>
+      <li>Netlify (recommended)</li>
+      <li>Vercel</li>
+      <li>GitHub Pages</li>
+      <li>Cloudflare Pages</li>
+    </ul>
+    <p>
+      Simply run <span class="code">npm run build</span> and deploy the <span class="code">dist</span> folder.
+    </p>
+  </div>
+
+  <div class="info-box">
+    <h2>📝 Note</h2>
+    <p>
+      Since there is no backend API, there are no endpoints to test.
+      All data persistence uses browser localStorage/IndexedDB through LocalForage.
+    </p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reorder Alert - API Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #FDF8F3;
+      color: #1F1F23;
+      padding: 24px;
+      line-height: 1.5;
+    }
+    h1 { color: #7C3AED; margin-bottom: 8px; }
+    h2 { margin-top: 32px; margin-bottom: 16px; color: #78716C; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .subtitle { color: #78716C; margin-bottom: 32px; }
+    .card {
+      background: #FFFFFF;
+      border: 1px solid #E7E5E4;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 6px rgba(31, 31, 35, 0.07), 0 2px 4px rgba(31, 31, 35, 0.04);
+    }
+    .endpoint { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .method {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      min-width: 60px;
+      text-align: center;
+    }
+    .method-get { background: #ECFCCB; color: #4D7C0F; }
+    .method-post { background: #EDE9FE; color: #7C3AED; }
+    .method-put { background: #FEF3C7; color: #D97706; }
+    .method-delete { background: #FEF2F2; color: #B91C1C; }
+    .path { font-family: monospace; font-size: 14px; color: #1F1F23; }
+    .description { color: #78716C; font-size: 14px; margin-bottom: 12px; }
+    .test-btn {
+      background: #7C3AED;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 150ms;
+    }
+    .test-btn:hover { background: #6D28D9; }
+    .result {
+      background: #F5F5F4;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      display: none;
+    }
+    .result.show { display: block; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-left: 8px;
+    }
+    .badge-local { background: #EDE9FE; color: #7C3AED; }
+    .note {
+      background: #FEF3C7;
+      border-left: 4px solid #D97706;
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Reorder Alert API Test</h1>
+  <p class="subtitle">MVP uses localStorage for persistence - no backend server required</p>
+
+  <div class="note">
+    <strong>Note:</strong> This MVP implementation uses browser localStorage for data persistence.
+    All API operations are simulated client-side. Future versions will include a REST API with the endpoints documented below.
+  </div>
+
+  <h2>Authentication</h2>
+
+  <div class="card">
+    <div class="endpoint">
+      <span class="method method-post">POST</span>
+      <span class="path">/api/auth/register</span>
+      <span class="badge badge-local">localStorage</span>
+    </div>
+    <p class="description">Register a new user account</p>
+    <button class="test-btn" onclick="testRegister()">Test Register</button>
+    <div class="result" id="result-register"></div>
+  </div>
+
+  <div class="card">
+    <div class="endpoint">
+      <span class="method method-post">POST</span>
+      <span class="path">/api/auth/login</span>
+      <span class="badge badge-local">localStorage</span>
+    </div>
+    <p class="description">Login with email and password</p>
+    <button class="test-btn" onclick="testLogin()">Test Login</button>
+    <div class="result" id="result-login"></div>
+  </div>
+
+  <div class="card">
+    <div class="endpoint">
+      <span class="method method-post">POST</span>
+      <span class="path">/api/auth/logout</span>
+      <span class="badge badge-local">localStorage</span>
+    </div>
+    <p class="description">Log out current user</p>
+    <button class="test-btn" onclick="testLogout()">Test Logout</button>
+    <div class="result" id="result-logout"></div>
+  </div>
+
+  <h2>Items</h2>
+
+  <div class="card">
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/items</span>
+      <span class="badge badge-local">localStorage</span>
+    </div>
+    <p class="description">Get all items for current user</p>
+    <button class="test-btn" onclick="testGetItems()">Test Get Items</button>
+    <div class="result" id="result-get-items"></div>
+  </div>
+
+  <div class="card">
+    <div class="endpoint">
+      <span class="method method-post">POST</span>
+      <span class="path">/api/items</span>
+      <span class="badge badge-local">localStorage</span>
+    </div>
+    <p class="description">Create a new item</p>
+    <button class="test-btn" onclick="testCreateItem()">Test Create Item</button>
+    <div class="result" id="result-create-item"></div>
+  </div>
+
+  <div class="card">
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/items/:id</span>
+      <span class="badge badge-local">localStorage</span>
+    </div>
+    <p class="description">Get a specific item by ID</p>
+    <button class="test-btn" onclick="testGetItem()">Test Get Item</button>
+    <div class="result" id="result-get-item"></div>
+  </div>
+
+  <div class="card">
+    <div class="endpoint">
+      <span class="method method-put">PUT</span>
+      <span class="path">/api/items/:id</span>
+      <span class="badge badge-local">localStorage</span>
+    </div>
+    <p class="description">Update an existing item</p>
+    <button class="test-btn" onclick="testUpdateItem()">Test Update Item</button>
+    <div class="result" id="result-update-item"></div>
+  </div>
+
+  <div class="card">
+    <div class="endpoint">
+      <span class="method method-put">PUT</span>
+      <span class="path">/api/items/:id/quantity</span>
+      <span class="badge badge-local">localStorage</span>
+    </div>
+    <p class="description">Update item quantity (quick update)</p>
+    <button class="test-btn" onclick="testUpdateQuantity()">Test Update Quantity</button>
+    <div class="result" id="result-update-quantity"></div>
+  </div>
+
+  <div class="card">
+    <div class="endpoint">
+      <span class="method method-delete">DELETE</span>
+      <span class="path">/api/items/:id</span>
+      <span class="badge badge-local">localStorage</span>
+    </div>
+    <p class="description">Delete an item</p>
+    <button class="test-btn" onclick="testDeleteItem()">Test Delete Item</button>
+    <div class="result" id="result-delete-item"></div>
+  </div>
+
+  <h2>Alerts</h2>
+
+  <div class="card">
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/alerts</span>
+      <span class="badge badge-local">localStorage</span>
+    </div>
+    <p class="description">Get all active alerts (items below threshold)</p>
+    <button class="test-btn" onclick="testGetAlerts()">Test Get Alerts</button>
+    <div class="result" id="result-get-alerts"></div>
+  </div>
+
+  <div class="card">
+    <div class="endpoint">
+      <span class="method method-post">POST</span>
+      <span class="path">/api/alerts/:id/resolve</span>
+      <span class="badge badge-local">localStorage</span>
+    </div>
+    <p class="description">Mark an alert as resolved (ordered)</p>
+    <button class="test-btn" onclick="testResolveAlert()">Test Resolve Alert</button>
+    <div class="result" id="result-resolve-alert"></div>
+  </div>
+
+  <div class="card">
+    <div class="endpoint">
+      <span class="method method-post">POST</span>
+      <span class="path">/api/alerts/:id/snooze</span>
+      <span class="badge badge-local">localStorage</span>
+    </div>
+    <p class="description">Snooze an alert for a specified duration</p>
+    <button class="test-btn" onclick="testSnoozeAlert()">Test Snooze Alert</button>
+    <div class="result" id="result-snooze-alert"></div>
+  </div>
+
+  <h2>Settings</h2>
+
+  <div class="card">
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/settings</span>
+      <span class="badge badge-local">localStorage</span>
+    </div>
+    <p class="description">Get user notification settings</p>
+    <button class="test-btn" onclick="testGetSettings()">Test Get Settings</button>
+    <div class="result" id="result-get-settings"></div>
+  </div>
+
+  <div class="card">
+    <div class="endpoint">
+      <span class="method method-put">PUT</span>
+      <span class="path">/api/settings</span>
+      <span class="badge badge-local">localStorage</span>
+    </div>
+    <p class="description">Update user notification settings</p>
+    <button class="test-btn" onclick="testUpdateSettings()">Test Update Settings</button>
+    <div class="result" id="result-update-settings"></div>
+  </div>
+
+  <h2>Data Export</h2>
+
+  <div class="card">
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/export/csv</span>
+      <span class="badge badge-local">localStorage</span>
+    </div>
+    <p class="description">Export all items as CSV file</p>
+    <button class="test-btn" onclick="testExportCSV()">Test Export CSV</button>
+    <div class="result" id="result-export-csv"></div>
+  </div>
+
+  <script>
+    // Simulated API functions using localStorage
+    const STORAGE_KEYS = {
+      USER: 'reorder_user',
+      ITEMS: 'reorder_items',
+      SETTINGS: 'reorder_settings'
+    };
+
+    function showResult(id, data) {
+      const el = document.getElementById(id);
+      el.textContent = JSON.stringify(data, null, 2);
+      el.classList.add('show');
+    }
+
+    function getItems() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEYS.ITEMS) || '[]');
+    }
+
+    function getSettings() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+    }
+
+    function getUser() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || 'null');
+    }
+
+    // Test functions
+    function testRegister() {
+      const user = {
+        email: 'test@example.com',
+        createdAt: new Date().toISOString()
+      };
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+      showResult('result-register', { success: true, user });
+    }
+
+    function testLogin() {
+      const user = getUser();
+      if (user) {
+        showResult('result-login', { success: true, user });
+      } else {
+        showResult('result-login', { success: false, error: 'No user found' });
+      }
+    }
+
+    function testLogout() {
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      showResult('result-logout', { success: true, message: 'Logged out' });
+    }
+
+    function testGetItems() {
+      const items = getItems();
+      showResult('result-get-items', { success: true, count: items.length, items });
+    }
+
+    function testCreateItem() {
+      const items = getItems();
+      const newItem = {
+        id: Date.now().toString(36),
+        name: 'Test Item',
+        quantity: 25,
+        threshold: 20,
+        description: 'Created via API test',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      items.push(newItem);
+      localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(items));
+      showResult('result-create-item', { success: true, item: newItem });
+    }
+
+    function testGetItem() {
+      const items = getItems();
+      if (items.length > 0) {
+        showResult('result-get-item', { success: true, item: items[0] });
+      } else {
+        showResult('result-get-item', { success: false, error: 'No items found' });
+      }
+    }
+
+    function testUpdateItem() {
+      const items = getItems();
+      if (items.length > 0) {
+        items[0].name = 'Updated Item Name';
+        items[0].updatedAt = new Date().toISOString();
+        localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(items));
+        showResult('result-update-item', { success: true, item: items[0] });
+      } else {
+        showResult('result-update-item', { success: false, error: 'No items to update' });
+      }
+    }
+
+    function testUpdateQuantity() {
+      const items = getItems();
+      if (items.length > 0) {
+        items[0].quantity += 10;
+        items[0].updatedAt = new Date().toISOString();
+        localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(items));
+        showResult('result-update-quantity', { success: true, item: items[0] });
+      } else {
+        showResult('result-update-quantity', { success: false, error: 'No items to update' });
+      }
+    }
+
+    function testDeleteItem() {
+      const items = getItems();
+      if (items.length > 0) {
+        const deleted = items.shift();
+        localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(items));
+        showResult('result-delete-item', { success: true, deleted });
+      } else {
+        showResult('result-delete-item', { success: false, error: 'No items to delete' });
+      }
+    }
+
+    function testGetAlerts() {
+      const items = getItems();
+      const alerts = items.filter(item => item.quantity <= item.threshold);
+      showResult('result-get-alerts', { success: true, count: alerts.length, alerts });
+    }
+
+    function testResolveAlert() {
+      showResult('result-resolve-alert', { success: true, message: 'Alert marked as resolved' });
+    }
+
+    function testSnoozeAlert() {
+      showResult('result-snooze-alert', {
+        success: true,
+        message: 'Alert snoozed',
+        snoozeUntil: new Date(Date.now() + 3600000).toISOString()
+      });
+    }
+
+    function testGetSettings() {
+      const settings = getSettings();
+      showResult('result-get-settings', { success: true, settings });
+    }
+
+    function testUpdateSettings() {
+      const settings = {
+        emailAlerts: true,
+        dailyDigest: false,
+        alertFrequency: 'immediate'
+      };
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      showResult('result-update-settings', { success: true, settings });
+    }
+
+    function testExportCSV() {
+      const items = getItems();
+      const csv = items.map(i => `${i.name},${i.quantity},${i.threshold}`).join('\n');
+      showResult('result-export-csv', { success: true, csv: 'Name,Quantity,Threshold\n' + csv });
+    }
+  </script>
+</body>
+</html>

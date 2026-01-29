@@ -16,6 +16,7 @@ const (
 	TypeFileModify MessageType = "file_modify" // Request to modify a file
 	TypeComplete   MessageType = "complete"    // Task completion signal
 	TypeError      MessageType = "error"       // Error message
+	TypeSystem     MessageType = "system"      // System/orchestrator message (phase changes, etc.)
 )
 
 // Message represents communication between agents or from user

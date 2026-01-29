@@ -1,0 +1,14 @@
+{
+  "projectId": "subscription-manager",
+  "tasks": [
+    {
+      "taskId": "task_1768701137077719000",
+      "summary": "i want to design a subscription management web ...",
+      "createdAt": "2026-01-18T07:22:17.078582+05:30",
+      "completedAt": "2026-01-18T11:14:14.474619+05:30",
+      "status": "completed",
+      "turns": 16,
+      "filesCreated": 0
+    }
+  ]
+}

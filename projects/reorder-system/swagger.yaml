@@ -1,0 +1,689 @@
+openapi: 3.0.3
+info:
+  title: Reorder Alert API
+  description: |
+    API for the Inventory Reorder Alert System.
+
+    **Note**: The MVP version uses browser localStorage for persistence.
+    This OpenAPI specification documents the planned REST API for future backend implementation.
+  version: 1.0.0
+  contact:
+    name: Reorder Alert Team
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+  - url: https://api.reorderalert.com/v1
+    description: Production server (future)
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Items
+    description: Inventory item management
+  - name: Alerts
+    description: Stock level alerts
+  - name: Settings
+    description: User preferences and notification settings
+  - name: Export
+    description: Data export functionality
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 6
+                  example: securepassword123
+      responses:
+        '201':
+          description: User successfully registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: Authenticate with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: End the current session
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logged out successfully
+
+  /items:
+    get:
+      tags:
+        - Items
+      summary: Get all items
+      description: Retrieve all inventory items for the current user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            type: string
+            enum: [critical, warning, success]
+        - name: category
+          in: query
+          description: Filter by category
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort field
+          schema:
+            type: string
+            enum: [name, quantity, threshold, updatedAt]
+            default: name
+        - name: order
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+      responses:
+        '200':
+          description: List of items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Item'
+                  total:
+                    type: integer
+                    example: 24
+
+    post:
+      tags:
+        - Items
+      summary: Create a new item
+      description: Add a new inventory item to track
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemInput'
+      responses:
+        '201':
+          description: Item created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /items/{id}:
+    get:
+      tags:
+        - Items
+      summary: Get item by ID
+      description: Retrieve a specific inventory item
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '404':
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Items
+      summary: Update item
+      description: Update an existing inventory item
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemInput'
+      responses:
+        '200':
+          description: Item updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '404':
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Items
+      summary: Delete item
+      description: Remove an inventory item
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Item deleted successfully
+        '404':
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /items/{id}/quantity:
+    put:
+      tags:
+        - Items
+      summary: Update item quantity
+      description: Quick update for item quantity (add, remove, or set)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - value
+                - mode
+              properties:
+                value:
+                  type: integer
+                  minimum: 0
+                  example: 50
+                mode:
+                  type: string
+                  enum: [set, add, remove]
+                  example: add
+      responses:
+        '200':
+          description: Quantity updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /alerts:
+    get:
+      tags:
+        - Alerts
+      summary: Get all alerts
+      description: Retrieve all active stock alerts (items below threshold)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by alert status
+          schema:
+            type: string
+            enum: [active, resolved]
+            default: active
+      responses:
+        '200':
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alert'
+                  total:
+                    type: integer
+                    example: 3
+
+  /alerts/{id}/resolve:
+    post:
+      tags:
+        - Alerts
+      summary: Resolve alert
+      description: Mark an alert as resolved (item has been ordered)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Alert resolved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          description: Alert not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /alerts/{id}/snooze:
+    post:
+      tags:
+        - Alerts
+      summary: Snooze alert
+      description: Temporarily dismiss an alert for a specified duration
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                duration:
+                  type: string
+                  enum: [1h, 4h, 1d, 1w]
+                  default: 1h
+                  description: How long to snooze the alert
+      responses:
+        '200':
+          description: Alert snoozed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Alert snoozed
+                  snoozeUntil:
+                    type: string
+                    format: date-time
+        '404':
+          description: Alert not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /settings:
+    get:
+      tags:
+        - Settings
+      summary: Get user settings
+      description: Retrieve current user's notification and preference settings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+
+    put:
+      tags:
+        - Settings
+      summary: Update user settings
+      description: Update notification and preference settings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Settings'
+      responses:
+        '200':
+          description: Settings updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+
+  /export/csv:
+    get:
+      tags:
+        - Export
+      summary: Export items as CSV
+      description: Download all inventory items as a CSV file
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+                example: |
+                  Name,Quantity,Threshold,Description,Category,Created,Updated
+                  "Coffee Beans",5,20,"Whole bean coffee","Break Room","2024-12-27","2024-12-27"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: abc123xyz
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    Item:
+      type: object
+      properties:
+        id:
+          type: string
+          example: lq2j5k3m
+        name:
+          type: string
+          example: Coffee Beans
+        quantity:
+          type: integer
+          minimum: 0
+          example: 5
+        threshold:
+          type: integer
+          minimum: 0
+          example: 20
+        description:
+          type: string
+          example: Whole bean coffee for break room
+        category:
+          type: string
+          example: Break Room Supplies
+        emoji:
+          type: string
+          example: ☕
+        status:
+          type: string
+          enum: [critical, warning, success]
+          example: critical
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ItemInput:
+      type: object
+      required:
+        - name
+        - quantity
+        - threshold
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Coffee Beans
+        quantity:
+          type: integer
+          minimum: 0
+          example: 5
+        threshold:
+          type: integer
+          minimum: 0
+          example: 20
+        description:
+          type: string
+          maxLength: 500
+          example: Whole bean coffee for break room
+        category:
+          type: string
+          maxLength: 50
+          example: Break Room Supplies
+        emoji:
+          type: string
+          example: ☕
+
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+          example: alert123
+        itemId:
+          type: string
+          example: lq2j5k3m
+        itemName:
+          type: string
+          example: Coffee Beans
+        quantity:
+          type: integer
+          example: 5
+        threshold:
+          type: integer
+          example: 20
+        severity:
+          type: string
+          enum: [critical, warning]
+          example: critical
+        status:
+          type: string
+          enum: [active, resolved]
+          example: active
+        triggeredAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    Settings:
+      type: object
+      properties:
+        emailAlerts:
+          type: boolean
+          description: Enable email notifications for stock alerts
+          example: true
+        alertFrequency:
+          type: string
+          enum: [immediate, hourly, daily]
+          description: How often to send alert notifications
+          example: immediate
+        dailyDigest:
+          type: boolean
+          description: Receive a daily summary email instead of individual alerts
+          example: false
+        digestTime:
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: Time to send daily digest (24h format)
+          example: '08:00'
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Invalid input
+        message:
+          type: string
+          example: Name is required
+        code:
+          type: string
+          example: VALIDATION_ERROR

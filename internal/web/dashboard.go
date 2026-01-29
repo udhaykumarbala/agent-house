@@ -198,6 +198,201 @@ var dashboardHTML = `<!DOCTYPE html>
         }
 
         /* ===================================
+           DEVELOPMENT PHASE TIMELINE
+        =================================== */
+        .dev-phases-section {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: var(--space-6);
+            margin: var(--space-4) 0;
+        }
+
+        .dev-phases-section h2 {
+            margin: 0 0 var(--space-4) 0;
+            color: var(--color-text-primary);
+            font-size: var(--text-lg);
+            font-weight: 600;
+        }
+
+        .dev-phases-timeline {
+            display: flex;
+            gap: var(--space-4);
+            align-items: center;
+            overflow-x: auto;
+            padding: var(--space-2) 0;
+        }
+
+        .phase-card {
+            flex: 1;
+            min-width: 200px;
+            background: var(--color-bg-tertiary);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: var(--space-4);
+            cursor: pointer;
+            transition: all var(--transition-normal);
+        }
+
+        .phase-card:hover {
+            border-color: var(--color-border-focus);
+            transform: translateY(-2px);
+        }
+
+        .phase-card.completed {
+            border-color: var(--color-status-success);
+            background: rgba(46, 204, 113, 0.1);
+        }
+
+        .phase-card.in-progress {
+            border-color: var(--color-status-info);
+            background: rgba(52, 152, 219, 0.1);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .phase-card.rejected {
+            border-color: var(--color-status-error);
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .phase-card.pending {
+            opacity: 0.6;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .phase-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-3);
+        }
+
+        .phase-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .phase-card.completed .phase-badge {
+            background: var(--color-status-success);
+            color: white;
+        }
+
+        .phase-card.in-progress .phase-badge {
+            background: var(--color-status-info);
+            color: white;
+        }
+
+        .phase-card.rejected .phase-badge {
+            background: var(--color-status-error);
+            color: white;
+        }
+
+        .phase-card.pending .phase-badge {
+            background: var(--color-bg-elevated);
+            color: var(--color-text-secondary);
+        }
+
+        .phase-name {
+            font-size: var(--text-base);
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-2);
+        }
+
+        .phase-progress {
+            width: 100%;
+            height: 4px;
+            background: var(--color-bg-elevated);
+            border-radius: 2px;
+            margin: var(--space-3) 0;
+            overflow: hidden;
+        }
+
+        .phase-progress-fill {
+            height: 100%;
+            background: var(--color-status-success);
+            transition: width var(--transition-normal);
+        }
+
+        .phase-card.in-progress .phase-progress-fill {
+            background: var(--color-status-info);
+        }
+
+        .phase-card.rejected .phase-progress-fill {
+            background: var(--color-status-error);
+        }
+
+        .phase-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: var(--text-xs);
+            color: var(--color-text-secondary);
+            margin-top: var(--space-2);
+        }
+
+        .qa-status {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-1);
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .qa-status.approved {
+            background: rgba(46, 204, 113, 0.2);
+            color: var(--color-status-success);
+        }
+
+        .qa-status.rejected {
+            background: rgba(231, 76, 60, 0.2);
+            color: var(--color-status-error);
+        }
+
+        .qa-status.pending {
+            background: rgba(160, 160, 184, 0.2);
+            color: var(--color-text-secondary);
+        }
+
+        .iteration-badge {
+            background: var(--color-status-warning);
+            color: white;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .iteration-badge.warning {
+            background: var(--color-status-error);
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .timeline-connector {
+            width: 24px;
+            height: 2px;
+            background: var(--color-border);
+            flex-shrink: 0;
+        }
+
+        /* ===================================
            HEADER
         =================================== */
         .header {
@@ -1441,6 +1636,14 @@ var dashboardHTML = `<!DOCTYPE html>
                     </form>
                 </div>
 
+                <!-- Development Phase Timeline -->
+                <section class="dev-phases-section" id="devPhasesSection" style="display: none;" role="region" aria-label="Development phases progress">
+                    <h2>Development Phases</h2>
+                    <div class="dev-phases-timeline" id="devPhasesTimeline" role="list">
+                        <!-- Phases will be inserted here by JavaScript -->
+                    </div>
+                </section>
+
                 <!-- Task Input -->
                 <div class="task-input-area">
                     <form class="task-form" id="taskForm">
@@ -1968,7 +2171,8 @@ var dashboardHTML = `<!DOCTYPE html>
             currentPhase: null,
             delegationChain: [],
             activeAgent: null,
-            projectId: 'default'
+            projectId: 'default',
+            currentPlan: null // Development plan data
         };
 
         // ===================================
@@ -2027,8 +2231,144 @@ var dashboardHTML = `<!DOCTYPE html>
             mobileOverlay: document.getElementById('mobileOverlay'),
             contextTabs: document.querySelectorAll('.context-tab'),
             contextSections: document.querySelectorAll('.context-section'),
-            agentOrgChart: document.getElementById('agentOrgChart')
+            agentOrgChart: document.getElementById('agentOrgChart'),
+            devPhasesSection: document.getElementById('devPhasesSection'),
+            devPhasesTimeline: document.getElementById('devPhasesTimeline')
         };
+
+        // ===================================
+        // DEVELOPMENT PHASE TIMELINE
+        // ===================================
+        async function updateDevelopmentPhases(projectId) {
+            if (!projectId || !elements.devPhasesSection) return;
+
+            try {
+                const response = await fetch('/api/phase-status?project=' + projectId);
+                const status = await response.json();
+
+                if (!status.has_plan) {
+                    elements.devPhasesSection.style.display = 'none';
+                    return;
+                }
+
+                // Show section
+                elements.devPhasesSection.style.display = 'block';
+
+                // Fetch full plan
+                const planResponse = await fetch('/api/development-plan?project=' + projectId);
+                state.currentPlan = await planResponse.json();
+
+                renderDevelopmentPhases(state.currentPlan, status);
+            } catch (error) {
+                console.error('Failed to fetch development phases:', error);
+                elements.devPhasesSection.style.display = 'none';
+            }
+        }
+
+        function renderDevelopmentPhases(plan, status) {
+            if (!elements.devPhasesTimeline || !plan || !plan.phases) return;
+
+            elements.devPhasesTimeline.innerHTML = '';
+
+            plan.phases.forEach((phase, index) => {
+                // Create phase card
+                const card = document.createElement('div');
+                card.className = 'phase-card ' + getPhaseStatusClass(phase);
+                card.dataset.phase = phase.index;
+                card.setAttribute('role', 'listitem');
+
+                const completedSubtasks = phase.subtasks.filter(st => st.status === 'completed').length;
+                const totalSubtasks = phase.subtasks.length;
+                const progress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0;
+
+                var iterationHTML = '';
+                if (phase.iteration > 1) {
+                    var badgeClass = 'iteration-badge' + (phase.iteration >= 3 ? ' warning' : '');
+                    iterationHTML = '<span class="' + badgeClass + '" aria-label="Iteration ' + phase.iteration + ' of 3">Iteration ' + phase.iteration + '/3</span>';
+                }
+
+                card.innerHTML =
+                    '<div class="phase-header">' +
+                        '<div class="phase-badge" aria-label="Phase ' + phase.index + '">' + getPhaseIcon(phase) + '</div>' +
+                        iterationHTML +
+                    '</div>' +
+                    '<div class="phase-name">' + escapeHtml(phase.name) + '</div>' +
+                    '<div class="phase-progress" role="progressbar" aria-valuenow="' + Math.round(progress) + '" aria-valuemin="0" aria-valuemax="100">' +
+                        '<div class="phase-progress-fill" style="width: ' + progress + '%"></div>' +
+                    '</div>' +
+                    '<div class="phase-meta">' +
+                        '<span class="qa-status ' + getQAStatusClass(phase.qa_status) + '">' + getQAStatusText(phase.qa_status) + '</span>' +
+                        '<span aria-label="' + completedSubtasks + ' of ' + totalSubtasks + ' subtasks complete">' + completedSubtasks + '/' + totalSubtasks + ' subtasks</span>' +
+                    '</div>';
+
+                card.addEventListener('click', () => showPhaseDetails(phase));
+                card.setAttribute('tabindex', '0');
+                card.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        showPhaseDetails(phase);
+                    }
+                });
+
+                elements.devPhasesTimeline.appendChild(card);
+
+                // Add connector if not last
+                if (index < plan.phases.length - 1) {
+                    const connector = document.createElement('div');
+                    connector.className = 'timeline-connector';
+                    connector.setAttribute('aria-hidden', 'true');
+                    elements.devPhasesTimeline.appendChild(connector);
+                }
+            });
+        }
+
+        function getPhaseStatusClass(phase) {
+            if (phase.qa_status === 'approved' && phase.status === 'completed') {
+                return 'completed';
+            } else if (phase.status === 'needs_revision' || phase.qa_status === 'rejected') {
+                return 'rejected';
+            } else if (phase.status === 'in_progress') {
+                return 'in-progress';
+            } else {
+                return 'pending';
+            }
+        }
+
+        function getPhaseIcon(phase) {
+            if (phase.qa_status === 'approved' && phase.status === 'completed') {
+                return '✓';
+            } else if (phase.status === 'needs_revision') {
+                return '⚠';
+            } else {
+                return phase.index;
+            }
+        }
+
+        function getQAStatusClass(status) {
+            return status || 'pending';
+        }
+
+        function getQAStatusText(status) {
+            const icons = {
+                approved: '✅ Approved',
+                rejected: '❌ Rejected',
+                pending: '⏳ Pending'
+            };
+            return icons[status] || '⏳ Pending';
+        }
+
+        function showPhaseDetails(phase) {
+            // TODO: Show modal or sidebar with phase details, subtasks, QA feedback
+            console.log('Show details for phase:', phase);
+            const detailsMsg = 'Phase ' + phase.index + ': ' + phase.name + '\n\nSubtasks: ' + phase.subtasks.length + '\nStatus: ' + phase.status + '\nQA: ' + phase.qa_status;
+            announce(detailsMsg);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
         // ===================================
         // WEBSOCKET CONNECTION
@@ -2753,6 +3093,7 @@ var dashboardHTML = `<!DOCTYPE html>
                 fetchFiles();
                 fetchTasks();
                 fetchMessages();
+                updateDevelopmentPhases(state.projectId);
 
                 // Show toast
                 showToast('Project Switched', 'Now viewing: ' + state.projectId, 'info');
@@ -2984,6 +3325,7 @@ var dashboardHTML = `<!DOCTYPE html>
             setInterval(fetchTasks, 10000);
             setInterval(fetchPhase, 3000);
             setInterval(fetchProjects, 30000); // Refresh projects every 30 seconds
+            setInterval(function() { updateDevelopmentPhases(state.projectId); }, 5000); // Refresh dev phases every 5 seconds
         }
 
         // Start app

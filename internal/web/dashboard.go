@@ -563,6 +563,159 @@ var dashboardHTML = `<!DOCTYPE html>
         }
 
         /* ===================================
+           PROGRESS DASHBOARD
+        =================================== */
+        .progress-dashboard {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: var(--space-6);
+            margin-bottom: var(--space-6);
+        }
+
+        .progress-dashboard h2 {
+            font-size: var(--text-xl);
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin: 0 0 var(--space-5) 0;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-4);
+        }
+
+        .metric-card {
+            background: var(--color-bg-primary);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            padding: var(--space-5);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+            transition: all var(--transition-base);
+        }
+
+        .metric-card:hover {
+            border-color: var(--color-border-focus);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .metric-icon {
+            font-size: var(--text-2xl);
+            line-height: 1;
+        }
+
+        .metric-label {
+            font-size: var(--text-sm);
+            color: var(--color-text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .metric-value {
+            font-size: var(--text-3xl);
+            font-weight: 700;
+            color: var(--color-text-primary);
+            line-height: 1.2;
+        }
+
+        .metric-value.success {
+            color: var(--color-status-success);
+        }
+
+        .metric-value.warning {
+            color: var(--color-status-warning);
+        }
+
+        .metric-value.error {
+            color: var(--color-status-error);
+        }
+
+        .metric-value.info {
+            color: var(--color-status-info);
+        }
+
+        .metric-description {
+            font-size: var(--text-sm);
+            color: var(--color-text-secondary);
+            line-height: 1.5;
+        }
+
+        .metric-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-1) var(--space-3);
+            border-radius: var(--radius-full);
+            font-size: var(--text-xs);
+            font-weight: 600;
+            background: var(--color-bg-tertiary);
+            color: var(--color-text-secondary);
+        }
+
+        .metric-badge.success {
+            background: rgba(46, 204, 113, 0.15);
+            color: var(--color-status-success);
+        }
+
+        .metric-badge.warning {
+            background: rgba(241, 196, 15, 0.15);
+            color: var(--color-status-warning);
+        }
+
+        .metric-badge.error {
+            background: rgba(231, 76, 60, 0.15);
+            color: var(--color-status-error);
+        }
+
+        .metric-badge.info {
+            background: rgba(52, 152, 219, 0.15);
+            color: var(--color-status-info);
+        }
+
+        .progress-ring {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+        }
+
+        .progress-ring-circle {
+            fill: transparent;
+            stroke: var(--color-border);
+            stroke-width: 8;
+        }
+
+        .progress-ring-fill {
+            fill: transparent;
+            stroke: var(--color-status-success);
+            stroke-width: 8;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 640px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metric-value {
+                font-size: var(--text-2xl);
+            }
+        }
+
+        /* ===================================
            HEADER
         =================================== */
         .header {
@@ -1814,6 +1967,56 @@ var dashboardHTML = `<!DOCTYPE html>
                     </div>
                 </section>
 
+                <!-- Progress Dashboard -->
+                <section class="progress-dashboard" id="progressDashboard" style="display: none;" role="region" aria-label="Project progress overview">
+                    <h2>Progress Overview</h2>
+                    <div class="metrics-grid">
+                        <!-- Total Progress -->
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon" aria-hidden="true">📊</span>
+                                <span class="metric-label">Total Progress</span>
+                            </div>
+                            <div class="metric-value info" id="totalProgress">0%</div>
+                            <div class="metric-description" id="progressDescription">0 of 0 subtasks complete</div>
+                        </div>
+
+                        <!-- Current Phase -->
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon" aria-hidden="true">⚡</span>
+                                <span class="metric-label">Current Phase</span>
+                            </div>
+                            <div class="metric-value" id="currentPhaseName">—</div>
+                            <div class="metric-description">
+                                <span class="metric-badge" id="currentPhaseIteration" style="display: none;"></span>
+                            </div>
+                        </div>
+
+                        <!-- Phases Complete -->
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon" aria-hidden="true">✅</span>
+                                <span class="metric-label">Phases Complete</span>
+                            </div>
+                            <div class="metric-value success" id="phasesComplete">0 / 0</div>
+                            <div class="metric-description" id="phasesDescription">No phases yet</div>
+                        </div>
+
+                        <!-- QA Status -->
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon" aria-hidden="true">🔍</span>
+                                <span class="metric-label">QA Status</span>
+                            </div>
+                            <div class="metric-value" id="qaStatusSummary">—</div>
+                            <div class="metric-description">
+                                <span class="metric-badge" id="qaStatusBadge" style="display: none;"></span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- QA Feedback Panel -->
                 <section class="qa-feedback-panel" id="qaFeedbackPanel" style="display: none;" role="region" aria-label="QA review feedback">
                     <div class="panel-header">
@@ -2435,7 +2638,16 @@ var dashboardHTML = `<!DOCTYPE html>
             qaStatusText: document.getElementById('qaStatusText'),
             qaReviewerInfo: document.getElementById('qaReviewerInfo'),
             qaFeedbackContent: document.getElementById('qaFeedbackContent'),
-            qaFeedbackActions: document.getElementById('qaFeedbackActions')
+            qaFeedbackActions: document.getElementById('qaFeedbackActions'),
+            progressDashboard: document.getElementById('progressDashboard'),
+            totalProgress: document.getElementById('totalProgress'),
+            progressDescription: document.getElementById('progressDescription'),
+            currentPhaseName: document.getElementById('currentPhaseName'),
+            currentPhaseIteration: document.getElementById('currentPhaseIteration'),
+            phasesComplete: document.getElementById('phasesComplete'),
+            phasesDescription: document.getElementById('phasesDescription'),
+            qaStatusSummary: document.getElementById('qaStatusSummary'),
+            qaStatusBadge: document.getElementById('qaStatusBadge')
         };
 
         // ===================================
@@ -2762,6 +2974,148 @@ var dashboardHTML = `<!DOCTYPE html>
             // Placeholder for iteration history view
             console.log('Show iteration history');
             // TODO: Implement iteration timeline modal
+        }
+
+        // ===================================
+        // PROGRESS DASHBOARD
+        // ===================================
+        async function updateProgressDashboard(projectId) {
+            if (!projectId || !elements.progressDashboard) return;
+
+            try {
+                // Fetch phase status
+                const statusResponse = await fetch('/api/phase-status?project=' + projectId);
+                const status = await statusResponse.json();
+
+                if (!status.has_plan) {
+                    elements.progressDashboard.style.display = 'none';
+                    return;
+                }
+
+                // Show dashboard
+                elements.progressDashboard.style.display = 'block';
+
+                // Fetch full plan
+                const planResponse = await fetch('/api/development-plan?project=' + projectId);
+                const plan = await planResponse.json();
+
+                // Calculate metrics
+                var totalSubtasks = 0;
+                var completedSubtasks = 0;
+                var phasesCompleted = 0;
+                var currentPhase = null;
+                var latestQAStatus = '—';
+
+                if (plan && plan.phases) {
+                    plan.phases.forEach(function(phase) {
+                        // Count subtasks
+                        if (phase.sub_tasks) {
+                            totalSubtasks = totalSubtasks + phase.sub_tasks.length;
+                            phase.sub_tasks.forEach(function(subtask) {
+                                if (subtask.status === 'completed') {
+                                    completedSubtasks = completedSubtasks + 1;
+                                }
+                            });
+                        }
+
+                        // Count completed phases
+                        if (phase.status === 'completed' && phase.qa_status === 'approved') {
+                            phasesCompleted = phasesCompleted + 1;
+                        }
+
+                        // Find current phase
+                        if (phase.status === 'in_progress' || phase.status === 'needs_revision') {
+                            currentPhase = phase;
+                        }
+
+                        // Get latest QA status
+                        if (phase.qa_status && phase.qa_status !== 'pending') {
+                            latestQAStatus = phase.qa_status;
+                        }
+                    });
+
+                    // Update Total Progress
+                    var progressPercent = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+                    elements.totalProgress.textContent = progressPercent + '%';
+                    elements.progressDescription.textContent = completedSubtasks + ' of ' + totalSubtasks + ' subtasks complete';
+
+                    // Color code based on progress
+                    elements.totalProgress.className = 'metric-value';
+                    if (progressPercent === 100) {
+                        elements.totalProgress.classList.add('success');
+                    } else if (progressPercent >= 50) {
+                        elements.totalProgress.classList.add('info');
+                    } else if (progressPercent > 0) {
+                        elements.totalProgress.classList.add('warning');
+                    }
+
+                    // Update Current Phase
+                    if (currentPhase) {
+                        elements.currentPhaseName.textContent = currentPhase.name || 'Phase ' + currentPhase.index;
+                        elements.currentPhaseName.className = 'metric-value';
+
+                        // Show iteration badge if iteration > 1
+                        if (currentPhase.iteration && currentPhase.iteration > 1) {
+                            elements.currentPhaseIteration.textContent = 'Iteration ' + currentPhase.iteration + '/3';
+                            elements.currentPhaseIteration.style.display = 'inline-flex';
+                            elements.currentPhaseIteration.className = 'metric-badge';
+                            if (currentPhase.iteration >= 3) {
+                                elements.currentPhaseIteration.classList.add('error');
+                            } else {
+                                elements.currentPhaseIteration.classList.add('warning');
+                            }
+                        } else {
+                            elements.currentPhaseIteration.style.display = 'none';
+                        }
+
+                        // Color code based on status
+                        if (currentPhase.status === 'needs_revision') {
+                            elements.currentPhaseName.classList.add('warning');
+                        } else {
+                            elements.currentPhaseName.classList.add('info');
+                        }
+                    } else {
+                        elements.currentPhaseName.textContent = '—';
+                        elements.currentPhaseName.className = 'metric-value';
+                        elements.currentPhaseIteration.style.display = 'none';
+                    }
+
+                    // Update Phases Complete
+                    var totalPhases = plan.phases.length;
+                    elements.phasesComplete.textContent = phasesCompleted + ' / ' + totalPhases;
+                    elements.phasesDescription.textContent = (totalPhases - phasesCompleted) + ' phases remaining';
+
+                    // Color code phases complete
+                    elements.phasesComplete.className = 'metric-value';
+                    if (phasesCompleted === totalPhases) {
+                        elements.phasesComplete.classList.add('success');
+                    } else if (phasesCompleted > 0) {
+                        elements.phasesComplete.classList.add('info');
+                    }
+
+                    // Update QA Status
+                    if (latestQAStatus === 'approved') {
+                        elements.qaStatusSummary.textContent = 'Approved';
+                        elements.qaStatusSummary.className = 'metric-value success';
+                        elements.qaStatusBadge.textContent = '✓ All checks passed';
+                        elements.qaStatusBadge.className = 'metric-badge success';
+                        elements.qaStatusBadge.style.display = 'inline-flex';
+                    } else if (latestQAStatus === 'rejected') {
+                        elements.qaStatusSummary.textContent = 'Rejected';
+                        elements.qaStatusSummary.className = 'metric-value error';
+                        elements.qaStatusBadge.textContent = '✗ Revisions needed';
+                        elements.qaStatusBadge.className = 'metric-badge error';
+                        elements.qaStatusBadge.style.display = 'inline-flex';
+                    } else {
+                        elements.qaStatusSummary.textContent = '—';
+                        elements.qaStatusSummary.className = 'metric-value';
+                        elements.qaStatusBadge.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating progress dashboard:', error);
+                elements.progressDashboard.style.display = 'none';
+            }
         }
 
         // ===================================
@@ -3489,6 +3843,7 @@ var dashboardHTML = `<!DOCTYPE html>
                 fetchMessages();
                 updateDevelopmentPhases(state.projectId);
                 updateQAFeedback(state.projectId);
+                updateProgressDashboard(state.projectId);
 
                 // Show toast
                 showToast('Project Switched', 'Now viewing: ' + state.projectId, 'info');
@@ -3722,6 +4077,7 @@ var dashboardHTML = `<!DOCTYPE html>
             setInterval(fetchProjects, 30000); // Refresh projects every 30 seconds
             setInterval(function() { updateDevelopmentPhases(state.projectId); }, 5000); // Refresh dev phases every 5 seconds
             setInterval(function() { updateQAFeedback(state.projectId); }, 5000); // Refresh QA feedback every 5 seconds
+            setInterval(function() { updateProgressDashboard(state.projectId); }, 5000); // Refresh progress dashboard every 5 seconds
         }
 
         // Start app

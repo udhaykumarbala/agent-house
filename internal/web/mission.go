@@ -495,6 +495,19 @@ body {
   user-select: none;
 }
 .log-toolbar-title:hover { color: var(--text-secondary); }
+.log-tab { padding: 4px 0; border-bottom: 2px solid transparent; margin-right: 4px; }
+.log-tab.active { color: var(--text-secondary); border-bottom-color: var(--accent); }
+
+/* Project panel in log area */
+.proj-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px; font-size: 11px; }
+.proj-card { background: var(--bg-overlay); border-radius: 6px; padding: 10px; }
+.proj-card-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 8px; }
+.proj-file { display: flex; gap: 6px; padding: 3px 0; cursor: pointer; color: var(--text-secondary); font-family: var(--font-mono); font-size: 10px; }
+.proj-file:hover { color: var(--accent); }
+.proj-agent { display: flex; gap: 8px; padding: 3px 0; font-size: 10px; }
+.proj-agent-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 2px; flex-shrink: 0; }
+.proj-agent-name { width: 80px; font-weight: 500; color: var(--text-secondary); }
+.proj-agent-val { color: var(--text-muted); font-family: var(--font-mono); }
 
 /* Task input inline */
 .task-input-row { display: flex; align-items: center; gap: 8px; flex: 1; }
@@ -963,13 +976,15 @@ body {
   <!-- ════════ LOG ════════ -->
   <div class="log-area" id="logArea">
     <div class="log-toolbar">
-      <span class="log-toolbar-title" id="logToggle">&#9660; Activity Log</span>
+      <span class="log-toolbar-title log-tab active" data-logtab="log" id="logToggle">Activity Log</span>
+      <span class="log-toolbar-title log-tab" data-logtab="project" id="projectToggle">Project</span>
       <div class="task-input-row">
         <input type="text" class="task-input" id="taskInput" placeholder="Describe what you want to build...">
         <button class="task-submit" id="taskSubmit">Launch</button>
       </div>
     </div>
     <div class="log-stream" id="logStream"></div>
+    <div class="log-stream" id="projectPanel" style="display:none"></div>
   </div>
 </div>
 
@@ -1919,10 +1934,135 @@ function handleLifecycleEvt(msg) {
       S.agents[k].state='idle'; S.agents[k].taskTitle='';
     });
     renderNodes(); renderRoster(); updateKPIs();
+    // Auto-switch to project tab and load details
+    switchLogTab('project');
+    fetchProjectDetail();
   }
   if(evt==='phase_started') {
     addLog({from:'system',content:'Phase: '+extra.phase_name,timestamp:new Date().toISOString()});
   }
+}
+
+// ═══════════════════════════════════════════
+// PROJECT PANEL (integrated in log area)
+// ═══════════════════════════════════════════
+let activeLogTab = 'log';
+const AGENT_COLORS_P = {ceo:'#60B4D4',pm:'#8B7EF8',ux:'#F47F7F',ui:'#4FD1C5',security:'#F6A623',architect:'#A87CF5',senior_dev:'#34D478',junior_dev:'#4BA3E3'};
+const FILE_ICONS_P = {html:'&#x1F310;',css:'&#x1F3A8;',js:'&#x26A1;',ts:'&#x1F535;',json:'&#x1F4CB;',md:'&#x1F4DD;',go:'&#x1F439;',default:'&#x1F4C4;'};
+
+function switchLogTab(tab) {
+  activeLogTab = tab;
+  document.querySelectorAll('.log-tab').forEach(t => t.classList.toggle('active', t.dataset.logtab===tab));
+  document.getElementById('logStream').style.display = tab==='log' ? '' : 'none';
+  document.getElementById('projectPanel').style.display = tab==='project' ? '' : 'none';
+  if(tab==='project') fetchProjectDetail();
+  // Expand log area if collapsed
+  document.getElementById('logArea').classList.remove('collapsed');
+}
+
+async function fetchProjectDetail() {
+  const panel = document.getElementById('projectPanel');
+  panel.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:12px">Loading project details...</div>';
+  try {
+    const res = await fetch('/api/projects/'+encodeURIComponent(S.projectId));
+    const data = await res.json();
+    renderProjectPanel(data);
+  } catch(e) {
+    panel.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:12px">Failed to load: '+e.message+'</div>';
+  }
+}
+
+function renderProjectPanel(data) {
+  const panel = document.getElementById('projectPanel');
+  const files = data.files || [];
+  const sessions = data.sessions || {};
+  const agents = sessions.agent_metrics || {};
+  const plan = data.dev_plan;
+
+  let html = '<div class="proj-grid">';
+
+  // Files card
+  html += '<div class="proj-card"><div class="proj-card-title">Files ('+files.length+')</div>';
+  if(files.length) {
+    html += files.slice(0,20).map(f => {
+      const ext = (f.path||'').split('.').pop().toLowerCase();
+      const icon = FILE_ICONS_P[ext]||FILE_ICONS_P.default;
+      const sz = f.size<1024 ? f.size+'B' : (f.size/1024).toFixed(1)+'KB';
+      return '<div class="proj-file" onclick="viewProjectFile(\''+esc(f.path)+'\')">'+icon+' <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(f.path)+'</span> <span style="color:var(--text-muted)">'+sz+'</span></div>';
+    }).join('');
+    if(files.length>20) html += '<div style="font-size:10px;color:var(--text-muted);padding-top:4px">+'+(files.length-20)+' more files</div>';
+  } else {
+    html += '<div style="color:var(--text-muted)">No files yet</div>';
+  }
+  html += '</div>';
+
+  // Agents card
+  html += '<div class="proj-card"><div class="proj-card-title">Agent Metrics</div>';
+  const agentEntries = Object.entries(agents).sort((a,b) => a[0].localeCompare(b[0]));
+  if(agentEntries.length) {
+    html += agentEntries.map(([role,m]) => {
+      const color = AGENT_COLORS_P[role]||'#888';
+      const toolStr = Object.entries(m.tools||{}).slice(0,4).map(([k,v])=>k+':'+v).join(' ') || '-';
+      return '<div class="proj-agent">'+
+        '<div class="proj-agent-dot" style="background:'+color+'"></div>'+
+        '<div class="proj-agent-name">'+(m.name||role)+'</div>'+
+        '<div class="proj-agent-val">'+(m.turns||0)+'t '+(m.tool_calls||0)+'tc $'+(m.cost_usd||0).toFixed(2)+'</div>'+
+        '<div class="proj-agent-val" style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(toolStr)+'</div></div>';
+    }).join('');
+    html += '<div class="proj-agent" style="font-weight:600;border-top:1px solid var(--border-subtle);margin-top:4px;padding-top:6px">'+
+      '<div class="proj-agent-dot" style="background:transparent"></div>'+
+      '<div class="proj-agent-name">Total</div>'+
+      '<div class="proj-agent-val" style="color:var(--st-complete)">$'+(sessions.total_cost||'0')+'</div>'+
+      '<div class="proj-agent-val">'+(sessions.total_tokens||0)+' tokens</div></div>';
+  } else {
+    html += '<div style="color:var(--text-muted)">No session data yet</div>';
+  }
+  html += '</div>';
+
+  // Dev plan card (if exists)
+  if(plan && plan.phases) {
+    html += '<div class="proj-card"><div class="proj-card-title">Development Plan</div>';
+    plan.phases.forEach(phase => {
+      const stColors = {pending:'var(--text-muted)',in_progress:'var(--accent)',completed:'var(--st-complete)',needs_revision:'#F6A623'};
+      html += '<div style="margin-bottom:6px"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:'+(stColors[phase.status]||'var(--text-muted)')+';margin-right:4px"></span>'+
+        '<span style="font-weight:500">'+esc(phase.name)+'</span> <span style="color:var(--text-muted)">('+phase.status+')</span></div>';
+      if(phase.subtasks) phase.subtasks.forEach(st => {
+        const stC = st.status==='completed'?'var(--st-complete)':st.status==='in_progress'?'var(--accent)':'var(--text-muted)';
+        html += '<div style="display:flex;gap:6px;padding-left:14px;font-size:10px;color:var(--text-secondary)">'+
+          '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:'+stC+';margin-top:4px;flex-shrink:0"></span>'+
+          esc(st.title||'Subtask')+'</div>';
+      });
+    });
+    html += '</div>';
+  }
+
+  // Task history card
+  const tasks = data.tasks||[];
+  if(tasks.length) {
+    html += '<div class="proj-card"><div class="proj-card-title">Task History ('+tasks.length+')</div>';
+    tasks.slice(-5).forEach(t => {
+      const status = t.Status||t.status||'?';
+      const task = t.Task||t.task||'';
+      const isOk = status==='completed'||status==='success';
+      html += '<div style="padding:4px 0;border-bottom:1px solid var(--border-subtle);font-size:10px">'+
+        '<span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;background:'+(isOk?'rgba(34,197,94,0.15)':'rgba(239,68,68,0.15)')+';color:'+(isOk?'var(--st-complete)':'var(--st-error)')+'">'+status+'</span> '+
+        esc(task.substring(0,80))+'</div>';
+    });
+    html += '</div>';
+  }
+
+  html += '</div>';
+  panel.innerHTML = html;
+}
+
+async function viewProjectFile(relPath) {
+  try {
+    const res = await fetch('/api/file-content?path='+encodeURIComponent(S.projectId+'/'+relPath));
+    if(res.ok) {
+      const d = await res.json();
+      openViewerRaw(relPath, d.content||'(empty)');
+    }
+  } catch(e) { console.error(e); }
 }
 
 // ═══════════════════════════════════════════
@@ -2228,7 +2368,8 @@ function init() {
   document.getElementById('taskSubmit').addEventListener('click', submitTask);
   document.getElementById('taskInput').addEventListener('keydown', e => { if(e.key==='Enter') submitTask(); });
   document.getElementById('dpClose').addEventListener('click', closePanel);
-  document.getElementById('logToggle').addEventListener('click', toggleLog);
+  document.getElementById('logToggle').addEventListener('click', () => switchLogTab('log'));
+  document.getElementById('projectToggle').addEventListener('click', () => switchLogTab('project'));
   document.getElementById('newProjBtn').addEventListener('click', openNewProject);
 
   // Checkpoint handlers

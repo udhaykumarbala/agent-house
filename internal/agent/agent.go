@@ -33,17 +33,19 @@ const (
 
 // PermissionModes maps agent roles to their Claude Code permission mode.
 // PermissionModes maps agent roles to their Claude Code permission mode.
-// acceptEdits: can read/write files freely, bash needs approval
-// bypassPermissions: can do everything without approval
+// All session-mode agents use bypassPermissions because:
+// 1. Human oversight happens at checkpoints (plan approval, phase gates), not per-tool
+// 2. acceptEdits still blocks WebSearch, Agent, and other tools agents need
+// 3. Agents run autonomously within phases — blocking mid-turn breaks the pipeline
 var PermissionModes = map[Role]string{
-	RoleCEO:       "acceptEdits",       // Needs to write plans, reviews
-	RolePM:        "acceptEdits",       // Needs to write research docs, specs
-	RoleUX:        "acceptEdits",       // Needs to write UX specs
-	RoleUI:        "acceptEdits",       // Needs to write UI specs
-	RoleSecurity:  "acceptEdits",       // Needs to write security audits
-	RoleArchitect: "acceptEdits",       // Needs to write template/architecture docs
-	RoleSeniorDev: "bypassPermissions", // Full access for coding + testing
-	RoleJuniorDev: "bypassPermissions", // Full access for coding
+	RoleCEO:       "bypassPermissions",
+	RolePM:        "bypassPermissions",
+	RoleUX:        "bypassPermissions",
+	RoleUI:        "bypassPermissions",
+	RoleSecurity:  "bypassPermissions",
+	RoleArchitect: "bypassPermissions",
+	RoleSeniorDev: "bypassPermissions",
+	RoleJuniorDev: "bypassPermissions",
 }
 
 // Agent represents a specialized AI agent

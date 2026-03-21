@@ -17,14 +17,34 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+// CheckpointEvent represents a checkpoint lifecycle event
+type CheckpointEvent struct {
+	EventType      string                 `json:"event_type"`      // checkpoint_reached, checkpoint_resolved, checkpoint_auto_delegated
+	CheckpointID   string                 `json:"checkpoint_id"`
+	CheckpointType string                 `json:"checkpoint_type"`
+	PhaseIndex     int                    `json:"phase_index,omitempty"`
+	Data           map[string]interface{} `json:"data"`
+}
+
+// SessionActionFunc handles WebSocket-driven agent session actions.
+type SessionActionFunc func(projectID, agentRole, action, toolUseID string)
+
 // Hub manages WebSocket connections
 type Hub struct {
-	clients         map[*Client]bool
-	broadcast       chan *message.Message
-	agentTaskEvents chan *AgentTaskEvent
-	register        chan *Client
-	unregister      chan *Client
-	mu              sync.RWMutex
+	clients              map[*Client]bool
+	broadcast            chan *message.Message
+	agentTaskEvents      chan *AgentTaskEvent
+	checkpointEvents     chan *CheckpointEvent
+	agentSessionEvents   chan []byte // pre-marshaled agent session events
+	register             chan *Client
+	unregister           chan *Client
+	mu                   sync.RWMutex
+	sessionActionHandler SessionActionFunc // handles WS-driven approve/deny/abort
+}
+
+// SetSessionActionHandler registers a handler for WebSocket agent session actions.
+func (h *Hub) SetSessionActionHandler(fn SessionActionFunc) {
+	h.sessionActionHandler = fn
 }
 
 // AgentTaskEvent represents an event related to agent tasks
@@ -45,11 +65,13 @@ type Client struct {
 // NewHub creates a new WebSocket hub
 func NewHub() *Hub {
 	return &Hub{
-		clients:         make(map[*Client]bool),
-		broadcast:       make(chan *message.Message),
-		agentTaskEvents: make(chan *AgentTaskEvent, 100),
-		register:        make(chan *Client),
-		unregister:      make(chan *Client),
+		clients:            make(map[*Client]bool),
+		broadcast:          make(chan *message.Message),
+		agentTaskEvents:    make(chan *AgentTaskEvent, 100),
+		checkpointEvents:   make(chan *CheckpointEvent, 100),
+		agentSessionEvents: make(chan []byte, 512),
+		register:           make(chan *Client),
+		unregister:         make(chan *Client),
 	}
 }
 
@@ -80,17 +102,7 @@ func (h *Hub) Run() {
 			if err != nil {
 				continue
 			}
-
-			h.mu.RLock()
-			for client := range h.clients {
-				select {
-				case client.send <- data:
-				default:
-					close(client.send)
-					delete(h.clients, client)
-				}
-			}
-			h.mu.RUnlock()
+			h.broadcastData(data)
 
 		case event := <-h.agentTaskEvents:
 			data, err := json.Marshal(map[string]interface{}{
@@ -100,19 +112,50 @@ func (h *Hub) Run() {
 			if err != nil {
 				continue
 			}
+			h.broadcastData(data)
 
-			h.mu.RLock()
-			for client := range h.clients {
-				select {
-				case client.send <- data:
-				default:
-					close(client.send)
-					delete(h.clients, client)
-				}
+		case event := <-h.checkpointEvents:
+			data, err := json.Marshal(map[string]interface{}{
+				"type":  "checkpoint",
+				"event": event,
+			})
+			if err != nil {
+				continue
 			}
-			h.mu.RUnlock()
+			h.broadcastData(data)
+
+		case data := <-h.agentSessionEvents:
+			h.broadcastData(data)
 		}
 	}
+}
+
+// BroadcastAgentSessionEvent sends a pre-marshaled agent session event.
+func (h *Hub) BroadcastAgentSessionEvent(data []byte) {
+	select {
+	case h.agentSessionEvents <- data:
+	default:
+		log.Printf("Warning: Agent session event channel full, dropping event")
+	}
+}
+
+// broadcastData sends data to all clients, collecting slow clients for removal.
+// Uses a write lock so close(client.send) cannot race with unregister.
+func (h *Hub) broadcastData(data []byte) {
+	h.mu.Lock()
+	var slow []*Client
+	for client := range h.clients {
+		select {
+		case client.send <- data:
+		default:
+			slow = append(slow, client)
+		}
+	}
+	for _, client := range slow {
+		delete(h.clients, client)
+		close(client.send)
+	}
+	h.mu.Unlock()
 }
 
 // Broadcast sends a message to all connected clients
@@ -180,6 +223,15 @@ func (h *Hub) BroadcastTaskFailed(task *agentask.AgentTask) {
 	})
 }
 
+// BroadcastCheckpointEvent sends a checkpoint event to all clients
+func (h *Hub) BroadcastCheckpointEvent(event *CheckpointEvent) {
+	select {
+	case h.checkpointEvents <- event:
+	default:
+		log.Printf("Warning: Checkpoint event channel full, dropping event")
+	}
+}
+
 // ClientCount returns the number of connected clients
 func (h *Hub) ClientCount() int {
 	h.mu.RLock()
@@ -195,12 +247,33 @@ func (c *Client) readPump() {
 	}()
 
 	for {
-		_, _, err := c.conn.ReadMessage()
+		_, msgData, err := c.conn.ReadMessage()
 		if err != nil {
 			break
 		}
-		// We don't process incoming messages for now
-		// Could be used for task submission or other commands
+
+		// Parse incoming WebSocket messages for agent control
+		var wsMsg struct {
+			Type      string `json:"type"`
+			ProjectID string `json:"project_id"`
+			AgentRole string `json:"agent_role"`
+			ToolUseID string `json:"tool_use_id"`
+		}
+		if err := json.Unmarshal(msgData, &wsMsg); err != nil {
+			continue
+		}
+
+		// Handle agent tool approval/denial via WebSocket
+		if c.hub.sessionActionHandler != nil {
+			switch wsMsg.Type {
+			case "approve_agent_tool":
+				c.hub.sessionActionHandler(wsMsg.ProjectID, wsMsg.AgentRole, "approve", wsMsg.ToolUseID)
+			case "deny_agent_tool":
+				c.hub.sessionActionHandler(wsMsg.ProjectID, wsMsg.AgentRole, "deny", wsMsg.ToolUseID)
+			case "abort_agent":
+				c.hub.sessionActionHandler(wsMsg.ProjectID, wsMsg.AgentRole, "abort", "")
+			}
+		}
 	}
 }
 

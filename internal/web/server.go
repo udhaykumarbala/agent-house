@@ -18,6 +18,7 @@ import (
 	"pty-claude-test/internal/agentask"
 	"pty-claude-test/internal/message"
 	"pty-claude-test/internal/orchestrator"
+	"pty-claude-test/internal/session"
 	"pty-claude-test/internal/task"
 )
 
@@ -53,9 +54,13 @@ func NewServer(config Config) *Server {
 
 	hub := NewHub()
 
+	// Create session manager for Claude Code sessions per agent
+	sessionMgr := session.NewSessionManager()
+	log.Printf("[SERVER] Session manager created: %v", sessionMgr != nil)
+
 	server := &Server{
 		store:          config.Store,
-		orchestrator:   orchestrator.New(orchConfig, config.Store),
+		orchestrator:   orchestrator.NewWithSessions(orchConfig, config.Store, sessionMgr),
 		projectDir:     config.ProjectDir,
 		projectTasks:   make(map[string]bool),
 		hub:            hub,
@@ -63,9 +68,63 @@ func NewServer(config Config) *Server {
 		agentTaskMgr:   agentask.NewManager(config.ProjectDir),
 	}
 
+	// Wire session manager events to WebSocket hub
+	go func() {
+		eventCh := sessionMgr.SubscribeAll()
+		for ev := range eventCh {
+			data, err := json.Marshal(map[string]interface{}{
+				"type":  "agent_event",
+				"event": ev,
+			})
+			if err != nil {
+				continue
+			}
+			hub.BroadcastAgentSessionEvent(data)
+		}
+	}()
+
+	// Wire WebSocket session action handler (approve/deny/abort via WS)
+	hub.SetSessionActionHandler(func(projectID, agentRole, action, toolUseID string) {
+		sess := sessionMgr.Get(projectID, agentRole)
+		if sess == nil {
+			return
+		}
+		switch action {
+		case "approve":
+			sess.ApproveTool(toolUseID)
+		case "deny":
+			sess.DenyTool(toolUseID)
+		case "abort":
+			sess.Abort()
+		}
+	})
+
 	// Register orchestrator message callback for WebSocket broadcast
 	server.orchestrator.OnMessage(func(msg *message.Message) {
 		hub.Broadcast(msg)
+	})
+
+	// Register checkpoint callback for WebSocket broadcast
+	server.orchestrator.SetCheckpointNotify(func(cpID, cpType, summary string, phaseIndex int, resolved bool, decidedBy, action string) {
+		eventType := "checkpoint_reached"
+		if resolved {
+			if decidedBy == "ceo_auto" {
+				eventType = "checkpoint_auto_delegated"
+			} else {
+				eventType = "checkpoint_resolved"
+			}
+		}
+		hub.BroadcastCheckpointEvent(&CheckpointEvent{
+			EventType:      eventType,
+			CheckpointID:   cpID,
+			CheckpointType: cpType,
+			PhaseIndex:     phaseIndex,
+			Data: map[string]interface{}{
+				"artifact_summary": summary,
+				"decided_by":       decidedBy,
+				"action":           action,
+			},
+		})
 	})
 
 	return server
@@ -99,11 +158,30 @@ func (s *Server) Start(port int) error {
 	// File content endpoint
 	mux.HandleFunc("/api/file-content", s.handleFileContent)
 
+	// Kanban endpoints
+	mux.HandleFunc("/api/kanban/tasks", s.handleKanbanTasks)
+	mux.HandleFunc("/api/kanban/tasks/", s.handleKanbanTaskByID)
+	mux.HandleFunc("/api/kanban/sync", s.handleKanbanSync)
+
+	// Checkpoint endpoints
+	mux.HandleFunc("/api/checkpoints", s.handleCheckpoints)
+	mux.HandleFunc("/api/checkpoints/", s.handleCheckpointByID)
+
+	// Workflow settings endpoints
+	mux.HandleFunc("/api/settings/workflow", s.handleWorkflowSettings)
+
 	// Development plan endpoints
 	mux.HandleFunc("/api/development-plan", s.handleDevelopmentPlan)
 	mux.HandleFunc("/api/subtasks", s.handleSubTasks)
 	mux.HandleFunc("/api/qa-reviews", s.handleQAReviews)
 	mux.HandleFunc("/api/phase-status", s.handlePhaseStatus)
+
+	// Agent session endpoints
+	mux.HandleFunc("/api/sessions", s.handleSessions)
+	mux.HandleFunc("/api/sessions/", s.handleSessionRouting)
+
+	// Project report endpoints
+	mux.HandleFunc("/api/reports/", s.handleProjectReport)
 
 	// WebSocket endpoint
 	mux.HandleFunc("/ws", s.hub.ServeWS)
@@ -259,6 +337,8 @@ func (s *Server) handleTask(w http.ResponseWriter, r *http.Request) {
 	// Generate task ID upfront so we can return it
 	taskID := task.GenerateTaskID()
 
+	log.Printf("[API] Task submitted: id=%s project=%s task=%q", taskID, req.ProjectID, req.Task)
+
 	// Start task in background
 	go func(taskID, projectID string) {
 		defer func() {
@@ -282,7 +362,7 @@ func (s *Server) handleTask(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		// Update orchestrator project dir
+		// Update orchestrator project dir, preserving session manager
 		config := orchestrator.Config{
 			ProjectDir:   projectDir,
 			MaxDepth:     5,
@@ -291,14 +371,42 @@ func (s *Server) handleTask(w http.ResponseWriter, r *http.Request) {
 			Verbose:      true,
 			EnablePhases: true, // Enable multi-phase workflow
 		}
-		s.orchestrator = orchestrator.New(config, s.store)
+		sm := s.orchestrator.GetSessionManager()
+		if sm != nil {
+			s.orchestrator = orchestrator.NewWithSessions(config, s.store, sm)
+		} else {
+			s.orchestrator = orchestrator.New(config, s.store)
+		}
 
-		// Re-register WebSocket callback on new orchestrator
+		// Re-register WebSocket callbacks on new orchestrator
 		s.orchestrator.OnMessage(func(msg *message.Message) {
 			s.hub.Broadcast(msg)
 		})
+		s.orchestrator.SetCheckpointNotify(func(cpID, cpType, summary string, phaseIndex int, resolved bool, decidedBy, action string) {
+			eventType := "checkpoint_reached"
+			if resolved {
+				if decidedBy == "ceo_auto" {
+					eventType = "checkpoint_auto_delegated"
+				} else {
+					eventType = "checkpoint_resolved"
+				}
+			}
+			s.hub.BroadcastCheckpointEvent(&CheckpointEvent{
+				EventType:      eventType,
+				CheckpointID:   cpID,
+				CheckpointType: cpType,
+				PhaseIndex:     phaseIndex,
+				Data: map[string]interface{}{
+					"artifact_summary": summary,
+					"decided_by":       decidedBy,
+					"action":           action,
+				},
+			})
+		})
 
+		log.Printf("[TASK] Starting orchestration: id=%s project=%s", taskID, projectID)
 		s.orchestrator.ProcessTaskWithID(req.ProjectID, taskWithContext, parentTaskID, taskID)
+		log.Printf("[TASK] Orchestration finished: id=%s project=%s", taskID, projectID)
 	}(taskID, req.ProjectID)
 
 	writeJSON(w, map[string]interface{}{
@@ -557,6 +665,24 @@ func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.URL.Path == "/office" {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(officeHTML))
+		return
+	}
+
+	if r.URL.Path == "/mission" {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(missionHTML))
+		return
+	}
+
+	if r.URL.Path == "/live" {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(agentActivityHTML))
+		return
+	}
+
 	http.NotFound(w, r)
 }
 
@@ -730,6 +856,8 @@ func (s *Server) handleAgentEndpoints(w http.ResponseWriter, r *http.Request) {
 		s.handleAgentRoleStatus(w, r, role)
 	case "outputs":
 		s.handleAgentRoleOutputs(w, r, role)
+	case "chat":
+		s.handleAgentChat(w, r)
 	default:
 		http.Error(w, "Unknown endpoint", http.StatusNotFound)
 	}

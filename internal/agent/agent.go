@@ -2,13 +2,18 @@ package agent
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/creack/pty"
+	"pty-claude-test/internal/session"
 )
 
 // Role represents an agent's role in the team
@@ -25,13 +30,26 @@ const (
 	RoleJuniorDev Role = "junior_dev"
 )
 
+// PermissionModes maps agent roles to their Claude Code permission mode.
+var PermissionModes = map[Role]string{
+	RoleCEO:       "plan",
+	RolePM:        "plan",
+	RoleUX:        "plan",
+	RoleUI:        "plan",
+	RoleSecurity:  "plan",
+	RoleArchitect: "plan",
+	RoleSeniorDev: "acceptEdits",
+	RoleJuniorDev: "acceptEdits",
+}
+
 // Agent represents a specialized AI agent
 type Agent struct {
-	ID           string
-	Name         string
-	Role         Role
-	SystemPrompt string
-	Color        string // For UI display
+	ID             string
+	Name           string
+	Role           Role
+	SystemPrompt   string
+	Color          string // For UI display
+	SessionManager *session.SessionManager
 }
 
 // Response from an agent
@@ -42,6 +60,138 @@ type Response struct {
 	Files      []string // Files to create
 	Raw        string   // Original unprocessed output
 	IsComplete bool     // Agent signals task is complete (no further delegation needed)
+}
+
+// SessionResponse is the structured response from session-based execution.
+type SessionResponse struct {
+	Text          string
+	Events        []session.AgentEvent
+	FilesCreated  []string
+	FilesModified []string
+	CommandsRun   []CommandRecord
+	Delegations   []Role
+	Reviews       []Role
+	IsComplete    bool
+
+	// Metrics
+	InputTokens  int
+	OutputTokens int
+	CostUSD      float64
+	ToolCalls    int
+	Duration     time.Duration
+}
+
+// CommandRecord captures a bash command and its output.
+type CommandRecord struct {
+	Command string
+	Output  string
+	IsError bool
+}
+
+// ExecuteWithSession sends a task via a persistent Claude Code session.
+// Returns a structured response with full event history.
+func (a *Agent) ExecuteWithSession(ctx context.Context, projectID, workDir, taskPrompt string) (*SessionResponse, error) {
+	if a.SessionManager == nil {
+		return nil, fmt.Errorf("session manager not set for agent %s", a.Role)
+	}
+
+	permMode := PermissionModes[a.Role]
+	if permMode == "" {
+		permMode = "bypassPermissions"
+	}
+
+	sess, err := a.SessionManager.GetOrCreate(session.SessionConfig{
+		AgentRole:      string(a.Role),
+		AgentName:      a.Name,
+		SystemPrompt:   a.SystemPrompt,
+		WorkDir:        workDir,
+		PermissionMode: permMode,
+		ProjectID:      projectID,
+		MaxTurns:       50,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("session create failed: %w", err)
+	}
+
+	startTime := time.Now()
+
+	text, events, err := sess.SendTask(ctx, taskPrompt)
+	if err != nil {
+		return nil, fmt.Errorf("session task failed: %w", err)
+	}
+
+	resp := &SessionResponse{
+		Text:     text,
+		Events:   events,
+		Duration: time.Since(startTime),
+	}
+
+	// Parse structured data from events
+	for _, ev := range events {
+		switch ev.Type {
+		case "tool_use":
+			resp.ToolCalls++
+			switch ev.ToolName {
+			case "Write":
+				path := extractFilePath(ev.Input)
+				if path != "" {
+					resp.FilesCreated = append(resp.FilesCreated, path)
+				}
+			case "Edit":
+				path := extractFilePath(ev.Input)
+				if path != "" {
+					resp.FilesModified = append(resp.FilesModified, path)
+				}
+			case "Bash":
+				cmd := extractCommand(ev.Input)
+				resp.CommandsRun = append(resp.CommandsRun, CommandRecord{Command: cmd})
+			}
+		case "tool_result":
+			// Match with last command to capture output
+			if len(resp.CommandsRun) > 0 {
+				last := &resp.CommandsRun[len(resp.CommandsRun)-1]
+				if last.Output == "" {
+					last.Output = ev.Output
+					last.IsError = ev.IsError
+				}
+			}
+		case "turn_complete":
+			resp.InputTokens = ev.InputTokens
+			resp.OutputTokens = ev.OutputTokens
+			resp.CostUSD = ev.CostUSD
+		}
+	}
+
+	// Parse text for delegation/review/completion signals
+	resp.Delegations = parseDelegations(text)
+	resp.Reviews = parseReviews(text)
+	resp.IsComplete = parseCompletionSignal(text)
+
+	return resp, nil
+}
+
+// extractFilePath extracts file_path from a tool input JSON string.
+func extractFilePath(inputJSON string) string {
+	var input map[string]interface{}
+	if err := json.Unmarshal([]byte(inputJSON), &input); err != nil {
+		return ""
+	}
+	if path, ok := input["file_path"].(string); ok {
+		return path
+	}
+	return ""
+}
+
+// extractCommand extracts command from a Bash tool input JSON string.
+func extractCommand(inputJSON string) string {
+	var input map[string]interface{}
+	if err := json.Unmarshal([]byte(inputJSON), &input); err != nil {
+		return ""
+	}
+	if cmd, ok := input["command"].(string); ok {
+		return cmd
+	}
+	return ""
 }
 
 // NewAgent creates a new agent with the given role
@@ -99,6 +249,13 @@ func (a *Agent) Process(task string) (*Response, error) {
 
 // ProcessInDir sends a task to the agent with a specific working directory
 func (a *Agent) ProcessInDir(task string, workDir string) (*Response, error) {
+	log.Printf("[AGENT:%s] Processing task in dir=%s", a.Role, workDir)
+	taskPreview := task
+	if len(taskPreview) > 150 {
+		taskPreview = taskPreview[:150] + "..."
+	}
+	log.Printf("[AGENT:%s] Task: %s", a.Role, taskPreview)
+
 	// Build the full prompt with system context
 	fullPrompt := fmt.Sprintf(`%s
 
@@ -113,8 +270,10 @@ If you create files, they will be created in the project directory.`, a.SystemPr
 	// Call Claude with --print mode
 	output, err := runClaudePrint(fullPrompt, workDir)
 	if err != nil {
+		log.Printf("[AGENT:%s] FAILED: %v", a.Role, err)
 		return nil, fmt.Errorf("claude error: %w", err)
 	}
+	log.Printf("[AGENT:%s] SUCCESS, response length: %d", a.Role, len(output))
 
 	// Parse the response
 	response := &Response{
@@ -234,26 +393,40 @@ func isValidRole(r Role) bool {
 	}
 }
 
+// AgentTimeout is the maximum time a single Claude CLI invocation can run.
+const AgentTimeout = 10 * time.Minute
+
 // runClaudePrint calls claude with tool permissions
 func runClaudePrint(prompt string, workDir string) (string, error) {
-	// Use claude with allowed tools for file operations
-	// --tools enables tools in print mode
-	// --dangerously-skip-permissions bypasses permission prompts
-	cmd := exec.Command("claude",
+	args := []string{
 		"--print",
 		"--tools", "Write,Read,Edit,Bash",
 		"--dangerously-skip-permissions",
 		prompt,
-	)
+	}
+
+	cmd := exec.Command("claude", args...)
 
 	// Set working directory for file operations
 	if workDir != "" {
 		cmd.Dir = workDir
 	}
 
+	// Log command details
+	promptPreview := prompt
+	if len(promptPreview) > 200 {
+		promptPreview = promptPreview[:200] + "..."
+	}
+	log.Printf("[AGENT] Executing: claude --print --tools Write,Read,Edit,Bash --dangerously-skip-permissions")
+	log.Printf("[AGENT] Working dir: %s", workDir)
+	log.Printf("[AGENT] Prompt preview: %s", promptPreview)
+
+	startTime := time.Now()
+
 	// Use PTY for proper terminal emulation
 	ptmx, err := pty.Start(cmd)
 	if err != nil {
+		log.Printf("[AGENT] ERROR PTY start failed: %v", err)
 		return "", fmt.Errorf("pty start: %w", err)
 	}
 	defer ptmx.Close()
@@ -267,16 +440,56 @@ func runClaudePrint(prompt string, workDir string) (string, error) {
 		done <- err
 	}()
 
-	// Wait for command to complete
-	cmdErr := cmd.Wait()
-	<-done
+	// Wait for command with timeout
+	waitCh := make(chan error, 1)
+	go func() {
+		waitCh <- cmd.Wait()
+	}()
 
-	if cmdErr != nil {
-		return output.String(), fmt.Errorf("command error: %w", cmdErr)
+	var cmdErr error
+	select {
+	case cmdErr = <-waitCh:
+		// Command finished normally
+	case <-time.After(AgentTimeout):
+		// Kill the process on timeout
+		log.Printf("[AGENT] ERROR Timeout after %v, killing process", AgentTimeout)
+		if cmd.Process != nil {
+			cmd.Process.Kill()
+		}
+		<-waitCh // Wait for process to actually exit
+		return output.String(), fmt.Errorf("agent timed out after %v", AgentTimeout)
 	}
 
-	// Strip ANSI codes
-	return stripANSI(output.String()), nil
+	<-done
+
+	elapsed := time.Since(startTime)
+	rawOutput := output.String()
+
+	if cmdErr != nil {
+		log.Printf("[AGENT] ERROR Command failed after %v: %v", elapsed, cmdErr)
+		log.Printf("[AGENT] ERROR Raw output (%d bytes): %s", len(rawOutput), truncate(rawOutput, 500))
+		// Also try to get exit code
+		if exitErr, ok := cmdErr.(*exec.ExitError); ok {
+			log.Printf("[AGENT] ERROR Exit code: %d, stderr: %s", exitErr.ExitCode(), string(exitErr.Stderr))
+		}
+		return rawOutput, fmt.Errorf("command error (after %v): %w", elapsed, cmdErr)
+	}
+
+	cleanOutput := stripANSI(rawOutput)
+	log.Printf("[AGENT] OK Completed in %v, output: %d bytes", elapsed, len(cleanOutput))
+	if len(cleanOutput) > 0 {
+		log.Printf("[AGENT] Response preview: %s", truncate(cleanOutput, 300))
+	}
+
+	return cleanOutput, nil
+}
+
+// truncate returns the first n characters of s
+func truncate(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "..."
 }
 
 // stripANSI removes ANSI escape codes from text

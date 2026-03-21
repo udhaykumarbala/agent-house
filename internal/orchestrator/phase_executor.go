@@ -142,7 +142,8 @@ func (pe *PhaseExecutor) ExecuteAgentsParallel(roles []agent.Role, taskPrompt st
 	return result, nil
 }
 
-// executeSequential executes agents one by one (fallback)
+// executeSequential executes agents one by one (fallback).
+// Supports both session-based and legacy execution.
 func (pe *PhaseExecutor) executeSequential(roles []agent.Role, taskPrompt string) (*PhaseResult, error) {
 	result := &PhaseResult{
 		Messages:  make([]*message.Message, 0),
@@ -152,15 +153,47 @@ func (pe *PhaseExecutor) executeSequential(roles []agent.Role, taskPrompt string
 	}
 
 	for _, role := range roles {
-		// Get agent
 		agentInstance, err := pe.getAgent(role)
 		if err != nil {
 			result.Errors.Add(role, fmt.Errorf("failed to get agent: %w", err))
 			continue
 		}
 
-		// Execute agent
 		startTime := time.Now()
+
+		// Try session-based execution first
+		if agentInstance.SessionManager != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), pe.config.AgentTimeout)
+			sessResp, err := agentInstance.ExecuteWithSession(ctx, pe.config.ProjectID, pe.config.WorkDir, taskPrompt)
+			cancel()
+			duration := time.Since(startTime)
+
+			if err != nil {
+				result.Errors.Add(role, err)
+			} else if sessResp != nil {
+				msg := message.NewMessage(
+					message.TypeResponse,
+					string(role),
+					"orchestrator",
+					sessResp.Text,
+				)
+				msg.Metadata.ProjectID = pe.config.ProjectID
+				msg.Metadata.TaskID = pe.config.TaskID
+				result.Messages = append(result.Messages, msg)
+				result.Files = append(result.Files, sessResp.FilesCreated...)
+				result.Files = append(result.Files, sessResp.FilesModified...)
+				if pe.messageStore != nil {
+					pe.messageStore.Add(msg)
+				}
+			}
+
+			if duration > result.MaxAgentDuration {
+				result.MaxAgentDuration = duration
+			}
+			continue
+		}
+
+		// Legacy execution path
 		response, err := agentInstance.ProcessInDir(taskPrompt, pe.config.WorkDir)
 		duration := time.Since(startTime)
 
@@ -169,7 +202,6 @@ func (pe *PhaseExecutor) executeSequential(roles []agent.Role, taskPrompt string
 			continue
 		}
 
-		// Create message
 		if response != nil {
 			msg := message.NewMessage(
 				message.TypeResponse,
@@ -183,13 +215,11 @@ func (pe *PhaseExecutor) executeSequential(roles []agent.Role, taskPrompt string
 			result.Messages = append(result.Messages, msg)
 			result.Files = append(result.Files, response.Files...)
 
-			// Store message
 			if pe.messageStore != nil {
 				pe.messageStore.Add(msg)
 			}
 		}
 
-		// Update duration stats
 		if duration > result.MaxAgentDuration {
 			result.MaxAgentDuration = duration
 		}

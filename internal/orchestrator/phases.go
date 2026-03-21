@@ -9,6 +9,8 @@ import (
 type Phase string
 
 const (
+	// PhaseTriage - CEO reviews the task and project context, decides which phases to run
+	PhaseTriage Phase = "triage"
 	// PhaseTemplateSelection - architect selects template, CEO/PM approve (NEW)
 	PhaseTemplateSelection Phase = "template_selection"
 	// PhaseResearch - agents research competitors, patterns, design inspiration
@@ -251,6 +253,7 @@ When done, signal: COMPLETE: Development finished following approved specs.
 // GetPhaseName returns a human-readable name for the phase
 func GetPhaseName(phase Phase) string {
 	names := map[Phase]string{
+		PhaseTriage:            "CEO Triage",
 		PhaseTemplateSelection: "Template Selection",
 		PhaseResearch:          "Research",
 		PhasePlanning:          "Planning",
@@ -268,6 +271,7 @@ func GetPhaseName(phase Phase) string {
 // GetPhaseEmoji returns an emoji for the phase
 func GetPhaseEmoji(phase Phase) string {
 	emojis := map[Phase]string{
+		PhaseTriage:            "👔",
 		PhaseTemplateSelection: "🎯",
 		PhaseResearch:          "🔍",
 		PhasePlanning:          "📋",

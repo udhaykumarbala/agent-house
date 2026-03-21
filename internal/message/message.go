@@ -32,13 +32,14 @@ type Message struct {
 
 // Metadata holds additional message information
 type Metadata struct {
-	ProjectID   string   `json:"project_id,omitempty"`
-	TaskID      string   `json:"task_id,omitempty"`
-	DelegateTo  []string `json:"delegate_to,omitempty"`  // For delegate messages
-	FilePath    string   `json:"file_path,omitempty"`    // For file operations
-	FileContent string   `json:"file_content,omitempty"` // For file creation
-	Priority    string   `json:"priority,omitempty"`     // high, medium, low
-	Tags        []string `json:"tags,omitempty"`         // Labels for filtering
+	ProjectID   string                 `json:"project_id,omitempty"`
+	TaskID      string                 `json:"task_id,omitempty"`
+	DelegateTo  []string               `json:"delegate_to,omitempty"`  // For delegate messages
+	FilePath    string                 `json:"file_path,omitempty"`    // For file operations
+	FileContent string                 `json:"file_content,omitempty"` // For file creation
+	Priority    string                 `json:"priority,omitempty"`     // high, medium, low
+	Tags        []string               `json:"tags,omitempty"`         // Labels for filtering
+	Extra       map[string]interface{} `json:"extra,omitempty"`        // For lifecycle events
 }
 
 // NewMessage creates a new message with generated ID and timestamp

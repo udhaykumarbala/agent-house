@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+// MaxMessages is the maximum number of messages kept in memory.
+// Older messages are discarded when this limit is reached.
+const MaxMessages = 10000
+
 // Store manages message persistence
 type Store struct {
 	messages  []*Message
@@ -28,10 +32,18 @@ func NewStore() *Store {
 func (s *Store) Add(msg *Message) {
 	s.mu.Lock()
 	s.messages = append(s.messages, msg)
+	// Trim oldest messages if over capacity
+	if len(s.messages) > MaxMessages {
+		excess := len(s.messages) - MaxMessages
+		s.messages = s.messages[excess:]
+	}
+	// Copy listeners while locked to avoid race on iteration
+	listeners := make([]func(*Message), len(s.listeners))
+	copy(listeners, s.listeners)
 	s.mu.Unlock()
 
-	// Notify listeners
-	for _, listener := range s.listeners {
+	// Notify listeners outside of lock
+	for _, listener := range listeners {
 		go listener(msg)
 	}
 }

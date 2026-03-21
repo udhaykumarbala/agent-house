@@ -21,12 +21,13 @@ type AgentJob struct {
 
 // AgentResult represents the outcome of an agent's work
 type AgentResult struct {
-	Role      agent.Role
-	Messages  []*message.Message
-	Files     []string
-	Error     error
-	Duration  time.Duration
-	TaskID    string
+	Role            agent.Role
+	Messages        []*message.Message
+	Files           []string
+	Error           error
+	Duration        time.Duration
+	TaskID          string
+	SessionResponse *agent.SessionResponse // populated when using session mode
 }
 
 // AgentGetter is a function that returns an agent for a given role
@@ -43,6 +44,7 @@ type AgentWorkerPool struct {
 	getAgent    AgentGetter
 	mu          sync.RWMutex
 	active      map[agent.Role]bool // Track active agents
+	closeOnce   sync.Once           // Ensures results channel is closed exactly once
 }
 
 // NewAgentWorkerPool creates a new worker pool for parallel agent execution
@@ -126,19 +128,54 @@ func (p *AgentWorkerPool) executeJob(job AgentJob) AgentResult {
 	defer cancel()
 
 	// Execute agent with context
-	messages, files, err := p.executeWithContext(jobCtx, agentInstance, job)
+	messages, files, err, sessResp := p.executeWithContext(jobCtx, agentInstance, job)
 
 	result.Messages = messages
 	result.Files = files
 	result.Error = err
 	result.Duration = time.Since(startTime)
+	result.SessionResponse = sessResp
 
 	return result
 }
 
-// executeWithContext runs the agent with context support
-func (p *AgentWorkerPool) executeWithContext(ctx context.Context, agentInstance *agent.Agent, job AgentJob) ([]*message.Message, []string, error) {
-	// Channel to receive result
+// executeWithContext runs the agent with context support.
+// Uses session-based execution if the agent has a SessionManager, otherwise falls back to legacy.
+func (p *AgentWorkerPool) executeWithContext(ctx context.Context, agentInstance *agent.Agent, job AgentJob) ([]*message.Message, []string, error, *agent.SessionResponse) {
+	// Extract workDir from context
+	workDir := ""
+	if wd, ok := job.Context["workDir"]; ok {
+		if wdStr, ok := wd.(string); ok {
+			workDir = wdStr
+		}
+	}
+
+	// Try session-based execution first
+	if agentInstance.SessionManager != nil {
+		sessResp, err := agentInstance.ExecuteWithSession(ctx, job.ProjectID, workDir, job.Prompt)
+
+		var messages []*message.Message
+		var files []string
+
+		if sessResp != nil {
+			msg := message.NewMessage(
+				message.TypeResponse,
+				string(job.Role),
+				"orchestrator",
+				sessResp.Text,
+			)
+			msg.Metadata.ProjectID = job.ProjectID
+			msg.Metadata.TaskID = job.TaskID
+			messages = append(messages, msg)
+
+			files = append(files, sessResp.FilesCreated...)
+			files = append(files, sessResp.FilesModified...)
+		}
+
+		return messages, files, err, sessResp
+	}
+
+	// Legacy execution path (claude --print)
 	type agentOutput struct {
 		messages []*message.Message
 		files    []string
@@ -146,25 +183,13 @@ func (p *AgentWorkerPool) executeWithContext(ctx context.Context, agentInstance 
 	}
 	resultChan := make(chan agentOutput, 1)
 
-	// Run agent in goroutine
 	go func() {
-		// Extract workDir from context
-		workDir := ""
-		if wd, ok := job.Context["workDir"]; ok {
-			if wdStr, ok := wd.(string); ok {
-				workDir = wdStr
-			}
-		}
-
-		// Process the agent with the task
 		response, err := agentInstance.ProcessInDir(job.Prompt, workDir)
 
-		// Convert response to messages and files
 		var messages []*message.Message
 		var files []string
 
 		if response != nil {
-			// Create a message from the response
 			msg := message.NewMessage(
 				message.TypeResponse,
 				string(job.Role),
@@ -180,12 +205,11 @@ func (p *AgentWorkerPool) executeWithContext(ctx context.Context, agentInstance 
 		resultChan <- agentOutput{messages, files, err}
 	}()
 
-	// Wait for result or timeout
 	select {
 	case <-ctx.Done():
-		return nil, nil, fmt.Errorf("agent %s timed out or cancelled: %w", job.Role, ctx.Err())
+		return nil, nil, fmt.Errorf("agent %s timed out or cancelled: %w", job.Role, ctx.Err()), nil
 	case output := <-resultChan:
-		return output.messages, output.files, output.err
+		return output.messages, output.files, output.err, nil
 	}
 }
 
@@ -208,14 +232,21 @@ func (p *AgentWorkerPool) Results() <-chan AgentResult {
 func (p *AgentWorkerPool) Wait() {
 	close(p.jobs)
 	p.wg.Wait()
-	close(p.results)
+	p.closeResults()
 }
 
 // Shutdown cancels the context and waits for workers
 func (p *AgentWorkerPool) Shutdown() {
 	p.cancel()
 	p.wg.Wait()
-	close(p.results)
+	p.closeResults()
+}
+
+// closeResults safely closes the results channel exactly once
+func (p *AgentWorkerPool) closeResults() {
+	p.closeOnce.Do(func() {
+		close(p.results)
+	})
 }
 
 // IsActive returns whether a specific agent is currently working

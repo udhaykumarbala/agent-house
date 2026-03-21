@@ -1,7 +1,9 @@
 package orchestrator
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -10,7 +12,10 @@ import (
 	"time"
 
 	"pty-claude-test/internal/agent"
+	"pty-claude-test/internal/checkpoint"
+	"pty-claude-test/internal/kanban"
 	"pty-claude-test/internal/message"
+	"pty-claude-test/internal/session"
 	"pty-claude-test/internal/task"
 	"pty-claude-test/internal/template"
 )
@@ -37,6 +42,9 @@ func DefaultConfig() Config {
 	}
 }
 
+// CheckpointNotifyFunc is called when a checkpoint is reached or resolved
+type CheckpointNotifyFunc func(cpID, cpType, summary string, phaseIndex int, resolved bool, decidedBy string, action string)
+
 // Orchestrator manages agent collaboration
 type Orchestrator struct {
 	config           Config
@@ -51,6 +59,15 @@ type Orchestrator struct {
 	selectedTemplate template.TemplateType // Template selected for current task
 	fileManager      *ConcurrentFileManager // Thread-safe file operations
 	resultMu         sync.Mutex // Protects Result struct during parallel execution
+
+	// Session management for Claude Code sessions per agent
+	sessionManager   *session.SessionManager
+
+	// Checkpoint system
+	checkpointCh     chan *checkpoint.Decision // Receives human/CEO decisions
+	pendingCP        *checkpoint.Checkpoint    // Currently pending checkpoint
+	cpMu             sync.Mutex               // Protects pendingCP
+	checkpointNotify CheckpointNotifyFunc      // Callback for checkpoint events
 }
 
 // New creates a new orchestrator
@@ -63,10 +80,286 @@ func New(config Config, store *message.Store) *Orchestrator {
 		phaseConfig:      DefaultPhaseConfig(),
 		selectedTemplate: template.DefaultTemplate,
 		fileManager:      NewConcurrentFileManager(),
+		checkpointCh:     make(chan *checkpoint.Decision, 1),
+	}
+}
+
+// NewWithSessions creates a new orchestrator with session-based agent execution.
+func NewWithSessions(config Config, store *message.Store, sm *session.SessionManager) *Orchestrator {
+	o := New(config, store)
+	o.sessionManager = sm
+	return o
+}
+
+// GetSessionManager returns the session manager (may be nil in legacy mode).
+func (o *Orchestrator) GetSessionManager() *session.SessionManager {
+	return o.sessionManager
+}
+
+// SetCheckpointNotify sets the callback for checkpoint events
+func (o *Orchestrator) SetCheckpointNotify(fn CheckpointNotifyFunc) {
+	o.checkpointNotify = fn
+}
+
+// GetPendingCheckpoint returns the currently pending checkpoint, if any
+func (o *Orchestrator) GetPendingCheckpoint() *checkpoint.Checkpoint {
+	o.cpMu.Lock()
+	defer o.cpMu.Unlock()
+	return o.pendingCP
+}
+
+// ResolveCheckpoint unblocks the orchestrator by sending a decision
+func (o *Orchestrator) ResolveCheckpoint(dec *checkpoint.Decision) error {
+	o.cpMu.Lock()
+	pending := o.pendingCP
+	o.cpMu.Unlock()
+
+	if pending == nil {
+		return fmt.Errorf("no pending checkpoint")
+	}
+
+	// Resolve on disk
+	_, err := checkpoint.ResolveCheckpoint(o.config.ProjectDir, pending.ID, *dec)
+	if err != nil {
+		return fmt.Errorf("failed to resolve checkpoint: %w", err)
+	}
+
+	// Record the decision
+	checkpoint.AddDecision(o.config.ProjectDir, *dec)
+
+	// Unblock the orchestrator
+	select {
+	case o.checkpointCh <- dec:
+	default:
+		// Channel already has a value (auto-delegate beat us)
+	}
+
+	return nil
+}
+
+// waitForCheckpoint blocks execution until a human or CEO agent resolves the checkpoint.
+// Returns nil decision if the checkpoint type is disabled in settings.
+func (o *Orchestrator) waitForCheckpoint(cpType string, phaseIndex int, artifactPath, artifactSummary, projectID string, result *Result) (*checkpoint.Decision, error) {
+	// Check if this checkpoint type is enabled
+	settings, err := checkpoint.LoadSettings(o.config.ProjectDir)
+	if err != nil {
+		settings = &checkpoint.WorkflowSettings{}
+		*settings = checkpoint.DefaultSettings(projectID)
+	}
+	if !settings.IsCheckpointEnabled(cpType) {
+		return nil, nil // Skip — checkpoint disabled
+	}
+
+	// Create checkpoint record
+	cp := checkpoint.Checkpoint{
+		ID:              checkpoint.GenerateCheckpointID(),
+		ProjectID:       projectID,
+		TaskID:          result.TaskID,
+		Type:            cpType,
+		PhaseIndex:      phaseIndex,
+		Status:          "pending",
+		ArtifactPath:    artifactPath,
+		ArtifactSummary: artifactSummary,
+		CreatedAt:       time.Now(),
+	}
+
+	if err := checkpoint.CreateCheckpoint(o.config.ProjectDir, cp); err != nil {
+		log.Printf("[CHECKPOINT] Failed to create checkpoint: %v", err)
+		return nil, nil // Don't block on storage failure
+	}
+
+	// Set as pending
+	o.cpMu.Lock()
+	o.pendingCP = &cp
+	o.cpMu.Unlock()
+
+	// Notify listeners
+	if o.checkpointNotify != nil {
+		o.checkpointNotify(cp.ID, cpType, artifactSummary, phaseIndex, false, "", "")
+	}
+
+	// Broadcast system message
+	sysMsg := message.NewMessage(message.TypeSystem, "system", "", fmt.Sprintf("Checkpoint: Waiting for approval — %s", artifactSummary))
+	sysMsg.Metadata.ProjectID = projectID
+	sysMsg.Metadata.TaskID = result.TaskID
+	o.store.Add(sysMsg)
+	o.notify(sysMsg)
+
+	log.Printf("[CHECKPOINT] Waiting for resolution: type=%s id=%s", cpType, cp.ID)
+
+	// Start auto-delegation timer if configured
+	var cancelTimer context.CancelFunc
+	if settings.AutoDelegateMinutes > 0 {
+		var ctx context.Context
+		ctx, cancelTimer = context.WithCancel(context.Background())
+		go o.autoDelegateTimer(ctx, &cp, settings.AutoDelegateMinutes, projectID, result)
+	}
+
+	// Block until decision arrives
+	dec := <-o.checkpointCh
+
+	// Cancel timer if it was running
+	if cancelTimer != nil {
+		cancelTimer()
+	}
+
+	// Clear pending
+	o.cpMu.Lock()
+	o.pendingCP = nil
+	o.cpMu.Unlock()
+
+	// Notify resolved
+	if o.checkpointNotify != nil {
+		o.checkpointNotify(cp.ID, cpType, artifactSummary, phaseIndex, true, dec.DecidedBy, string(dec.Action))
+	}
+
+	log.Printf("[CHECKPOINT] Resolved: type=%s action=%s by=%s", cpType, dec.Action, dec.DecidedBy)
+
+	return dec, nil
+}
+
+// autoDelegateTimer waits for the configured duration then delegates to CEO agent
+func (o *Orchestrator) autoDelegateTimer(ctx context.Context, cp *checkpoint.Checkpoint, minutes int, projectID string, result *Result) {
+	select {
+	case <-time.After(time.Duration(minutes) * time.Minute):
+		// Timer expired — delegate to CEO
+	case <-ctx.Done():
+		// Human resolved before timer expired
+		return
+	}
+
+	log.Printf("[CHECKPOINT] Auto-delegating to CEO after %d minutes: %s", minutes, cp.ID)
+
+	// Read artifact content
+	artifactContent := ""
+	if cp.ArtifactPath != "" {
+		if data, err := os.ReadFile(cp.ArtifactPath); err == nil {
+			artifactContent = string(data)
+			if len(artifactContent) > 8000 {
+				artifactContent = artifactContent[:8000] + "\n...(truncated)"
+			}
+		}
+	}
+
+	// Build CEO review prompt
+	prompt := fmt.Sprintf(`You are acting as an automated reviewer because the human has not responded within %d minutes.
+
+CHECKPOINT TYPE: %s
+ARTIFACT SUMMARY: %s
+
+ARTIFACT TO REVIEW:
+%s
+
+Review the above artifact and respond with EXACTLY one of these on its own line:
+- CHECKPOINT_APPROVED: {brief justification}
+- CHECKPOINT_REJECTED: {specific feedback for improvement}
+- CHECKPOINT_ESCALATED: {reason this needs mandatory human review}`, minutes, cp.Type, cp.ArtifactSummary, artifactContent)
+
+	// Spawn CEO agent
+	ceoAgent, err := o.getAgent(agent.RoleCEO)
+	if err != nil {
+		log.Printf("[CHECKPOINT] Failed to get CEO agent: %v", err)
+		return
+	}
+
+	var response *agent.Response
+	if ceoAgent.SessionManager != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		sessResp, sessErr := ceoAgent.ExecuteWithSession(ctx, projectID, o.config.ProjectDir, prompt)
+		cancel()
+		if sessErr != nil {
+			log.Printf("[CHECKPOINT] CEO auto-review (session) failed: %v", sessErr)
+			return
+		}
+		response = &agent.Response{Content: sessResp.Text}
+	} else {
+		var respErr error
+		response, _, respErr = ceoAgent.ProcessWithFileOps(prompt, o.config.ProjectDir)
+		if respErr != nil {
+			log.Printf("[CHECKPOINT] CEO auto-review failed: %v", respErr)
+			return
+		}
+	}
+
+	// Parse CEO decision
+	dec := &checkpoint.Decision{
+		ID:             checkpoint.GenerateDecisionID(),
+		ProjectID:      projectID,
+		TaskID:         result.TaskID,
+		CheckpointType: cp.Type,
+		PhaseIndex:     cp.PhaseIndex,
+		DecidedBy:      "ceo_auto",
+		DecidedAt:      time.Now(),
+	}
+
+	content := response.Content
+	if strings.Contains(content, "CHECKPOINT_APPROVED") {
+		dec.Action = checkpoint.DecisionApproved
+		// Extract justification
+		if idx := strings.Index(content, "CHECKPOINT_APPROVED:"); idx >= 0 {
+			dec.Feedback = strings.TrimSpace(content[idx+len("CHECKPOINT_APPROVED:"):])
+			if nl := strings.Index(dec.Feedback, "\n"); nl >= 0 {
+				dec.Feedback = dec.Feedback[:nl]
+			}
+		}
+	} else if strings.Contains(content, "CHECKPOINT_REJECTED") {
+		dec.Action = checkpoint.DecisionRejected
+		if idx := strings.Index(content, "CHECKPOINT_REJECTED:"); idx >= 0 {
+			dec.Feedback = strings.TrimSpace(content[idx+len("CHECKPOINT_REJECTED:"):])
+		}
+	} else if strings.Contains(content, "CHECKPOINT_ESCALATED") {
+		// Escalated — don't resolve, notify user
+		log.Printf("[CHECKPOINT] CEO escalated — waiting for human: %s", cp.ID)
+		sysMsg := message.NewMessage(message.TypeSystem, "ceo", "", "CEO escalated checkpoint — requires human review")
+		sysMsg.Metadata.ProjectID = projectID
+		o.store.Add(sysMsg)
+		o.notify(sysMsg)
+		return // Don't send to channel — keep blocking
+	} else {
+		// Default to approved if response is unclear
+		dec.Action = checkpoint.DecisionApproved
+		dec.Feedback = "Auto-approved (CEO response did not contain explicit markers)"
+	}
+
+	// Resolve on disk
+	checkpoint.ResolveCheckpoint(o.config.ProjectDir, cp.ID, *dec)
+	checkpoint.AddDecision(o.config.ProjectDir, *dec)
+
+	// Send to channel
+	select {
+	case o.checkpointCh <- dec:
+	default:
 	}
 }
 
 // OnMessage registers a callback for new messages
+// syncKanbanFromPlan creates kanban tasks from the development plan's subtasks
+func (o *Orchestrator) syncKanbanFromPlan(plan *DevelopmentPlan, projectID string) {
+	var phases []kanban.DevPlanPhase
+	for _, p := range plan.Phases {
+		phase := kanban.DevPlanPhase{Index: p.Index, Name: p.Name}
+		for _, st := range p.SubTasks {
+			agents := make([]string, len(st.AssignedAgents))
+			for j, a := range st.AssignedAgents { agents[j] = string(a) }
+			phase.SubTasks = append(phase.SubTasks, kanban.DevPlanSubTask{
+				ID:                 st.ID,
+				Title:              st.Title,
+				Description:        st.Description,
+				AssignedAgents:     agents,
+				CompletionCriteria: st.CompletionCriteria,
+			})
+		}
+		phases = append(phases, phase)
+	}
+
+	created, err := kanban.SyncFromDevPlan(o.config.ProjectDir, projectID, phases)
+	if err != nil {
+		log.Printf("[KANBAN] Failed to sync: %v", err)
+	} else if created > 0 {
+		log.Printf("[KANBAN] Synced %d tasks from development plan", created)
+	}
+}
+
 func (o *Orchestrator) OnMessage(fn func(msg *message.Message)) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -82,7 +375,23 @@ func (o *Orchestrator) notify(msg *message.Message) {
 	}
 }
 
-// getAgent returns or creates an agent for the given role
+// notifyLifecycle broadcasts a lifecycle event (phase/task start/complete) via the message system.
+func (o *Orchestrator) notifyLifecycle(eventType, projectID, taskID string, data map[string]interface{}) {
+	content := eventType
+	if name, ok := data["phase_name"]; ok {
+		content = fmt.Sprintf("%s: %s", eventType, name)
+	}
+	msg := message.NewMessage("lifecycle", "orchestrator", "", content)
+	msg.Metadata.ProjectID = projectID
+	msg.Metadata.TaskID = taskID
+	msg.Metadata.Extra = data
+	msg.Metadata.Extra["event_type"] = eventType
+	o.store.Add(msg)
+	o.notify(msg)
+}
+
+// getAgent returns or creates an agent for the given role.
+// If a SessionManager is configured, agents will use session-based execution.
 func (o *Orchestrator) getAgent(role agent.Role) (*agent.Agent, error) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -94,6 +403,11 @@ func (o *Orchestrator) getAgent(role agent.Role) (*agent.Agent, error) {
 	a, err := agent.NewAgent(role)
 	if err != nil {
 		return nil, err
+	}
+
+	// Inject session manager if available
+	if o.sessionManager != nil {
+		a.SessionManager = o.sessionManager
 	}
 
 	o.agents[role] = a
@@ -133,6 +447,12 @@ func (o *Orchestrator) ProcessTaskWithID(projectID, taskStr, parentTaskID, taskI
 	o.notify(taskMsg)
 	result.Messages = append(result.Messages, taskMsg)
 
+	log.Printf("[TASK] ========================================")
+	log.Printf("[TASK] New task: id=%s project=%s phases=%v", taskID, projectID, o.config.EnablePhases)
+	log.Printf("[TASK] Task: %s", taskStr)
+	log.Printf("[TASK] Config: maxTurns=%d maxDepth=%d files=%v verbose=%v", o.config.MaxTurns, o.config.MaxDepth, o.config.EnableFiles, o.config.Verbose)
+	log.Printf("[TASK] ========================================")
+
 	if o.config.Verbose {
 		fmt.Printf("\n🎯 New Task: %s\n", taskStr)
 		fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
@@ -152,12 +472,20 @@ func (o *Orchestrator) ProcessTaskWithID(projectID, taskStr, parentTaskID, taskI
 	}
 
 	if err != nil {
+		log.Printf("[TASK] FAILED: %v", err)
 		result.Error = err
 	}
 
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(result.StartTime)
 	result.TotalTurns = o.turns
+
+	// Broadcast task_completed
+	o.notifyLifecycle("task_completed", projectID, result.TaskID, map[string]interface{}{
+		"turns":        o.turns,
+		"files":        len(result.Files),
+		"duration_ms":  result.Duration.Milliseconds(),
+	})
 
 	if o.config.Verbose {
 		fmt.Printf("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
@@ -184,12 +512,40 @@ func (o *Orchestrator) processWithPhases(taskStr, projectID string, result *Resu
 	// Reset selected template to default for new task
 	o.selectedTemplate = template.DefaultTemplate
 
-	// Execute standard phases up to Discussion
-	standardPhases := []Phase{
-		PhaseTemplateSelection,
-		PhaseResearch,
-		PhasePlanning,
-		PhaseDiscussion,
+	// ── CEO TRIAGE: Decide which phases to run ──
+	triage, err := o.executeTriage(taskStr, projectID, result)
+	if err != nil {
+		log.Printf("[TRIAGE] Failed: %v, using full pipeline", err)
+		triage = defaultTriage()
+	}
+
+	if o.config.Verbose && triage.Direction != "" {
+		fmt.Printf("\n🎯 CEO Direction: %s\n", triage.Direction)
+		fmt.Printf("   Task type: %s | Skipping: %v\n", triage.TaskType, triage.SkipPhases)
+	}
+
+	// Broadcast triage result
+	triageMsg := message.NewMessage(message.TypeSystem, "ceo", "all",
+		fmt.Sprintf("Triage: %s — %s", triage.TaskType, triage.Direction))
+	triageMsg.Metadata.ProjectID = projectID
+	triageMsg.Metadata.TaskID = result.TaskID
+	o.store.Add(triageMsg)
+	o.notify(triageMsg)
+
+	// If the CEO's direction provides context, prepend it to the task for downstream agents
+	enrichedTask := taskStr
+	if triage.Direction != "" {
+		enrichedTask = fmt.Sprintf("CEO Direction: %s\n\nOriginal Task: %s", triage.Direction, taskStr)
+	}
+
+	// Build phase list based on triage (skip what CEO says to skip)
+	standardPhases := []Phase{}
+	for _, p := range []Phase{PhaseTemplateSelection, PhaseResearch, PhasePlanning, PhaseDiscussion} {
+		if !triage.shouldSkipPhase(p) {
+			standardPhases = append(standardPhases, p)
+		} else if o.config.Verbose {
+			fmt.Printf("   ⏭  Skipping %s (CEO decision)\n", GetPhaseName(p))
+		}
 	}
 
 	for _, phase := range standardPhases {
@@ -211,10 +567,82 @@ func (o *Orchestrator) processWithPhases(taskStr, projectID string, result *Resu
 		// Reset visited roles for each phase (agents can be called again in different phases)
 		result.VisitedRoles = make(map[agent.Role]bool)
 
-		// Execute the phase
-		if err := o.executePhase(phase, taskStr, projectID, result); err != nil {
+		// Execute the phase (use enriched task with CEO direction)
+		phaseStart := time.Now()
+		log.Printf("[PHASE] Starting phase: %s (project=%s)", GetPhaseName(phase), projectID)
+
+		// Broadcast phase_started
+		o.notifyLifecycle("phase_started", projectID, result.TaskID, map[string]interface{}{
+			"phase": string(phase), "phase_name": GetPhaseName(phase),
+		})
+
+		if err := o.executePhase(phase, enrichedTask, projectID, result); err != nil {
+			log.Printf("[PHASE] Phase %s FAILED after %v: %v", GetPhaseName(phase), time.Since(phaseStart), err)
 			return fmt.Errorf("phase %s failed: %w", phase, err)
 		}
+		phaseDuration := time.Since(phaseStart)
+		log.Printf("[PHASE] Phase %s completed in %v", GetPhaseName(phase), phaseDuration)
+
+		// Broadcast phase_completed
+		o.notifyLifecycle("phase_completed", projectID, result.TaskID, map[string]interface{}{
+			"phase": string(phase), "phase_name": GetPhaseName(phase),
+			"duration_ms": phaseDuration.Milliseconds(),
+		})
+
+		// ── Post-phase checkpoints ──
+		switch phase {
+		case PhaseTemplateSelection:
+			templatePath := filepath.Join(o.config.ProjectDir, ".plans", "template.md")
+			if dec, err := o.waitForCheckpoint(
+				checkpoint.TypeTemplateApproval, 0, templatePath,
+				fmt.Sprintf("Selected template: %s", o.selectedTemplate),
+				projectID, result,
+			); err != nil {
+				return fmt.Errorf("template checkpoint failed: %w", err)
+			} else if dec != nil && dec.Action == checkpoint.DecisionRejected {
+				return fmt.Errorf("template selection rejected: %s", dec.Feedback)
+			}
+		case PhaseResearch:
+			// Optional research review checkpoint
+			if _, err := o.waitForCheckpoint(
+				checkpoint.TypeResearchReview, 0,
+				filepath.Join(o.config.ProjectDir, ".plans", "research"),
+				"Research phase complete — review before planning?",
+				projectID, result,
+			); err != nil {
+				return fmt.Errorf("research review checkpoint failed: %w", err)
+			}
+		case PhasePlanning:
+			// Optional spec review checkpoint
+			if _, err := o.waitForCheckpoint(
+				checkpoint.TypeSpecReview, 0,
+				filepath.Join(o.config.ProjectDir, ".plans", "specs"),
+				"Specifications ready for review",
+				projectID, result,
+			); err != nil {
+				return fmt.Errorf("spec review checkpoint failed: %w", err)
+			}
+		}
+	}
+
+	// ── CHECKPOINT: Plan Approval (after Discussion, before Development) ──
+	planPath := filepath.Join(o.config.ProjectDir, ".plans", "final", "approved-plan.md")
+	if dec, err := o.waitForCheckpoint(
+		checkpoint.TypePlanApproval, 0, planPath,
+		"Development plan ready for review",
+		projectID, result,
+	); err != nil {
+		return fmt.Errorf("plan approval checkpoint failed: %w", err)
+	} else if dec != nil && dec.Action == checkpoint.DecisionRejected {
+		// Re-run discussion phase with feedback
+		log.Printf("[CHECKPOINT] Plan rejected, re-running discussion with feedback: %s", dec.Feedback)
+		result.VisitedRoles = make(map[agent.Role]bool)
+		feedbackCtx := PhasePromptContext(PhaseDiscussion, taskStr) + "\n\n### Human Feedback\n" + dec.Feedback
+		if err := o.processAgentInPhase(o.phaseConfig.DiscussionLeader, feedbackCtx, projectID, result); err != nil {
+			log.Printf("[CHECKPOINT] Discussion re-run had issues: %v", err)
+		}
+	} else if dec != nil && dec.Action == checkpoint.DecisionOverridden && dec.OverrideData != "" {
+		os.WriteFile(planPath, []byte(dec.OverrideData), 0644)
 	}
 
 	// After Discussion phase, load development plan
@@ -224,8 +652,11 @@ func (o *Orchestrator) processWithPhases(taskStr, projectID string, result *Resu
 		if o.config.Verbose {
 			fmt.Printf("⚠️  No development plan found, using single development phase\n")
 		}
-		return o.executeSingleDevelopmentPhase(taskStr, projectID, result)
+		return o.executeSingleDevelopmentPhase(enrichedTask, projectID, result)
 	}
+
+	// Auto-sync kanban tasks from the development plan
+	o.syncKanbanFromPlan(plan, projectID)
 
 	// Execute each development phase with QA loop
 	for i := range plan.Phases {
@@ -277,6 +708,16 @@ func (o *Orchestrator) processWithPhases(taskStr, projectID string, result *Resu
 
 			// Check QA result
 			if devPhase.QAStatus == QAStatusApproved {
+				// ── CHECKPOINT: Phase Gate (after QA approval, before next phase) ──
+				if _, err := o.waitForCheckpoint(
+					checkpoint.TypePhaseGate, devPhase.Index,
+					filepath.Join(o.config.ProjectDir, ".plans", "development-plan.json"),
+					fmt.Sprintf("Phase %d: %s passed QA — proceed?", devPhase.Index, devPhase.Name),
+					projectID, result,
+				); err != nil {
+					return fmt.Errorf("phase gate checkpoint failed: %w", err)
+				}
+
 				// Mark phase as completed
 				if err := plan.UpdatePhaseStatus(o.config.ProjectDir, devPhase.Index, PhaseStatusCompleted); err != nil {
 					if o.config.Verbose {
@@ -313,6 +754,16 @@ func (o *Orchestrator) processWithPhases(taskStr, projectID string, result *Resu
 				fmt.Printf("\n🔄 Starting Iteration %d for Phase %d: %s\n", devPhase.Iteration, devPhase.Index, devPhase.Name)
 			}
 		}
+	}
+
+	// ── CHECKPOINT: Final Acceptance ──
+	if _, err := o.waitForCheckpoint(
+		checkpoint.TypeFinalAcceptance, 0,
+		filepath.Join(o.config.ProjectDir, ".plans", "development-plan.json"),
+		"All development phases completed — final acceptance",
+		projectID, result,
+	); err != nil {
+		return fmt.Errorf("final acceptance checkpoint failed: %w", err)
 	}
 
 	// All phases completed successfully
@@ -465,19 +916,63 @@ func (o *Orchestrator) processAgentInPhase(role agent.Role, phaseContext, projec
 		fmt.Printf("\n%s %s is working...\n", getAgentEmoji(role), a.Name)
 	}
 
-	// Process with phase context
+	// Process with phase context — use session if available, else legacy
 	var response *agent.Response
 	var fileResults []agent.FileResult
 
-	if o.config.EnableFiles {
+	log.Printf("[ORCHESTRATOR] Agent %s starting (turn %d, files=%v, session=%v)", role, o.turns, o.config.EnableFiles, a.SessionManager != nil)
+
+	if a.SessionManager != nil {
+		// Snapshot files before execution for diff
+		filesBefore := snapshotFiles(o.config.ProjectDir)
+
+		// Session-based execution — full Claude Code with tools
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		sessResp, sessErr := a.ExecuteWithSession(ctx, projectID, o.config.ProjectDir, phaseContext)
+		cancel()
+		if sessErr != nil {
+			err = sessErr
+		} else if sessResp != nil {
+			response = &agent.Response{
+				Content:    sessResp.Text,
+				DelegateTo: sessResp.Delegations,
+				ReviewTo:   sessResp.Reviews,
+				IsComplete: sessResp.IsComplete,
+				Raw:        sessResp.Text,
+			}
+
+			// Use tool events for file tracking if available
+			response.Files = append(sessResp.FilesCreated, sessResp.FilesModified...)
+			for _, f := range sessResp.FilesCreated {
+				fileResults = append(fileResults, agent.FileResult{Path: f, Success: true, Action: "create"})
+			}
+			for _, f := range sessResp.FilesModified {
+				fileResults = append(fileResults, agent.FileResult{Path: f, Success: true, Action: "modify"})
+			}
+
+			// Fallback: filesystem diff to catch files created by Claude directly
+			filesAfter := snapshotFiles(o.config.ProjectDir)
+			for path := range filesAfter {
+				if _, existed := filesBefore[path]; !existed {
+					// New file found on disk
+					if !containsPath(response.Files, path) {
+						response.Files = append(response.Files, path)
+						fileResults = append(fileResults, agent.FileResult{Path: path, Success: true, Action: "create"})
+					}
+				}
+			}
+		}
+	} else if o.config.EnableFiles {
 		response, fileResults, err = a.ProcessWithFileOps(phaseContext, o.config.ProjectDir)
 	} else {
 		response, err = a.Process(phaseContext)
 	}
 
 	if err != nil {
+		log.Printf("[ORCHESTRATOR] Agent %s FAILED at turn %d: %v", role, o.turns, err)
 		return fmt.Errorf("agent %s failed: %w", role, err)
 	}
+	log.Printf("[ORCHESTRATOR] Agent %s completed (turn %d), response: %d bytes, files: %d", role, o.turns, len(response.Content), len(fileResults))
 
 	// Record response
 	responseMsg := message.NewMessage(message.TypeResponse, string(role), "orchestrator", response.Content)
@@ -495,7 +990,8 @@ func (o *Orchestrator) processAgentInPhase(role agent.Role, phaseContext, projec
 		fmt.Printf("   └─ %s\n", content)
 	}
 
-	// Handle file operations
+	// Handle file operations (lock for parallel safety)
+	result.filesMu.Lock()
 	for _, fr := range fileResults {
 		if prevAgent, exists := result.CreatedFiles[fr.Path]; exists {
 			if o.config.Verbose {
@@ -531,6 +1027,7 @@ func (o *Orchestrator) processAgentInPhase(role agent.Role, phaseContext, projec
 			Agent:   string(role),
 		})
 	}
+	result.filesMu.Unlock()
 
 	return nil
 }
@@ -654,12 +1151,10 @@ func (o *Orchestrator) saveRunningTask(result *Result) {
 
 // saveTaskToHistory saves the completed task to history
 func (o *Orchestrator) saveTaskToHistory(result *Result) {
-	// Collect created file paths
-	filePaths := make([]string, 0, len(result.Files))
-	for _, f := range result.Files {
-		if f.Success {
-			filePaths = append(filePaths, f.Path)
-		}
+	// Collect created file paths from CreatedFiles map (tracks all successfully created files)
+	filePaths := make([]string, 0, len(result.CreatedFiles))
+	for path := range result.CreatedFiles {
+		filePaths = append(filePaths, path)
 	}
 
 	// Determine status
@@ -745,11 +1240,27 @@ func (o *Orchestrator) processAgent(role agent.Role, task, projectID string, dep
 		fmt.Printf("\n%s %s is thinking...\n", getAgentEmoji(role), a.Name)
 	}
 
-	// Process task
+	// Process task — use session if available, else legacy
 	var response *agent.Response
 	var fileResults []agent.FileResult
 
-	if o.config.EnableFiles {
+	if a.SessionManager != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		sessResp, sessErr := a.ExecuteWithSession(ctx, projectID, o.config.ProjectDir, task)
+		cancel()
+		if sessErr != nil {
+			err = sessErr
+		} else if sessResp != nil {
+			response = &agent.Response{
+				Content:    sessResp.Text,
+				DelegateTo: sessResp.Delegations,
+				ReviewTo:   sessResp.Reviews,
+				IsComplete: sessResp.IsComplete,
+				Raw:        sessResp.Text,
+			}
+			response.Files = append(sessResp.FilesCreated, sessResp.FilesModified...)
+		}
+	} else if o.config.EnableFiles {
 		response, fileResults, err = a.ProcessWithFileOps(task, o.config.ProjectDir)
 	} else {
 		response, err = a.Process(task)
@@ -957,6 +1468,36 @@ If you create files, use the appropriate file creation format.`,
 }
 
 // getAgentEmoji returns an emoji for the agent role
+// snapshotFiles returns a set of file paths under dir (excluding hidden dirs like .git, .plans, .tasks).
+func snapshotFiles(dir string) map[string]bool {
+	files := make(map[string]bool)
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			base := filepath.Base(path)
+			if strings.HasPrefix(base, ".") && path != dir {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		files[path] = true
+		return nil
+	})
+	return files
+}
+
+// containsPath checks if a path is in a slice.
+func containsPath(paths []string, path string) bool {
+	for _, p := range paths {
+		if p == path {
+			return true
+		}
+	}
+	return false
+}
+
 func getAgentEmoji(role agent.Role) string {
 	emojis := map[agent.Role]string{
 		agent.RoleCEO:       "👔",
@@ -989,6 +1530,7 @@ type Result struct {
 	Error        error
 	VisitedRoles map[agent.Role]bool // Track visited agents to prevent circular delegation
 	CreatedFiles map[string]string   // Track created files (path -> agent) to prevent duplicates
+	filesMu      sync.Mutex          // Protects CreatedFiles and Files during parallel execution
 }
 
 // FileResult tracks a file operation result

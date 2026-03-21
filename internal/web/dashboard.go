@@ -1885,6 +1885,8 @@ var dashboardHTML = `<!DOCTYPE html>
                     <div class="status-item" aria-label="Message count">
                         <span id="messageCount">0 messages</span>
                     </div>
+                    <a href="/live" style="padding:4px 12px;border:1px solid var(--color-border);color:var(--color-text-secondary);text-decoration:none;font-size:0.75rem;letter-spacing:1px;text-transform:uppercase;border-radius:4px;transition:all 0.15s" onmouseover="this.style.borderColor='#3B82F6';this.style.color='#3B82F6'" onmouseout="this.style.borderColor='var(--color-border)';this.style.color='var(--color-text-secondary)'">&lt;Live Activity&gt;</a>
+                    <a href="/office" style="padding:4px 12px;border:1px solid var(--color-border);color:var(--color-text-secondary);text-decoration:none;font-size:0.75rem;letter-spacing:1px;text-transform:uppercase;border-radius:4px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--color-accent)';this.style.color='var(--color-accent)'" onmouseout="this.style.borderColor='var(--color-border)';this.style.color='var(--color-text-secondary)'">&lt;8-Bit Office&gt;</a>
                 </div>
             </div>
 

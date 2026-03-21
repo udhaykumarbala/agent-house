@@ -5,10 +5,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"pty-claude-test/internal/agent"
 )
+
+// devPlanMu serializes all load-modify-save operations on development plans
+// to prevent concurrent tasks from overwriting each other's changes.
+var devPlanMu sync.Mutex
 
 // PhaseStatus represents the status of a development phase
 type PhaseStatus string
@@ -117,6 +122,9 @@ func (p *DevelopmentPlan) GetPhase(index int) *DevelopmentPhase {
 
 // UpdatePhaseStatus updates the status of a phase and saves the plan
 func (p *DevelopmentPlan) UpdatePhaseStatus(projectDir string, phaseIndex int, status PhaseStatus) error {
+	devPlanMu.Lock()
+	defer devPlanMu.Unlock()
+
 	phase := p.GetPhase(phaseIndex)
 	if phase == nil {
 		return fmt.Errorf("invalid phase index: %d", phaseIndex)
@@ -137,6 +145,9 @@ func (p *DevelopmentPlan) UpdatePhaseStatus(projectDir string, phaseIndex int, s
 
 // UpdatePhaseQAStatus updates the QA status of a phase and saves the plan
 func (p *DevelopmentPlan) UpdatePhaseQAStatus(projectDir string, phaseIndex int, qaStatus QAStatus, feedback string) error {
+	devPlanMu.Lock()
+	defer devPlanMu.Unlock()
+
 	phase := p.GetPhase(phaseIndex)
 	if phase == nil {
 		return fmt.Errorf("invalid phase index: %d", phaseIndex)
@@ -154,6 +165,9 @@ func (p *DevelopmentPlan) UpdatePhaseQAStatus(projectDir string, phaseIndex int,
 
 // IncrementIteration increments the iteration counter for a phase
 func (p *DevelopmentPlan) IncrementIteration(projectDir string, phaseIndex int) error {
+	devPlanMu.Lock()
+	defer devPlanMu.Unlock()
+
 	phase := p.GetPhase(phaseIndex)
 	if phase == nil {
 		return fmt.Errorf("invalid phase index: %d", phaseIndex)

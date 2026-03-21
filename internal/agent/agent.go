@@ -32,15 +32,18 @@ const (
 )
 
 // PermissionModes maps agent roles to their Claude Code permission mode.
+// PermissionModes maps agent roles to their Claude Code permission mode.
+// acceptEdits: can read/write files freely, bash needs approval
+// bypassPermissions: can do everything without approval
 var PermissionModes = map[Role]string{
-	RoleCEO:       "plan",
-	RolePM:        "plan",
-	RoleUX:        "plan",
-	RoleUI:        "plan",
-	RoleSecurity:  "plan",
-	RoleArchitect: "plan",
-	RoleSeniorDev: "acceptEdits",
-	RoleJuniorDev: "acceptEdits",
+	RoleCEO:       "acceptEdits",       // Needs to write plans, reviews
+	RolePM:        "acceptEdits",       // Needs to write research docs, specs
+	RoleUX:        "acceptEdits",       // Needs to write UX specs
+	RoleUI:        "acceptEdits",       // Needs to write UI specs
+	RoleSecurity:  "acceptEdits",       // Needs to write security audits
+	RoleArchitect: "acceptEdits",       // Needs to write template/architecture docs
+	RoleSeniorDev: "bypassPermissions", // Full access for coding + testing
+	RoleJuniorDev: "bypassPermissions", // Full access for coding
 }
 
 // Agent represents a specialized AI agent

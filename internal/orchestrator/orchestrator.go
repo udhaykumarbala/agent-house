@@ -480,10 +480,15 @@ func (o *Orchestrator) ProcessTaskWithID(projectID, taskStr, parentTaskID, taskI
 	result.Duration = result.EndTime.Sub(result.StartTime)
 	result.TotalTurns = o.turns
 
-	// Broadcast task_completed
+	// Broadcast task_completed with file list
+	fileNames := make([]string, 0, len(result.Files))
+	for _, f := range result.Files {
+		fileNames = append(fileNames, f.Path)
+	}
 	o.notifyLifecycle("task_completed", projectID, result.TaskID, map[string]interface{}{
 		"turns":        o.turns,
-		"files":        len(result.Files),
+		"files_count":  len(result.Files),
+		"files":        fileNames,
 		"duration_ms":  result.Duration.Milliseconds(),
 	})
 
@@ -1059,8 +1064,8 @@ func (o *Orchestrator) executeAgentsParallel(roles []agent.Role, phaseContext, p
 	executorConfig := ExecutorConfig{
 		EnableParallel: true,
 		MaxWorkers:     0, // Unlimited
-		AgentTimeout:   5 * time.Minute,
-		PhaseTimeout:   15 * time.Minute,
+		AgentTimeout:   10 * time.Minute,
+		PhaseTimeout:   25 * time.Minute,
 		WorkDir:        o.config.ProjectDir,
 		ProjectID:      projectID,
 		TaskID:         result.TaskID,
@@ -1074,6 +1079,9 @@ func (o *Orchestrator) executeAgentsParallel(roles []agent.Role, phaseContext, p
 		fmt.Printf("\n   🚀 Executing %d agents in parallel...\n", len(rolesToExecute))
 	}
 
+	// Snapshot files before parallel execution for diff
+	filesBefore := snapshotFiles(o.config.ProjectDir)
+
 	phaseResult, err := executor.ExecuteAgentsParallel(rolesToExecute, phaseContext)
 	if err != nil {
 		return fmt.Errorf("parallel execution failed: %w", err)
@@ -1082,6 +1090,30 @@ func (o *Orchestrator) executeAgentsParallel(roles []agent.Role, phaseContext, p
 	// Aggregate results
 	o.resultMu.Lock()
 	result.Messages = append(result.Messages, phaseResult.Messages...)
+	// Transfer files from parallel execution to result
+	for _, f := range phaseResult.Files {
+		result.Files = append(result.Files, FileResult{
+			Path:    f,
+			Agent:   "parallel",
+			Success: true,
+		})
+	}
+	// Filesystem diff fallback — catch files created by Claude directly
+	filesAfter := snapshotFiles(o.config.ProjectDir)
+	for path := range filesAfter {
+		if _, existed := filesBefore[path]; !existed {
+			alreadyTracked := false
+			for _, f := range result.Files {
+				if f.Path == path {
+					alreadyTracked = true
+					break
+				}
+			}
+			if !alreadyTracked {
+				result.Files = append(result.Files, FileResult{Path: path, Agent: "detected", Success: true})
+			}
+		}
+	}
 	o.resultMu.Unlock()
 
 	// Handle file operations from all agents

@@ -1171,21 +1171,46 @@ function renderPanelTab(tab) {
   const ag = AGENTS[key]; const as = S.agents[key] || {};
 
   if(tab==='activity') {
-    const msgs = S.messages.filter(m => normRole(m.from)===key || normRole(m.to)===key).slice(-20);
-    body.innerHTML = '<div class="dp-section"><div class="dp-section-title">Status</div>'+
-      '<div class="dp-status-row"><div class="dp-status-dot" style="background:'+(as.state==='working'?'var(--st-working)':as.state==='completed'?'var(--st-complete)':as.state==='error'?'var(--st-error)':'var(--st-idle)')+'"></div>'+
-      '<span style="text-transform:uppercase;letter-spacing:0.06em;font-size:12px">'+(as.state||'idle')+'</span></div></div>'+
-      '<div class="dp-section"><div class="dp-section-title">Recent Activity</div>'+
-      (msgs.length ? msgs.map((m,idx) => {
-        const content = m.content||'';
-        const truncated = content.length > 200;
-        return '<div class="dp-msg"><div class="dp-msg-header"><span class="dp-msg-from" style="color:'+(AGENTS[normRole(m.from)]?.color||'#888')+'">'+(m.from||'sys')+'</span>'+
-        '<span class="dp-msg-time">'+fmtTime(m.timestamp)+'</span></div>'+
-        '<div class="dp-msg-text">'+renderMd(content.substring(0,200))+(truncated?'...':'')+'</div>'+
-        (truncated?'<button class="dp-msg-more" data-msgidx="'+idx+'" onclick="openViewer(\''+(m.from||'Message')+'\',this.dataset.msgidx,\''+key+'\')">View More</button>':'')+
-        '</div>';
-      }).join('') : '<div style="font-size:12px;color:var(--text-muted)">No activity yet</div>')+
-      '</div>';
+    // Show live session activity (tool calls, thinking, etc.)
+    const activity = (as.activity || []).slice(-50);
+    const toolCount = as.toolCount || 0;
+    const stDot = as.state==='working'?'var(--st-working)':as.state==='completed'?'var(--st-complete)':as.state==='error'?'var(--st-error)':'var(--st-idle)';
+
+    let html = '<div class="dp-section"><div class="dp-section-title">Status</div>'+
+      '<div class="dp-status-row"><div class="dp-status-dot" style="background:'+stDot+'"></div>'+
+      '<span style="text-transform:uppercase;letter-spacing:0.06em;font-size:12px">'+(as.state||'idle')+'</span>'+
+      (toolCount ? '<span style="margin-left:12px;font-size:11px;color:var(--text-muted)">'+toolCount+' tool calls</span>':'')+
+      '</div></div>';
+
+    if(activity.length) {
+      html += '<div class="dp-section"><div class="dp-section-title">Live Activity</div>';
+      html += activity.map(a => {
+        const time = new Date(a.t).toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        return '<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--border-subtle);font-size:11px;font-family:var(--font-mono)">'+
+          '<span style="flex-shrink:0">'+a.icon+'</span>'+
+          '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary)">'+esc(a.text)+'</span>'+
+          '<span style="flex-shrink:0;color:var(--text-muted);font-size:10px">'+time+'</span></div>';
+      }).join('');
+      html += '</div>';
+    }
+
+    // Also show message-based activity
+    const msgs = S.messages.filter(m => normRole(m.from)===key || normRole(m.to)===key).slice(-10);
+    if(msgs.length) {
+      html += '<div class="dp-section"><div class="dp-section-title">Messages</div>'+
+        msgs.map((m,idx) => {
+          const content = m.content||'';
+          const truncated = content.length > 200;
+          return '<div class="dp-msg"><div class="dp-msg-header"><span class="dp-msg-from" style="color:'+(AGENTS[normRole(m.from)]?.color||'#888')+'">'+(m.from||'sys')+'</span>'+
+          '<span class="dp-msg-time">'+fmtTime(m.timestamp)+'</span></div>'+
+          '<div class="dp-msg-text">'+renderMd(content.substring(0,200))+(truncated?'...':'')+'</div></div>';
+        }).join('')+'</div>';
+    }
+
+    if(!activity.length && !msgs.length) {
+      html += '<div style="font-size:12px;color:var(--text-muted);padding:20px;text-align:center">No activity yet</div>';
+    }
+    body.innerHTML = html;
   } else if(tab==='tasks') {
     const tasks = as.tasks || [];
     body.innerHTML = '<div class="dp-section"><div class="dp-section-title">Assigned Tasks</div>'+
@@ -1209,13 +1234,17 @@ function renderPanelTab(tab) {
       if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendChat(key); }
     });
   } else if(tab==='metrics') {
-    body.innerHTML = '<div class="dp-section"><div class="dp-section-title">Metrics</div>'+
-      '<div style="font-size:12px;color:var(--text-secondary);line-height:2">'+
+    const tc = as.toolCount||0;
+    body.innerHTML = '<div class="dp-section"><div class="dp-section-title">Session Metrics</div>'+
+      '<div style="font-size:12px;color:var(--text-secondary);line-height:2.2">'+
+      'State: <strong style="color:'+ag.color+'">'+(as.state||'idle')+'</strong><br>'+
+      'Tool calls: <strong>'+tc+'</strong><br>'+
       'Messages sent: <strong>'+(S.messages.filter(m=>normRole(m.from)===key).length)+'</strong><br>'+
       'Messages received: <strong>'+(S.messages.filter(m=>normRole(m.to)===key).length)+'</strong><br>'+
-      'Tasks completed: <strong>'+(as.tasks?as.tasks.filter(t=>t.status==='completed').length:0)+'</strong><br>'+
-      'Current state: <strong style="color:'+ag.color+'">'+(as.state||'idle')+'</strong>'+
-      '</div></div>';
+      'Tasks completed: <strong>'+(as.tasks?as.tasks.filter(t=>t.status==='completed').length:0)+'</strong>'+
+      '</div></div>'+
+      '<div class="dp-section"><div class="dp-section-title">Activity Summary</div>'+
+      '<div style="font-size:11px;color:var(--text-muted)">'+(as.activity||[]).length+' events recorded</div></div>';
   }
 }
 
@@ -1751,6 +1780,7 @@ function handleWS(data) {
   }
   if(data.type==='agent_task_event' && data.event) handleTaskEvt(data.event);
   if(data.type==='agent_event' && data.event) handleAgentSessionEvt(data.event);
+  if(data.type==='message' && data.message && data.message.type==='lifecycle') handleLifecycleEvt(data.message);
   if(data.type==='checkpoint' && data.event) {
     if(data.event.event_type==='chat_message' || data.event.event_type==='chat_response') handleChatWS(data.event);
     else handleCheckpointEvt(data.event);
@@ -1806,24 +1836,93 @@ function handleTaskEvt(evt) {
 // ═══════════════════════════════════════════
 // AGENT SESSION EVENTS (Claude Code live activity)
 // ═══════════════════════════════════════════
+const TOOL_ICONS = {Read:'📖',Write:'📝',Edit:'✏️',Bash:'💻',Grep:'🔍',Glob:'📂',Agent:'🤖',WebSearch:'🌐',WebFetch:'🌐',default:'🔧'};
+function fmtToolInput(name, inputStr) {
+  try {
+    const inp = JSON.parse(inputStr);
+    switch(name) {
+      case 'Read': return inp.file_path||'?';
+      case 'Write': return (inp.file_path||'?')+' ('+((inp.content||'').length)+' chars)';
+      case 'Edit': return (inp.file_path||'?')+' (edit)';
+      case 'Bash': return '$ '+(inp.command||'?');
+      case 'Grep': return 'grep "'+((inp.pattern||''))+'" '+(inp.path||'.');
+      case 'Glob': return 'glob "'+(inp.pattern||'')+'"';
+      default: return inputStr.substring(0,80);
+    }
+  } catch(e) { return (inputStr||'').substring(0,80); }
+}
+
 function handleAgentSessionEvt(ev) {
   const k = normRole(ev.agent_role); if(!k) return;
-  if(!S.agents[k]) S.agents[k] = {state:'idle',tasks:[],taskTitle:''};
+  if(!S.agents[k]) S.agents[k] = {state:'idle',tasks:[],taskTitle:'',activity:[]};
   const a = S.agents[k];
+  if(!a.activity) a.activity=[];
+
   switch(ev.type) {
-    case 'text_delta': a.state='working'; a.taskTitle=ev.content?(ev.content.substring(0,60)):'Working...'; break;
-    case 'thinking_delta': a.state='working'; a.taskTitle='Thinking...'; break;
-    case 'tool_use': a.state='working'; a.taskTitle=(ev.tool_name||'Tool')+': '+(ev.input||'').substring(0,40); break;
+    case 'text_delta':
+      a.state='working';
+      a.taskTitle=ev.content?(ev.content.substring(0,60)):'Working...';
+      break;
+    case 'thinking_delta':
+      a.state='working';
+      a.taskTitle='💭 Thinking...';
+      a.activity.push({t:Date.now(),icon:'💭',text:'Thinking...'});
+      break;
+    case 'tool_use':
+      a.state='working';
+      const icon = TOOL_ICONS[ev.tool_name]||TOOL_ICONS.default;
+      const desc = fmtToolInput(ev.tool_name, ev.input||'');
+      a.taskTitle=icon+' '+ev.tool_name+': '+desc.substring(0,50);
+      a.activity.push({t:Date.now(),icon:icon,text:ev.tool_name+': '+desc});
+      if(!a.toolCount) a.toolCount=0;
+      a.toolCount++;
+      break;
+    case 'tool_result':
+      if(ev.is_error) a.activity.push({t:Date.now(),icon:'❌',text:'Error: '+(ev.output||'').substring(0,100)});
+      break;
     case 'turn_complete':
       a.state='completed';
-      a.taskTitle='Turn complete';
+      a.taskTitle='✅ Turn complete';
+      a.activity.push({t:Date.now(),icon:'✅',text:'Turn complete — tokens: '+(ev.input_tokens||0)+' in / '+(ev.output_tokens||0)+' out, $'+(ev.cost_usd||0).toFixed(4)});
       setTimeout(()=>{ if(S.agents[k]?.state==='completed'){S.agents[k].state='idle';S.agents[k].taskTitle='';renderNodes();renderRoster();} },5000);
       break;
-    case 'session_meta': a.state='working'; a.taskTitle='Session started ('+ev.model+')'; break;
-    case 'error': a.state='error'; a.taskTitle='Error'; break;
+    case 'session_meta':
+      a.state='working';
+      a.taskTitle='Session started ('+(ev.model||'unknown')+')';
+      a.activity.push({t:Date.now(),icon:'⚡',text:'Session started: '+(ev.model||'unknown')});
+      break;
+    case 'error':
+      a.state='error';
+      a.taskTitle='Error';
+      a.activity.push({t:Date.now(),icon:'⚠️',text:'Error: '+(ev.content||'unknown')});
+      break;
   }
+  // Keep activity log bounded
+  if(a.activity.length>200) a.activity=a.activity.slice(-100);
+
   renderNodes(); renderRoster(); updateKPIs();
   if(S.selected===k) renderPanelTab(S.activeTab);
+}
+
+// Handle lifecycle events (phase/task completion)
+function handleLifecycleEvt(msg) {
+  const extra = msg.metadata?.extra || {};
+  const evt = extra.event_type;
+  if(evt==='task_completed') {
+    S.running=false;
+    document.getElementById('taskSubmit').disabled=false;
+    const fc = extra.files_count||0;
+    const turns = extra.turns||0;
+    addLog({from:'system',content:'Task completed: '+turns+' turns, '+fc+' files created',timestamp:new Date().toISOString()});
+    // Reset all agents
+    Object.keys(S.agents).forEach(k => {
+      S.agents[k].state='idle'; S.agents[k].taskTitle='';
+    });
+    renderNodes(); renderRoster(); updateKPIs();
+  }
+  if(evt==='phase_started') {
+    addLog({from:'system',content:'Phase: '+extra.phase_name,timestamp:new Date().toISOString()});
+  }
 }
 
 // ═══════════════════════════════════════════

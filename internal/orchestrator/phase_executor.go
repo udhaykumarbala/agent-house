@@ -26,8 +26,8 @@ func DefaultExecutorConfig() ExecutorConfig {
 	return ExecutorConfig{
 		EnableParallel: true,
 		MaxWorkers:     0, // Unlimited
-		AgentTimeout:   5 * time.Minute,
-		PhaseTimeout:   15 * time.Minute,
+		AgentTimeout:   10 * time.Minute,
+		PhaseTimeout:   25 * time.Minute,
 	}
 }
 

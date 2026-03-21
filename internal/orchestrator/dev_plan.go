@@ -69,7 +69,7 @@ func autoGeneratePlan(taskDescription, projectID string, devAgents []agent.Role)
 		{
 			ID:             fmt.Sprintf("st_%d_1", now.UnixMilli()),
 			TaskID:         projectID,
-			PhaseIndex:     0,
+			PhaseIndex:     1,
 			Title:          "Project Setup & Structure",
 			Description:    "Set up project structure, dependencies, and configuration files",
 			AssignedAgents: devAgents,
@@ -82,7 +82,7 @@ func autoGeneratePlan(taskDescription, projectID string, devAgents []agent.Role)
 		{
 			ID:             fmt.Sprintf("st_%d_2", now.UnixMilli()),
 			TaskID:         projectID,
-			PhaseIndex:     0,
+			PhaseIndex:     1,
 			Title:          "Core Implementation",
 			Description:    taskDescription,
 			AssignedAgents: devAgents,
@@ -98,7 +98,7 @@ func autoGeneratePlan(taskDescription, projectID string, devAgents []agent.Role)
 		TaskID: projectID,
 		Phases: []DevelopmentPhase{
 			{
-				Index:       0,
+				Index:       1,
 				Name:        "Implementation",
 				Description: taskDescription,
 				SubTasks:    subtasks,

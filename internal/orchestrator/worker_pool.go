@@ -124,7 +124,7 @@ func (p *AgentWorkerPool) executeJob(job AgentJob) AgentResult {
 	}
 
 	// Create context with timeout
-	jobCtx, cancel := context.WithTimeout(p.ctx, 5*time.Minute)
+	jobCtx, cancel := context.WithTimeout(p.ctx, 10*time.Minute)
 	defer cancel()
 
 	// Execute agent with context

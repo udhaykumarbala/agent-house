@@ -348,6 +348,7 @@ func (s *AgentSession) SendTask(ctx context.Context, prompt string) (string, []A
 	// Collect events until turn_complete or context cancellation
 	var events []AgentEvent
 	var response strings.Builder
+	var lastToolOutput strings.Builder // fallback if text_delta is empty
 
 	for {
 		select {
@@ -357,13 +358,27 @@ func (s *AgentSession) SendTask(ctx context.Context, prompt string) (string, []A
 			switch ev.Type {
 			case "text_delta":
 				response.WriteString(ev.Content)
+			case "tool_result":
+				// Capture tool output as fallback content
+				if ev.Output != "" && !ev.IsError {
+					lastToolOutput.WriteString(ev.Output)
+					lastToolOutput.WriteString("\n")
+				}
 			case "turn_complete":
-				return response.String(), events, nil
+				result := response.String()
+				// If text response is empty, use turn_complete content (Claude's final summary)
+				if result == "" && ev.Content != "" {
+					result = ev.Content
+				}
+				// If still empty, use tool outputs as fallback
+				if result == "" && lastToolOutput.Len() > 0 {
+					result = lastToolOutput.String()
+				}
+				return result, events, nil
 			case "error":
 				if ev.Content != "" {
 					return response.String(), events, fmt.Errorf("agent error: %s", ev.Content)
 				}
-				// Some errors are non-fatal (like process exit after turn_complete)
 				return response.String(), events, nil
 			}
 

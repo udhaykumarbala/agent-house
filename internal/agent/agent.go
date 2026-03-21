@@ -167,6 +167,22 @@ func (a *Agent) ExecuteWithSession(ctx context.Context, projectID, workDir, task
 	resp.Reviews = parseReviews(text)
 	resp.IsComplete = parseCompletionSignal(text)
 
+	// If text parsing didn't find completion, infer from events:
+	// - If the agent wrote files or ran commands, it completed its work
+	// - If turn_complete arrived, the agent finished successfully
+	if !resp.IsComplete {
+		hasTurnComplete := false
+		for _, ev := range events {
+			if ev.Type == "turn_complete" {
+				hasTurnComplete = true
+				break
+			}
+		}
+		if hasTurnComplete && (len(resp.FilesCreated) > 0 || len(resp.FilesModified) > 0 || resp.ToolCalls > 0) {
+			resp.IsComplete = true
+		}
+	}
+
 	return resp, nil
 }
 

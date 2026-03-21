@@ -51,21 +51,21 @@
 ## P2 — Medium
 
 ### BUG-06: No subtasks created or assigned
-- **Status:** OPEN
+- **Status:** FIXED
 - **Symptom:** Kanban board empty, log shows "No development plan found"
 - **Root cause:** CEO discussion phase doesn't create structured `.plans/final/approved-plan.md` in session mode
 - **Fix:** Update CEO system prompt for discussion phase OR parse output into plan programmatically
 - **Test:** After discussion, development plan exists with subtasks
 
 ### BUG-07: Response text often empty ("0 bytes")
-- **Status:** OPEN
+- **Status:** FIXED
 - **Symptom:** Agent responses show 0 bytes content in messages
 - **Root cause:** Agents write to files instead of outputting text. `SendTask` only captures `text_delta` events.
 - **Fix:** Also capture content from files written during turn, or read final text from tool outputs
 - **Test:** Agent produces research doc → message content is non-empty
 
 ### BUG-08: No structured output format for delegation/review signals
-- **Status:** OPEN
+- **Status:** FIXED
 - **Symptom:** DELEGATE:/REVIEW:/COMPLETE: signals not parsed in session mode
 - **Root cause:** Session agents don't output these text markers. Text parsing was regex-based on legacy response.
 - **Fix:** Either update system prompts to include signals, or infer from events/files
@@ -92,3 +92,6 @@ For fast testing, skip the full 5-phase pipeline:
 | 2026-03-21 | BUG-03 | Added filesystem diff (snapshotFiles before/after) as fallback file tracking | Build OK |
 | 2026-03-21 | BUG-04 | Added handleLifecycleEvent in /live dashboard JS — resets all agents on task_completed | Build OK |
 | 2026-03-21 | BUG-05 | Updated triage.go to use ExecuteWithSession when SessionManager available | Build OK |
+| 2026-03-21 | BUG-06 | Auto-generate development plan when CEO doesn't create JSON; syncs to kanban | Build OK |
+| 2026-03-21 | BUG-07 | SendTask now captures turn_complete content and tool outputs as fallback | Integration test PASS |
+| 2026-03-21 | BUG-08 | Infer completion from events (turn_complete + tool activity) when text signals absent | Build OK |

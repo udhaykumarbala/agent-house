@@ -648,11 +648,12 @@ func (o *Orchestrator) processWithPhases(taskStr, projectID string, result *Resu
 	// After Discussion phase, load development plan
 	plan, err := LoadDevelopmentPlan(o.config.ProjectDir)
 	if err != nil {
-		// If no development plan exists, fall back to single development phase
-		if o.config.Verbose {
-			fmt.Printf("⚠️  No development plan found, using single development phase\n")
+		// No JSON plan found — auto-generate a simple one from the task
+		log.Printf("[DEV-PLAN] No development-plan.json found, auto-generating from task")
+		plan = autoGeneratePlan(enrichedTask, projectID, o.phaseConfig.DevelopmentAgents)
+		if saveErr := SaveDevelopmentPlan(o.config.ProjectDir, plan); saveErr != nil {
+			log.Printf("[DEV-PLAN] Failed to save auto-generated plan: %v", saveErr)
 		}
-		return o.executeSingleDevelopmentPhase(enrichedTask, projectID, result)
 	}
 
 	// Auto-sync kanban tasks from the development plan

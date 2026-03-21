@@ -58,6 +58,64 @@ type DevelopmentPhase struct {
 	CompletedAt *time.Time  `json:"completed_at,omitempty"`
 }
 
+// autoGeneratePlan creates a simple single-phase development plan when the CEO
+// doesn't explicitly create development-plan.json. This ensures the subtask/kanban
+// system always has something to work with.
+func autoGeneratePlan(taskDescription, projectID string, devAgents []agent.Role) *DevelopmentPlan {
+	now := time.Now()
+
+	// Create subtasks — one for setup/structure, one for main implementation
+	subtasks := []SubTask{
+		{
+			ID:             fmt.Sprintf("st_%d_1", now.UnixMilli()),
+			TaskID:         projectID,
+			PhaseIndex:     0,
+			Title:          "Project Setup & Structure",
+			Description:    "Set up project structure, dependencies, and configuration files",
+			AssignedAgents: devAgents,
+			CompletionCriteria: []string{
+				"Project directory structure created",
+				"Configuration files in place",
+			},
+			Status: SubTaskStatusPending,
+		},
+		{
+			ID:             fmt.Sprintf("st_%d_2", now.UnixMilli()),
+			TaskID:         projectID,
+			PhaseIndex:     0,
+			Title:          "Core Implementation",
+			Description:    taskDescription,
+			AssignedAgents: devAgents,
+			CompletionCriteria: []string{
+				"All features implemented per spec",
+				"Code compiles and runs without errors",
+			},
+			Status: SubTaskStatusPending,
+		},
+	}
+
+	plan := &DevelopmentPlan{
+		TaskID: projectID,
+		Phases: []DevelopmentPhase{
+			{
+				Index:       0,
+				Name:        "Implementation",
+				Description: taskDescription,
+				SubTasks:    subtasks,
+				Status:      PhaseStatusPending,
+				QAStatus:    QAStatusPending,
+				Iteration:   1,
+			},
+		},
+		CreatedBy:  agent.RoleCEO,
+		ApprovedBy: agent.RoleCEO,
+		CreatedAt:  now,
+		ApprovedAt: &now,
+	}
+
+	return plan
+}
+
 // LoadDevelopmentPlan loads the development plan from .plans/development-plan.json
 func LoadDevelopmentPlan(projectDir string) (*DevelopmentPlan, error) {
 	planPath := filepath.Join(projectDir, ".plans", "development-plan.json")

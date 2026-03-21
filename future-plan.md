@@ -315,8 +315,8 @@ What exists today:
 ### Phase 2: Agent Platform (Q3 2026)
 **Goal: Any agent, any workflow — no Go code changes**
 
-- [ ] File-based agent definitions (agent.md + settings.json)
-- [ ] Agent registry — auto-discovers from /agents/ directory
+- [x] File-based agent definitions (agent.md + settings.json) ✅ Done
+- [x] Agent registry — auto-discovers from /agents/ directory ✅ Done
 - [ ] Custom pipeline definitions (team.json per project)
 - [ ] Phase-specific mode switching declared in settings.json
 - [ ] Per-project agent overrides (.agent-house/agents/)

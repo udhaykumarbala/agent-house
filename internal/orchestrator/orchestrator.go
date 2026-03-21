@@ -733,8 +733,12 @@ func (o *Orchestrator) processWithPhases(taskStr, projectID string, result *Resu
 	}
 
 	// ── CHECKPOINT: Plan Approval (after Discussion, before Development) ──
+	// Skip if discussion phase was skipped (no plan to review)
+	discussionRan := !triage.shouldSkipPhase(PhaseDiscussion)
 	planPath := filepath.Join(o.config.ProjectDir, ".plans", "final", "approved-plan.md")
-	if dec, err := o.waitForCheckpoint(
+	if !discussionRan {
+		log.Printf("[CHECKPOINT] Skipping plan_approval — discussion phase was skipped")
+	} else if dec, err := o.waitForCheckpoint(
 		checkpoint.TypePlanApproval, 0, planPath,
 		"Development plan ready for review",
 		projectID, result,

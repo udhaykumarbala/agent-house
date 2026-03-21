@@ -84,6 +84,10 @@ func NewServer(config Config) *Server {
 		}
 	}()
 
+	// Load file-based agent registry
+	agentRegistry := agent.NewRegistry("agents")
+	server.orchestrator.SetAgentRegistry(agentRegistry)
+
 	// Start cron scheduler
 	server.cronScheduler = NewCronScheduler(server.orchestrator)
 

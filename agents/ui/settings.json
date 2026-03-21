@@ -1,0 +1,19 @@
+{
+  "id": "ui",
+  "name": "UI Designer",
+  "color": "#4FD1C5",
+  "icon": "🖌️",
+  "execution": {
+    "default_mode": "session",
+    "phase_modes": {},
+    "model": "",
+    "max_turns": 50,
+    "timeout": "10m",
+    "claude_permission": "bypassPermissions"
+  },
+  "phases": ["research", "planning"],
+  "tools": {
+    "builtin": ["Read", "Write", "Glob", "Grep", "WebSearch", "WebFetch"],
+    "mcp_servers": []
+  }
+}

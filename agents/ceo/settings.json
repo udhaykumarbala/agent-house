@@ -1,0 +1,24 @@
+{
+  "id": "ceo",
+  "name": "CEO",
+  "color": "#60B4D4",
+  "icon": "👔",
+  "execution": {
+    "default_mode": "oneshot",
+    "phase_modes": {
+      "triage": "oneshot",
+      "template_selection": "oneshot",
+      "discussion": "oneshot",
+      "qa_review": "session"
+    },
+    "model": "",
+    "max_turns": 50,
+    "timeout": "10m",
+    "claude_permission": "bypassPermissions"
+  },
+  "phases": ["triage", "template_selection", "discussion", "qa_review"],
+  "tools": {
+    "builtin": ["Read", "Write", "Glob", "Grep"],
+    "mcp_servers": []
+  }
+}

@@ -62,6 +62,7 @@ type Orchestrator struct {
 
 	// Session management for Claude Code sessions per agent
 	sessionManager   *session.SessionManager
+	agentRegistry    *agent.Registry
 
 	// Checkpoint system
 	checkpointCh     chan *checkpoint.Decision // Receives human/CEO decisions
@@ -188,6 +189,11 @@ func NewWithSessions(config Config, store *message.Store, sm *session.SessionMan
 	o := New(config, store)
 	o.sessionManager = sm
 	return o
+}
+
+// SetAgentRegistry sets the agent registry for file-based agent loading.
+func (o *Orchestrator) SetAgentRegistry(registry *agent.Registry) {
+	o.agentRegistry = registry
 }
 
 // GetSessionManager returns the session manager (may be nil in legacy mode).
@@ -490,7 +496,7 @@ func (o *Orchestrator) notifyLifecycle(eventType, projectID, taskID string, data
 }
 
 // getAgent returns or creates an agent for the given role.
-// If a SessionManager is configured, agents will use session-based execution.
+// Tries the file-based registry first, falls back to hardcoded NewAgent.
 func (o *Orchestrator) getAgent(role agent.Role) (*agent.Agent, error) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -499,9 +505,23 @@ func (o *Orchestrator) getAgent(role agent.Role) (*agent.Agent, error) {
 		return a, nil
 	}
 
-	a, err := agent.NewAgent(role)
-	if err != nil {
-		return nil, err
+	var a *agent.Agent
+	var err error
+
+	// Try file-based registry first
+	if o.agentRegistry != nil {
+		a, err = o.agentRegistry.CreateAgent(role)
+		if err != nil {
+			log.Printf("[ORCHESTRATOR] Registry lookup for %s failed, falling back to hardcoded: %v", role, err)
+		}
+	}
+
+	// Fallback to hardcoded agent definitions
+	if a == nil {
+		a, err = agent.NewAgent(role)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Inject session manager if available

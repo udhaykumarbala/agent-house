@@ -1,0 +1,19 @@
+{
+  "id": "architect",
+  "name": "Architect",
+  "color": "#A87CF5",
+  "icon": "🏗️",
+  "execution": {
+    "default_mode": "session",
+    "phase_modes": {},
+    "model": "",
+    "max_turns": 50,
+    "timeout": "10m",
+    "claude_permission": "bypassPermissions"
+  },
+  "phases": ["template_selection", "research", "planning"],
+  "tools": {
+    "builtin": ["Read", "Write", "Edit", "Glob", "Grep", "Bash"],
+    "mcp_servers": []
+  }
+}

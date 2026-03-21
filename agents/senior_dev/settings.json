@@ -1,0 +1,19 @@
+{
+  "id": "senior_dev",
+  "name": "Senior Developer",
+  "color": "#34D478",
+  "icon": "💻",
+  "execution": {
+    "default_mode": "session",
+    "phase_modes": {},
+    "model": "",
+    "max_turns": 50,
+    "timeout": "10m",
+    "claude_permission": "bypassPermissions"
+  },
+  "phases": ["development"],
+  "tools": {
+    "builtin": ["Read", "Write", "Edit", "Glob", "Grep", "Bash"],
+    "mcp_servers": []
+  }
+}

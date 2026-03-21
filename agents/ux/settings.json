@@ -1,0 +1,19 @@
+{
+  "id": "ux",
+  "name": "UX Designer",
+  "color": "#F47F7F",
+  "icon": "🎨",
+  "execution": {
+    "default_mode": "oneshot",
+    "phase_modes": {},
+    "model": "",
+    "max_turns": 50,
+    "timeout": "10m",
+    "claude_permission": "bypassPermissions"
+  },
+  "phases": ["research", "planning"],
+  "tools": {
+    "builtin": ["Read", "Write", "Glob"],
+    "mcp_servers": []
+  }
+}

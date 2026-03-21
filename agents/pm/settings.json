@@ -1,0 +1,22 @@
+{
+  "id": "pm",
+  "name": "Product Manager",
+  "color": "#8B7EF8",
+  "icon": "📋",
+  "execution": {
+    "default_mode": "oneshot",
+    "phase_modes": {
+      "research": "oneshot",
+      "planning": "oneshot"
+    },
+    "model": "",
+    "max_turns": 50,
+    "timeout": "10m",
+    "claude_permission": "bypassPermissions"
+  },
+  "phases": ["template_selection", "research", "planning"],
+  "tools": {
+    "builtin": ["Read", "Write", "Glob", "Grep"],
+    "mcp_servers": []
+  }
+}

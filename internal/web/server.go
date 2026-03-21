@@ -91,7 +91,7 @@ func NewServer(config Config) *Server {
 
 	// Initialize Brain handler
 	apiClient := session.NewAPIClient()
-	server.brainHandler = NewBrainHandler(apiClient, server.orchestrator, hub, config.ProjectDir)
+	server.brainHandler = NewBrainHandler(apiClient, server.orchestrator, config.Store, hub, config.ProjectDir)
 
 	// Start cron scheduler
 	server.cronScheduler = NewCronScheduler(server.orchestrator)

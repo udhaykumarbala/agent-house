@@ -979,8 +979,8 @@ body {
       <span class="log-toolbar-title log-tab active" data-logtab="log" id="logToggle">Activity Log</span>
       <span class="log-toolbar-title log-tab" data-logtab="project" id="projectToggle">Project</span>
       <div class="task-input-row">
-        <input type="text" class="task-input" id="taskInput" placeholder="Describe what you want to build...">
-        <button class="task-submit" id="taskSubmit">Launch</button>
+        <input type="text" class="task-input" id="taskInput" placeholder="Chat with Brain — ask anything, create projects, delegate tasks...">
+        <button class="task-submit" id="taskSubmit">Send</button>
         <button class="task-submit" id="injectBtn" style="background:var(--c-architect);font-size:10px;padding:5px 10px" title="Inject a task into the running pipeline">&#x1F4CC; Inject</button>
       </div>
     </div>
@@ -1343,11 +1343,16 @@ function addLog(msg) {
   const el = document.getElementById('logStream');
   const row = document.createElement('div');
   row.className = 'log-entry';
-  const c = AGENTS[normRole(msg.from)]?.color || '#555';
+  const from = msg.from || 'SYS';
+  let c = AGENTS[normRole(from)]?.color || '#555';
+  if (from === 'you') c = 'var(--accent)';
+  if (from === 'brain') c = '#3B82F6';
+  if (from === 'human') c = 'var(--accent)';
+  const content = (msg.content || '').substring(0, 500);
   row.innerHTML =
     '<span class="log-time">'+fmtTime(msg.timestamp)+'</span>'+
-    '<span class="log-who" style="color:'+c+'">'+(msg.from||'SYS')+'</span>'+
-    '<span class="log-text">'+esc((msg.content||'').substring(0,200))+'</span>';
+    '<span class="log-who" style="color:'+c+'">'+esc(from)+'</span>'+
+    '<span class="log-text">'+renderMd(content)+'</span>';
   el.appendChild(row);
   el.scrollTop = el.scrollHeight;
   while(el.children.length > 500) el.removeChild(el.firstChild);
@@ -2159,18 +2164,51 @@ async function submitInject() {
 
 async function submitTask() {
   const inp = document.getElementById('taskInput');
-  const task = inp.value.trim(); if(!task) return;
+  const msg = inp.value.trim(); if(!msg) return;
   const btn = document.getElementById('taskSubmit');
-  btn.disabled = true; S.running = true; S.startTime = Date.now();
-  S.agents = {}; S.messages = []; S.msgCount = 0;
-  document.getElementById('logStream').innerHTML = '';
-  renderNodes(); renderRoster();
+  btn.disabled = true;
+  inp.value = '';
+
+  // Add user message to log
+  addLog({from:'you', content: msg, timestamp: new Date().toISOString()});
+
   try {
-    const res = await fetch('/api/task',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,project_id:S.projectId})});
+    // Route through Brain
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg, user_id: 'default'})
+    });
     const d = await res.json();
-    if(d.success) { inp.value=''; addLog({from:'system',content:'Task: '+task,timestamp:new Date().toISOString()}); }
-    else { addLog({from:'system',content:'Error: '+(d.error||'Failed'),timestamp:new Date().toISOString()}); btn.disabled=false; S.running=false; }
-  } catch(e) { addLog({from:'system',content:'Connection error',timestamp:new Date().toISOString()}); btn.disabled=false; S.running=false; }
+
+    // Show Brain response in log
+    const icon = d.action === 'create_project' ? '🚀' : d.action === 'delegate' ? '📌' : d.action === 'list_projects' ? '📋' : d.action === 'project_status' ? '📊' : '🧠';
+    addLog({from: 'brain', content: icon + ' ' + (d.response || 'Done'), timestamp: new Date().toISOString()});
+
+    // If Brain created a project, update state
+    if (d.action === 'create_project' && d.success) {
+      S.running = true;
+      S.startTime = Date.now();
+      if (d.project_id) {
+        // Switch to the new project
+        const sel = document.getElementById('projectSel');
+        if (!Array.from(sel.options).some(o => o.value === d.project_id)) {
+          const opt = document.createElement('option');
+          opt.value = d.project_id; opt.textContent = d.project_id;
+          sel.appendChild(opt);
+        }
+        sel.value = d.project_id;
+        S.projectId = d.project_id;
+      }
+      S.agents = {}; S.messages = []; S.msgCount = 0;
+      renderNodes(); renderRoster();
+    }
+
+    btn.disabled = false;
+  } catch(e) {
+    addLog({from: 'brain', content: '❌ Error: ' + e.message, timestamp: new Date().toISOString()});
+    btn.disabled = false;
+  }
 }
 
 async function fetchProjects() {

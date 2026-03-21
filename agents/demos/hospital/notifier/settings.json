@@ -1,0 +1,19 @@
+{
+  "id": "notifier",
+  "name": "Staff Notifier",
+  "color": "#F47F7F",
+  "icon": "📧",
+  "execution": {
+    "default_mode": "oneshot",
+    "phase_modes": {},
+    "model": "",
+    "max_turns": 50,
+    "timeout": "10m",
+    "claude_permission": "bypassPermissions"
+  },
+  "phases": ["research", "planning", "development"],
+  "tools": {
+    "builtin": ["Read", "Write", "Glob", "Grep"],
+    "mcp_servers": []
+  }
+}

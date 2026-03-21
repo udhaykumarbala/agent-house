@@ -28,7 +28,7 @@ type BrainHandler struct {
 }
 
 // NewBrainHandler creates the Brain handler with all dependencies wired.
-func NewBrainHandler(apiClient *session.APIClient, orch *orchestrator.Orchestrator, hub *Hub, projDir string) *BrainHandler {
+func NewBrainHandler(apiClient *session.APIClient, orch *orchestrator.Orchestrator, store *message.Store, hub *Hub, projDir string) *BrainHandler {
 	convos := brain.NewConversationStore(projDir + "/.brain/conversations")
 	router := brain.NewRouter(apiClient, projDir, convos)
 	executor := brain.NewExecutor(projDir)
@@ -38,6 +38,7 @@ func NewBrainHandler(apiClient *session.APIClient, orch *orchestrator.Orchestrat
 		executor: executor,
 		convos:   convos,
 		orch:     orch,
+		store:    store,
 		projDir:  projDir,
 		hub:      hub,
 	}
@@ -142,16 +143,23 @@ func (bh *BrainHandler) handleCreateProject(projectID, taskStr string) error {
 		}
 
 		sm := bh.orch.GetSessionManager()
-		var orch *orchestrator.Orchestrator
+		var newOrch *orchestrator.Orchestrator
 		if sm != nil {
-			orch = orchestrator.NewWithSessions(config, bh.store, sm)
+			newOrch = orchestrator.NewWithSessions(config, bh.store, sm)
 		} else {
-			orch = orchestrator.New(config, bh.store)
+			newOrch = orchestrator.New(config, bh.store)
 		}
+		// Wire callbacks for WebSocket broadcast
+		newOrch.OnMessage(func(msg *message.Message) {
+			data, _ := json.Marshal(map[string]interface{}{
+				"type": "message", "message": msg,
+			})
+			bh.hub.BroadcastAgentSessionEvent(data)
+		})
 
 		taskID := task.GenerateTaskID()
 		log.Printf("[BRAIN] Starting orchestration: project=%s task=%s", projectID, taskID)
-		orch.ProcessTaskWithID(projectID, taskStr, "", taskID)
+		newOrch.ProcessTaskWithID(projectID, taskStr, "", taskID)
 		log.Printf("[BRAIN] Orchestration complete: project=%s", projectID)
 	}()
 

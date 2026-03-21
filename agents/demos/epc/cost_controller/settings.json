@@ -1,0 +1,19 @@
+{
+  "id": "cost_controller",
+  "name": "Cost Controller",
+  "color": "#4ECDC4",
+  "icon": "💰",
+  "execution": {
+    "default_mode": "session",
+    "phase_modes": {},
+    "model": "",
+    "max_turns": 50,
+    "timeout": "10m",
+    "claude_permission": "bypassPermissions"
+  },
+  "phases": ["research", "planning", "development"],
+  "tools": {
+    "builtin": ["Read", "Write", "Glob", "Grep"],
+    "mcp_servers": []
+  }
+}

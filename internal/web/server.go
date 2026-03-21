@@ -32,6 +32,7 @@ type Server struct {
 	hub             *Hub
 	historyManager  *task.HistoryManager
 	agentTaskMgr    *agentask.Manager // Agent task tracking
+	cronScheduler   *CronScheduler     // Cron scheduler for recurring tasks
 }
 
 // Config holds server configuration
@@ -82,6 +83,9 @@ func NewServer(config Config) *Server {
 			hub.BroadcastAgentSessionEvent(data)
 		}
 	}()
+
+	// Start cron scheduler
+	server.cronScheduler = NewCronScheduler(server.orchestrator)
 
 	// Wire WebSocket session action handler (approve/deny/abort via WS)
 	hub.SetSessionActionHandler(func(projectID, agentRole, action, toolUseID string) {
@@ -181,6 +185,13 @@ func (s *Server) Start(port int) error {
 
 	// Inject task endpoint
 	mux.HandleFunc("/api/inject", s.handleInjectTask)
+
+	// Webhook hooks — external systems trigger agents
+	mux.HandleFunc("/api/hooks/", s.handleWebhook)
+
+	// Cron scheduler — recurring agent tasks
+	mux.HandleFunc("/api/cron", s.handleCronRouting)
+	mux.HandleFunc("/api/cron/", s.handleCronRouting)
 
 	// Agent session endpoints
 	mux.HandleFunc("/api/sessions", s.handleSessions)

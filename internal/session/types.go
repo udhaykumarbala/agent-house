@@ -82,6 +82,7 @@ type SessionConfig struct {
 	ProjectID      string // project identifier
 	Model          string // optional model override
 	MaxTurns       int    // safety limit per task (default: 50)
+	MCPConfigPath  string // path to MCP config JSON (optional — gives agent external tools)
 }
 
 // SessionStats holds accumulated metrics for a session.

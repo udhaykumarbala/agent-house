@@ -87,6 +87,10 @@ func (s *AgentSession) spawn() error {
 	}
 	args = append(args, "--max-turns", strconv.Itoa(maxTurns))
 
+	if s.Config.MCPConfigPath != "" {
+		args = append(args, "--mcp-config", s.Config.MCPConfigPath)
+	}
+
 	args = append(args, "--session-id", s.ClaudeSessionID)
 
 	cmd := exec.Command("claude", args...)

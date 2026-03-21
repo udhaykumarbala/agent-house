@@ -100,6 +100,12 @@ func (a *Agent) ExecuteWithSession(ctx context.Context, projectID, workDir, task
 		permMode = "bypassPermissions"
 	}
 
+	// Check for MCP config and build role-specific config
+	mcpPath := ""
+	if mcpConfig := session.LoadMCPConfig(workDir); mcpConfig != nil {
+		mcpPath = session.BuildMCPConfigForRole(mcpConfig, string(a.Role))
+	}
+
 	sess, err := a.SessionManager.GetOrCreate(session.SessionConfig{
 		AgentRole:      string(a.Role),
 		AgentName:      a.Name,
@@ -108,6 +114,7 @@ func (a *Agent) ExecuteWithSession(ctx context.Context, projectID, workDir, task
 		PermissionMode: permMode,
 		ProjectID:      projectID,
 		MaxTurns:       50,
+		MCPConfigPath:  mcpPath,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("session create failed: %w", err)

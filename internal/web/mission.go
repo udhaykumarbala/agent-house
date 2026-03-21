@@ -1129,13 +1129,16 @@ function renderRoster() {
     const card = document.createElement('div');
     card.className = 'roster-card' + sel;
     if(state==='working') card.style.borderLeftColor = ag.color;
+    const mode = (S.agentModes||{})[ag.key] || 'session';
+    const modeBadge = mode==='oneshot' ? '<span class="mode-badge" style="font-size:8px;padding:1px 4px;border-radius:3px;background:rgba(246,166,35,0.2);color:#F6A623;margin-left:4px;cursor:pointer" title="Click to switch to Session mode" onclick="event.stopPropagation();toggleAgentMode(\''+ag.key+'\')">&#x26A1;API</span>'
+      : '<span class="mode-badge" style="font-size:8px;padding:1px 4px;border-radius:3px;background:rgba(59,130,246,0.2);color:#3B82F6;margin-left:4px;cursor:pointer" title="Click to switch to Oneshot mode" onclick="event.stopPropagation();toggleAgentMode(\''+ag.key+'\')">&#x1F517;CC</span>';
     card.innerHTML =
       '<div class="roster-avatar" style="border-color:'+ag.color+';color:'+ag.color+'">'+
         ag.name.charAt(0)+
         '<div class="state-dot" style="background:'+stColor+'"></div>'+
       '</div>'+
       '<div class="roster-info">'+
-        '<div class="roster-name" style="color:'+ag.color+'">'+ag.name+'</div>'+
+        '<div class="roster-name" style="color:'+ag.color+'">'+ag.name+modeBadge+'</div>'+
         '<div class="roster-role">'+ag.full+'</div>'+
         (as.taskTitle ? '<div class="roster-task">'+esc(as.taskTitle)+'</div>' : '')+
       '</div>';
@@ -2088,6 +2091,29 @@ function renderProjectPanel(data) {
   panel.innerHTML = html;
 }
 
+// ═══════════════════════════════════════════
+// AGENT MODES (oneshot / session switching)
+// ═══════════════════════════════════════════
+async function fetchAgentModes() {
+  try {
+    const d = await (await fetch('/api/agents/modes')).json();
+    S.agentModes = d.modes || {};
+    renderRoster();
+  } catch(e) { console.error('fetchAgentModes:', e); }
+}
+async function toggleAgentMode(role) {
+  const current = (S.agentModes||{})[role] || 'session';
+  const next = current==='oneshot' ? 'session' : 'oneshot';
+  try {
+    await fetch('/api/agents/modes', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({role,mode:next})});
+    if(!S.agentModes) S.agentModes={};
+    S.agentModes[role] = next;
+    renderRoster();
+    addLog({from:'system',content:role+' switched to '+next+' mode',timestamp:new Date().toISOString()});
+  } catch(e) { console.error('toggleAgentMode:', e); }
+}
+
 async function viewProjectFile(relPath) {
   try {
     const res = await fetch('/api/file-content?path='+encodeURIComponent(S.projectId+'/'+relPath));
@@ -2425,7 +2451,7 @@ function openNewProject() {
 // ═══════════════════════════════════════════
 function init() {
   renderPipeline(); renderNodes(); renderRoster(); updateKPIs(); loadSettings();
-  connectWS(); fetchProjects();
+  connectWS(); fetchProjects(); fetchAgentModes();
 
   // Event listeners
   document.getElementById('taskSubmit').addEventListener('click', submitTask);

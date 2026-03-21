@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/creack/pty"
@@ -88,9 +89,22 @@ type CommandRecord struct {
 	IsError bool
 }
 
-// ExecuteWithSession sends a task via a persistent Claude Code session.
-// Returns a structured response with full event history.
+// ExecuteWithSession sends a task using the agent's configured execution mode.
+// Oneshot mode: Direct API call (fast, no tools).
+// Session mode: Claude Code session (persistent, full tool access).
 func (a *Agent) ExecuteWithSession(ctx context.Context, projectID, workDir, taskPrompt string) (*SessionResponse, error) {
+	mode := GetMode(a.Role)
+
+	// Try oneshot mode first if configured
+	if mode == ModeOneshot {
+		resp, err := a.executeOneshot(ctx, projectID, taskPrompt)
+		if err == nil {
+			return resp, nil
+		}
+		// Fall back to session if oneshot fails (e.g., no API key)
+		log.Printf("[AGENT:%s] Oneshot failed, falling back to session: %v", a.Role, err)
+	}
+
 	if a.SessionManager == nil {
 		return nil, fmt.Errorf("session manager not set for agent %s", a.Role)
 	}
@@ -189,6 +203,81 @@ func (a *Agent) ExecuteWithSession(ctx context.Context, projectID, workDir, task
 			resp.IsComplete = true
 		}
 	}
+
+	return resp, nil
+}
+
+// apiClient is a singleton API client for oneshot calls.
+var (
+	apiClient     *session.APIClient
+	apiClientOnce sync.Once
+)
+
+func getAPIClient() *session.APIClient {
+	apiClientOnce.Do(func() {
+		apiClient = session.NewAPIClient()
+	})
+	return apiClient
+}
+
+// executeOneshot sends a task via direct API call (no tools, fast).
+func (a *Agent) executeOneshot(ctx context.Context, projectID, taskPrompt string) (*SessionResponse, error) {
+	client := getAPIClient()
+	if !client.IsAvailable() {
+		return nil, fmt.Errorf("API client not available")
+	}
+
+	startTime := time.Now()
+
+	apiResp, err := client.SendMessage(ctx, a.SystemPrompt, taskPrompt)
+	if err != nil {
+		return nil, fmt.Errorf("oneshot API call failed: %w", err)
+	}
+
+	duration := time.Since(startTime)
+
+	log.Printf("[AGENT:%s] Oneshot completed in %dms — %d in / %d out tokens",
+		a.Role, apiResp.DurationMS, apiResp.Usage.InputTokens, apiResp.Usage.OutputTokens)
+
+	// Build SessionResponse compatible with the rest of the pipeline
+	resp := &SessionResponse{
+		Text:         apiResp.Text,
+		IsComplete:   true,
+		InputTokens:  apiResp.Usage.InputTokens,
+		OutputTokens: apiResp.Usage.OutputTokens,
+		Duration:     duration,
+		Events: []session.AgentEvent{
+			{
+				Type:         "session_meta",
+				AgentRole:    string(a.Role),
+				AgentName:    a.Name,
+				ProjectID:    projectID,
+				Model:        apiResp.Model,
+				Timestamp:    startTime.UnixMilli(),
+			},
+			{
+				Type:         "text_delta",
+				AgentRole:    string(a.Role),
+				AgentName:    a.Name,
+				ProjectID:    projectID,
+				Content:      apiResp.Text,
+				Timestamp:    time.Now().UnixMilli(),
+			},
+			{
+				Type:         "turn_complete",
+				AgentRole:    string(a.Role),
+				AgentName:    a.Name,
+				ProjectID:    projectID,
+				InputTokens:  apiResp.Usage.InputTokens,
+				OutputTokens: apiResp.Usage.OutputTokens,
+				Timestamp:    time.Now().UnixMilli(),
+			},
+		},
+	}
+
+	// Parse text for signals
+	resp.Delegations = parseDelegations(apiResp.Text)
+	resp.Reviews = parseReviews(apiResp.Text)
 
 	return resp, nil
 }

@@ -189,6 +189,41 @@ func (s *Server) handleAgentSessionAction(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// handleAgentModes handles GET/POST /api/agents/modes
+func (s *Server) handleAgentModes(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		writeJSON(w, map[string]interface{}{
+			"modes":    agent.GetAllModes(),
+			"defaults": agent.DefaultModes,
+		})
+
+	case http.MethodPost:
+		var req struct {
+			Role string `json:"role"`
+			Mode string `json:"mode"` // "oneshot" or "session"
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid body", http.StatusBadRequest)
+			return
+		}
+		if req.Role == "" || (req.Mode != "oneshot" && req.Mode != "session") {
+			http.Error(w, "role and mode (oneshot|session) required", http.StatusBadRequest)
+			return
+		}
+
+		agent.SetMode(agent.Role(req.Role), agent.ExecutionMode(req.Mode))
+		writeJSON(w, map[string]interface{}{
+			"success": true,
+			"role":    req.Role,
+			"mode":    req.Mode,
+		})
+
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
 // handleInjectTask handles POST /api/inject — inject a task into the running pipeline
 func (s *Server) handleInjectTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

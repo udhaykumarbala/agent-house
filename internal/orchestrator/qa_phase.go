@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 
@@ -9,11 +10,23 @@ import (
 	"pty-claude-test/internal/message"
 )
 
-// executeQAPhase runs QA review for a completed development phase
+// executeQAPhase runs QA review for a completed development phase.
+// Forces session mode for the CEO so it can read implementation files.
 func (o *Orchestrator) executeQAPhase(phase *DevelopmentPhase, taskStr, projectID string, result *Result) error {
 	if o.config.Verbose {
 		fmt.Printf("\n%s QA REVIEW - Phase %d: %s (Iteration %d)\n", GetPhaseEmoji(PhaseQA), phase.Index, phase.Name, phase.Iteration)
 		fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+	}
+
+	// Force CEO to session mode for QA — it needs to read code files
+	prevMode := agent.GetMode(agent.RoleCEO)
+	if prevMode == agent.ModeOneshot {
+		agent.SetMode(agent.RoleCEO, agent.ModeSession)
+		log.Printf("[QA] Switched CEO to session mode for code review")
+		defer func() {
+			agent.SetMode(agent.RoleCEO, prevMode)
+			log.Printf("[QA] Restored CEO to %s mode", prevMode)
+		}()
 	}
 
 	// Build QA context with completion criteria

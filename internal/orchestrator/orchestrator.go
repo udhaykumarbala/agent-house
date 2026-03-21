@@ -1603,7 +1603,7 @@ If you create files, use the appropriate file creation format.`,
 }
 
 // getAgentEmoji returns an emoji for the agent role
-// snapshotFiles returns a set of file paths under dir (excluding hidden dirs like .git, .plans, .tasks).
+// snapshotFiles returns a set of file paths under dir (excluding hidden dirs, node_modules, dist).
 func snapshotFiles(dir string) map[string]bool {
 	files := make(map[string]bool)
 	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -1613,6 +1613,9 @@ func snapshotFiles(dir string) map[string]bool {
 		if info.IsDir() {
 			base := filepath.Base(path)
 			if strings.HasPrefix(base, ".") && path != dir {
+				return filepath.SkipDir
+			}
+			if base == "node_modules" || base == "dist" || base == ".git" {
 				return filepath.SkipDir
 			}
 			return nil

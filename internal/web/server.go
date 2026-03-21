@@ -33,6 +33,7 @@ type Server struct {
 	historyManager  *task.HistoryManager
 	agentTaskMgr    *agentask.Manager // Agent task tracking
 	cronScheduler   *CronScheduler     // Cron scheduler for recurring tasks
+	brainHandler    *BrainHandler      // Brain chat handler
 }
 
 // Config holds server configuration
@@ -87,6 +88,10 @@ func NewServer(config Config) *Server {
 	// Load file-based agent registry
 	agentRegistry := agent.NewRegistry("agents")
 	server.orchestrator.SetAgentRegistry(agentRegistry)
+
+	// Initialize Brain handler
+	apiClient := session.NewAPIClient()
+	server.brainHandler = NewBrainHandler(apiClient, server.orchestrator, hub, config.ProjectDir)
 
 	// Start cron scheduler
 	server.cronScheduler = NewCronScheduler(server.orchestrator)
@@ -186,6 +191,9 @@ func (s *Server) Start(port int) error {
 
 	// Project detail endpoint
 	mux.HandleFunc("/api/projects/", s.handleProjectDetail)
+
+	// Brain chat endpoint
+	mux.HandleFunc("/api/chat", s.handleBrainChat)
 
 	// Agent mode management
 	mux.HandleFunc("/api/agents/modes", s.handleAgentModes)

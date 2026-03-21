@@ -1,0 +1,19 @@
+{
+  "id": "brain",
+  "name": "Brain",
+  "color": "#3B82F6",
+  "icon": "🧠",
+  "execution": {
+    "default_mode": "oneshot",
+    "phase_modes": {},
+    "model": "",
+    "max_turns": 3,
+    "timeout": "30s",
+    "claude_permission": "bypassPermissions"
+  },
+  "phases": [],
+  "tools": {
+    "builtin": [],
+    "mcp_servers": []
+  }
+}

@@ -330,8 +330,16 @@ func (s *Server) handleProjectDetail(w http.ResponseWriter, r *http.Request) {
 		json.Unmarshal(data, &devPlan)
 	}
 
+	// Get project.json metadata
+	var projectMeta interface{}
+	metaPath := projectDir + "/project.json"
+	if data, err := os.ReadFile(metaPath); err == nil {
+		json.Unmarshal(data, &projectMeta)
+	}
+
 	writeJSON(w, map[string]interface{}{
 		"project_id": projectID,
+		"meta":       projectMeta,
 		"files":      files,
 		"file_count": len(files),
 		"tasks":      tasks,

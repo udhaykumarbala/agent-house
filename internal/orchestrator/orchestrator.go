@@ -547,6 +547,9 @@ func (o *Orchestrator) ProcessTaskWithParent(projectID, taskStr, parentTaskID st
 func (o *Orchestrator) ProcessTaskWithID(projectID, taskStr, parentTaskID, taskID string) (*Result, error) {
 	o.turns = 0
 
+	// Auto-create project.json
+	InitProjectMeta(o.config.ProjectDir, projectID, taskStr)
+
 	result := &Result{
 		ProjectID:    projectID,
 		TaskID:       taskID,
@@ -616,6 +619,20 @@ func (o *Orchestrator) ProcessTaskWithID(projectID, taskStr, parentTaskID, taskI
 		fmt.Printf("✅ Task Complete - %d turns, %d files created\n", o.turns, len(result.Files))
 		fmt.Printf("⏱️  Duration: %s\n", result.Duration.Round(time.Second))
 	}
+
+	// Update project.json with completion stats
+	var team []string
+	for role := range result.VisitedRoles {
+		team = append(team, string(role))
+	}
+	totalCost := 0.0
+	if o.sessionManager != nil {
+		metrics := o.sessionManager.GetProjectMetrics(projectID)
+		if tc, ok := metrics["total_cost"].(string); ok {
+			fmt.Sscanf(tc, "%f", &totalCost)
+		}
+	}
+	UpdateProjectCompletion(o.config.ProjectDir, totalCost, o.turns, len(result.Files), team)
 
 	// Save task to history
 	o.saveTaskToHistory(result)
@@ -694,6 +711,9 @@ func (o *Orchestrator) processWithPhases(taskStr, projectID string, result *Resu
 		// Execute the phase (use enriched task with CEO direction)
 		phaseStart := time.Now()
 		log.Printf("[PHASE] Starting phase: %s (project=%s)", GetPhaseName(phase), projectID)
+
+		// Update project.json with current phase
+		UpdateProjectPhase(o.config.ProjectDir, GetPhaseName(phase))
 
 		// Broadcast phase_started
 		o.notifyLifecycle("phase_started", projectID, result.TaskID, map[string]interface{}{

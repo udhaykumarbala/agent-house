@@ -981,10 +981,43 @@ body {
       <div class="task-input-row">
         <input type="text" class="task-input" id="taskInput" placeholder="Describe what you want to build...">
         <button class="task-submit" id="taskSubmit">Launch</button>
+        <button class="task-submit" id="injectBtn" style="background:var(--c-architect);font-size:10px;padding:5px 10px" title="Inject a task into the running pipeline">&#x1F4CC; Inject</button>
       </div>
     </div>
     <div class="log-stream" id="logStream"></div>
     <div class="log-stream" id="projectPanel" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ════════ INJECT TASK DIALOG ════════ -->
+<div class="cmd-overlay cmd-hidden" id="injectOverlay" onclick="if(event.target===this)closeInject()">
+  <div class="cmd-box" style="max-width:500px;padding:20px">
+    <div style="font-size:14px;font-weight:600;margin-bottom:16px">&#x1F4CC; Inject Task</div>
+    <div style="font-size:11px;color:var(--text-secondary);margin-bottom:12px">Send a task directly to an agent during the current pipeline run. It will execute between phases.</div>
+    <textarea id="injectTaskInput" style="width:100%;min-height:80px;background:var(--bg-raised);border:1px solid var(--border-default);color:var(--text-primary);padding:10px;border-radius:6px;font-family:var(--font-ui);font-size:12px;resize:vertical;margin-bottom:12px" placeholder="What should the agent do?"></textarea>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px">
+      <label style="font-size:11px;color:var(--text-muted)">Agent:</label>
+      <select id="injectAgentSel" style="background:var(--bg-raised);border:1px solid var(--border-default);color:var(--text-primary);padding:4px 8px;border-radius:4px;font-size:11px">
+        <option value="senior_dev">Senior Dev</option>
+        <option value="junior_dev">Junior Dev</option>
+        <option value="architect">Architect</option>
+        <option value="pm">PM</option>
+        <option value="ceo">CEO</option>
+        <option value="ux">UX</option>
+        <option value="ui">UI</option>
+        <option value="security">Security</option>
+      </select>
+      <label style="font-size:11px;color:var(--text-muted);margin-left:8px">Priority:</label>
+      <select id="injectPrioritySel" style="background:var(--bg-raised);border:1px solid var(--border-default);color:var(--text-primary);padding:4px 8px;border-radius:4px;font-size:11px">
+        <option value="normal">Normal</option>
+        <option value="high">High</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="closeInject()" style="background:transparent;border:1px solid var(--border-default);color:var(--text-secondary);padding:6px 16px;border-radius:6px;font-size:12px;cursor:pointer">Cancel</button>
+      <button onclick="submitInject()" style="background:var(--c-architect);color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Inject Task</button>
+    </div>
+    <div id="injectStatus" style="font-size:11px;color:var(--text-muted);margin-top:8px"></div>
   </div>
 </div>
 
@@ -2068,6 +2101,36 @@ async function viewProjectFile(relPath) {
 // ═══════════════════════════════════════════
 // API
 // ═══════════════════════════════════════════
+function openInject() {
+  document.getElementById('injectOverlay').classList.remove('cmd-hidden');
+  document.getElementById('injectTaskInput').focus();
+}
+function closeInject() {
+  document.getElementById('injectOverlay').classList.add('cmd-hidden');
+  document.getElementById('injectStatus').textContent='';
+}
+async function submitInject() {
+  const task = document.getElementById('injectTaskInput').value.trim();
+  if(!task) return;
+  const agentRole = document.getElementById('injectAgentSel').value;
+  const priority = document.getElementById('injectPrioritySel').value;
+  const statusEl = document.getElementById('injectStatus');
+  statusEl.textContent='Injecting...';
+  try {
+    const res = await fetch('/api/inject',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({task,agent_role:agentRole,project_id:S.projectId,priority})});
+    const d = await res.json();
+    if(d.success) {
+      statusEl.innerHTML='&#x2705; '+d.message;
+      document.getElementById('injectTaskInput').value='';
+      addLog({from:'human',content:'Injected task for '+agentRole+': '+task,timestamp:new Date().toISOString()});
+      setTimeout(closeInject,2000);
+    } else {
+      statusEl.textContent='Error: '+(d.error||'Failed');
+    }
+  } catch(e) { statusEl.textContent='Error: '+e.message; }
+}
+
 async function submitTask() {
   const inp = document.getElementById('taskInput');
   const task = inp.value.trim(); if(!task) return;
@@ -2370,6 +2433,7 @@ function init() {
   document.getElementById('dpClose').addEventListener('click', closePanel);
   document.getElementById('logToggle').addEventListener('click', () => switchLogTab('log'));
   document.getElementById('projectToggle').addEventListener('click', () => switchLogTab('project'));
+  document.getElementById('injectBtn').addEventListener('click', openInject);
   document.getElementById('newProjBtn').addEventListener('click', openNewProject);
 
   // Checkpoint handlers

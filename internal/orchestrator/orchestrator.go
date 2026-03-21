@@ -68,6 +68,19 @@ type Orchestrator struct {
 	pendingCP        *checkpoint.Checkpoint    // Currently pending checkpoint
 	cpMu             sync.Mutex               // Protects pendingCP
 	checkpointNotify CheckpointNotifyFunc      // Callback for checkpoint events
+
+	// Injected tasks — human can push tasks that run between phases
+	injectedTasks    chan *InjectedTask
+}
+
+// InjectedTask is a task injected by a human during pipeline execution.
+type InjectedTask struct {
+	ID        string     `json:"id"`
+	Task      string     `json:"task"`
+	AgentRole agent.Role `json:"agent_role"` // target agent (empty = orchestrator decides)
+	ProjectID string     `json:"project_id"`
+	Priority  string     `json:"priority"`   // high, normal
+	CreatedAt time.Time  `json:"created_at"`
 }
 
 // New creates a new orchestrator
@@ -81,7 +94,93 @@ func New(config Config, store *message.Store) *Orchestrator {
 		selectedTemplate: template.DefaultTemplate,
 		fileManager:      NewConcurrentFileManager(),
 		checkpointCh:     make(chan *checkpoint.Decision, 1),
+		injectedTasks:    make(chan *InjectedTask, 20),
 	}
+}
+
+// InjectTask adds a human-injected task to the queue.
+// It will be executed between phases or during the next available slot.
+func (o *Orchestrator) InjectTask(task *InjectedTask) {
+	select {
+	case o.injectedTasks <- task:
+		log.Printf("[INJECT] Task queued: role=%s task=%q", task.AgentRole, truncateStr(task.Task, 80))
+		// Broadcast to listeners
+		msg := message.NewMessage("system", "human", string(task.AgentRole),
+			fmt.Sprintf("Injected task for %s: %s", task.AgentRole, truncateStr(task.Task, 100)))
+		msg.Metadata.ProjectID = task.ProjectID
+		if task.Priority == "high" {
+			msg.Metadata.Priority = "high"
+		}
+		o.store.Add(msg)
+		o.notify(msg)
+	default:
+		log.Printf("[INJECT] Queue full, dropping task: %s", truncateStr(task.Task, 60))
+	}
+}
+
+func truncateStr(s string, n int) string {
+	if len(s) <= n { return s }
+	return s[:n] + "..."
+}
+
+// drainInjectedTasks processes any queued injected tasks.
+// Called between phases to handle human-injected work.
+func (o *Orchestrator) drainInjectedTasks(projectID string, result *Result) {
+	for {
+		select {
+		case task := <-o.injectedTasks:
+			o.executeInjectedTask(task, projectID, result)
+		default:
+			return // Queue empty
+		}
+	}
+}
+
+// executeInjectedTask runs a single injected task using the specified agent.
+func (o *Orchestrator) executeInjectedTask(injected *InjectedTask, projectID string, result *Result) {
+	role := injected.AgentRole
+	if role == "" {
+		role = agent.RoleSeniorDev // Default to senior dev
+	}
+
+	log.Printf("[INJECT] Executing: role=%s task=%q", role, truncateStr(injected.Task, 80))
+
+	o.notifyLifecycle("injected_task_started", projectID, result.TaskID, map[string]interface{}{
+		"inject_id":  injected.ID,
+		"agent_role": string(role),
+		"task":       injected.Task,
+	})
+
+	// Build prompt with context
+	prompt := fmt.Sprintf(`## Injected Task (from human)
+
+A human has injected this task during the build pipeline. Execute it now.
+
+### Task
+%s
+
+### Context
+- Project: %s
+- Current phase: %s
+- This is a priority insertion — complete it before continuing the pipeline.
+
+Read the existing project files for context before making changes.`, injected.Task, projectID, GetPhaseName(o.currentPhase))
+
+	// Execute using the existing processAgentInPhase mechanism
+	result.VisitedRoles[role] = false // Allow re-execution
+	err := o.processAgentInPhase(role, prompt, projectID, result)
+
+	status := "completed"
+	if err != nil {
+		status = "failed"
+		log.Printf("[INJECT] Failed: %v", err)
+	}
+
+	o.notifyLifecycle("injected_task_completed", projectID, result.TaskID, map[string]interface{}{
+		"inject_id":  injected.ID,
+		"agent_role": string(role),
+		"status":     status,
+	})
 }
 
 // NewWithSessions creates a new orchestrator with session-based agent execution.
@@ -593,6 +692,9 @@ func (o *Orchestrator) processWithPhases(taskStr, projectID string, result *Resu
 			"phase": string(phase), "phase_name": GetPhaseName(phase),
 			"duration_ms": phaseDuration.Milliseconds(),
 		})
+
+		// Process any injected tasks between phases
+		o.drainInjectedTasks(projectID, result)
 
 		// ── Post-phase checkpoints ──
 		switch phase {

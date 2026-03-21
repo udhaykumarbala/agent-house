@@ -179,6 +179,9 @@ func (s *Server) Start(port int) error {
 	// Project detail endpoint
 	mux.HandleFunc("/api/projects/", s.handleProjectDetail)
 
+	// Inject task endpoint
+	mux.HandleFunc("/api/inject", s.handleInjectTask)
+
 	// Agent session endpoints
 	mux.HandleFunc("/api/sessions", s.handleSessions)
 	mux.HandleFunc("/api/sessions/", s.handleSessionRouting)

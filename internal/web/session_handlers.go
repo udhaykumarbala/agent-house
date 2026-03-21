@@ -2,11 +2,16 @@ package web
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
+
+	"pty-claude-test/internal/agent"
+	"pty-claude-test/internal/orchestrator"
 )
 
 // handleSessionRouting routes /api/sessions/* requests.
@@ -182,6 +187,52 @@ func (s *Server) handleAgentSessionAction(w http.ResponseWriter, r *http.Request
 	default:
 		http.Error(w, "Unknown action: "+action, http.StatusBadRequest)
 	}
+}
+
+// handleInjectTask handles POST /api/inject — inject a task into the running pipeline
+func (s *Server) handleInjectTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Task      string `json:"task"`
+		AgentRole string `json:"agent_role"` // ceo, pm, senior_dev, etc. Empty = auto
+		ProjectID string `json:"project_id"`
+		Priority  string `json:"priority"`   // high, normal
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid body", http.StatusBadRequest)
+		return
+	}
+	if req.Task == "" {
+		http.Error(w, "task is required", http.StatusBadRequest)
+		return
+	}
+	if req.ProjectID == "" {
+		req.ProjectID = "default"
+	}
+	if req.Priority == "" {
+		req.Priority = "normal"
+	}
+
+	injected := &orchestrator.InjectedTask{
+		ID:        fmt.Sprintf("inj_%d", time.Now().UnixMilli()),
+		Task:      req.Task,
+		AgentRole: agent.Role(req.AgentRole),
+		ProjectID: req.ProjectID,
+		Priority:  req.Priority,
+		CreatedAt: time.Now(),
+	}
+
+	s.orchestrator.InjectTask(injected)
+
+	writeJSON(w, map[string]interface{}{
+		"success":   true,
+		"inject_id": injected.ID,
+		"message":   fmt.Sprintf("Task injected for %s — will execute between phases", req.AgentRole),
+	})
 }
 
 // handleProjectDetail handles GET /api/projects/{projectID} — full project summary

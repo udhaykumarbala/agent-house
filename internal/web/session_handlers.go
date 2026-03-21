@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -180,6 +182,76 @@ func (s *Server) handleAgentSessionAction(w http.ResponseWriter, r *http.Request
 	default:
 		http.Error(w, "Unknown action: "+action, http.StatusBadRequest)
 	}
+}
+
+// handleProjectDetail handles GET /api/projects/{projectID} — full project summary
+func (s *Server) handleProjectDetail(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	projectID := strings.TrimPrefix(r.URL.Path, "/api/projects/")
+	if projectID == "" {
+		http.Error(w, "Project ID required", http.StatusBadRequest)
+		return
+	}
+
+	projectDir := s.projectDir + "/" + projectID
+
+	// Collect project files (non-hidden)
+	var files []map[string]interface{}
+	filepath.Walk(projectDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			base := filepath.Base(path)
+			if strings.HasPrefix(base, ".") && path != projectDir {
+				return filepath.SkipDir
+			}
+			if base == "node_modules" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		rel, _ := filepath.Rel(projectDir, path)
+		files = append(files, map[string]interface{}{
+			"path": rel,
+			"size": info.Size(),
+		})
+		return nil
+	})
+
+	// Get task history
+	var tasks []map[string]interface{}
+	historyPath := projectDir + "/.tasks/history.json"
+	if data, err := os.ReadFile(historyPath); err == nil {
+		json.Unmarshal(data, &tasks)
+	}
+
+	// Get session metrics
+	var sessionMetrics map[string]interface{}
+	sm := s.orchestrator.GetSessionManager()
+	if sm != nil {
+		sessionMetrics = sm.GetProjectMetrics(projectID)
+	}
+
+	// Get development plan
+	var devPlan interface{}
+	planPath := projectDir + "/.plans/development-plan.json"
+	if data, err := os.ReadFile(planPath); err == nil {
+		json.Unmarshal(data, &devPlan)
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"project_id": projectID,
+		"files":      files,
+		"file_count": len(files),
+		"tasks":      tasks,
+		"sessions":   sessionMetrics,
+		"dev_plan":   devPlan,
+	})
 }
 
 // handleProjectReport handles GET /api/reports/{projectID}

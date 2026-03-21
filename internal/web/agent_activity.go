@@ -454,6 +454,8 @@ function handleLifecycleEvent(msg) {
   const eventType = extra.event_type;
 
   if (eventType === 'task_completed') {
+    const fc = extra.files_count || 0;
+    const turns = extra.turns || 0;
     // Reset ALL agents to idle
     Object.keys(S.agents).forEach(k => {
       S.agents[k].state = 'idle';
@@ -462,16 +464,34 @@ function handleLifecycleEvent(msg) {
     });
     renderGrid();
     renderDetail();
+    // Show completion toast with project link
+    if (S.projectId) {
+      showCompletionBanner(turns, fc, S.projectId);
+    }
   }
 
   if (eventType === 'phase_started') {
-    // Could show phase indicator in header
     console.log('[LIFECYCLE] Phase started:', extra.phase_name);
   }
 
   if (eventType === 'phase_completed') {
     console.log('[LIFECYCLE] Phase completed:', extra.phase_name, extra.duration_ms + 'ms');
   }
+}
+
+function showCompletionBanner(turns, files, projectId) {
+  // Remove existing banner
+  const old = document.getElementById('completionBanner');
+  if (old) old.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'completionBanner';
+  banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--bg-overlay);border:1px solid var(--st-complete);border-radius:10px;padding:14px 24px;z-index:1000;display:flex;align-items:center;gap:16px;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,0.4)';
+  banner.innerHTML = '<span style="font-size:18px">&#x2705;</span>' +
+    '<span>Task complete: <strong>' + turns + ' turns</strong>, <strong>' + files + ' files</strong></span>' +
+    '<a href="/project/' + encodeURIComponent(projectId) + '" style="color:var(--accent);font-weight:600;white-space:nowrap">View Project &#x2192;</a>' +
+    '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;margin-left:8px">&#x2715;</button>';
+  document.body.appendChild(banner);
 }
 
 function handleAgentEvent(ev) {

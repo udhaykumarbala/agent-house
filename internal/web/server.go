@@ -176,6 +176,9 @@ func (s *Server) Start(port int) error {
 	mux.HandleFunc("/api/qa-reviews", s.handleQAReviews)
 	mux.HandleFunc("/api/phase-status", s.handlePhaseStatus)
 
+	// Project detail endpoint
+	mux.HandleFunc("/api/projects/", s.handleProjectDetail)
+
 	// Agent session endpoints
 	mux.HandleFunc("/api/sessions", s.handleSessions)
 	mux.HandleFunc("/api/sessions/", s.handleSessionRouting)
@@ -680,6 +683,12 @@ func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/live" {
 		w.Header().Set("Content-Type", "text/html")
 		w.Write([]byte(agentActivityHTML))
+		return
+	}
+
+	if strings.HasPrefix(r.URL.Path, "/project/") {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(projectDetailHTML))
 		return
 	}
 

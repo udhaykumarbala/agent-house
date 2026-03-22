@@ -29,12 +29,16 @@ type VendorSummary struct {
 	ContractTerms string `json:"contract_terms,omitempty"` // serialized terms
 }
 
-// EmailSummary is a compact email for Brain context.
+// EmailSummary is an email for Brain context.
 type EmailSummary struct {
-	From    string `json:"from"`
-	Subject string `json:"subject"`
-	Trust   string `json:"trust"`
+	ID       string `json:"id"`
+	From     string `json:"from"`
+	Subject  string `json:"subject"`
+	Body     string `json:"body"`
+	Trust    string `json:"trust"`
+	TrustReason string `json:"trust_reason"`
 	Category string `json:"category"`
+	Read     bool   `json:"read"`
 }
 
 // ProjectSummary is a compact view of a project for the Brain's context.
@@ -140,7 +144,7 @@ func AssembleContext(projectsDir string) string {
 		}
 	}
 
-	// Load recent emails from inbox
+	// Load recent emails from inbox (full content for Brain to reference)
 	inboxDir := filepath.Join(projectsDir, "inbox")
 	if entries, err := os.ReadDir(inboxDir); err == nil {
 		for _, entry := range entries {
@@ -152,18 +156,30 @@ func AssembleContext(projectsDir string) string {
 				continue
 			}
 			var email struct {
+				ID          string `json:"id"`
 				From        string `json:"from"`
 				FromName    string `json:"from_name"`
 				Subject     string `json:"subject"`
+				Body        string `json:"body"`
 				TrustStatus string `json:"trust_status"`
+				TrustReason string `json:"trust_reason"`
 				Category    string `json:"category"`
+				Read        bool   `json:"read"`
 			}
 			if json.Unmarshal(data, &email) == nil {
+				body := email.Body
+				if len(body) > 1000 {
+					body = body[:1000] + "... (truncated)"
+				}
 				ctx.RecentEmails = append(ctx.RecentEmails, EmailSummary{
-					From:    email.FromName + " <" + email.From + ">",
-					Subject: email.Subject,
-					Trust:   email.TrustStatus,
-					Category: email.Category,
+					ID:          email.ID,
+					From:        email.FromName + " <" + email.From + ">",
+					Subject:     email.Subject,
+					Body:        body,
+					Trust:       email.TrustStatus,
+					TrustReason: email.TrustReason,
+					Category:    email.Category,
+					Read:        email.Read,
 				})
 			}
 		}
@@ -211,12 +227,19 @@ func formatContext(ctx WorkspaceContext) string {
 	}
 
 	if len(ctx.RecentEmails) > 0 {
-		sb.WriteString(fmt.Sprintf("\n**Inbox (%d emails):**\n", len(ctx.RecentEmails)))
-		for _, e := range ctx.RecentEmails {
+		sb.WriteString(fmt.Sprintf("\n**Inbox (%d emails):**\n\n", len(ctx.RecentEmails)))
+		for i, e := range ctx.RecentEmails {
 			trust := ""
-			if e.Trust == "impersonation" { trust = " 🚨IMPERSONATION" }
-			if e.Trust == "new_contact" { trust = " ⚠️NEW" }
-			sb.WriteString(fmt.Sprintf("- %s: \"%s\" [%s]%s\n", e.From, truncate(e.Subject, 60), e.Category, trust))
+			if e.Trust == "impersonation" { trust = " 🚨IMPERSONATION — " + e.TrustReason }
+			if e.Trust == "new_contact" { trust = " ⚠️NEW CONTACT — " + e.TrustReason }
+			readStatus := "UNREAD"
+			if e.Read { readStatus = "read" }
+			sb.WriteString(fmt.Sprintf("**Email %d** [%s] [%s]%s\n", i+1, e.Category, readStatus, trust))
+			sb.WriteString(fmt.Sprintf("From: %s\nSubject: %s\n", e.From, e.Subject))
+			if e.Body != "" {
+				sb.WriteString(fmt.Sprintf("Body:\n%s\n", e.Body))
+			}
+			sb.WriteString("\n")
 		}
 	}
 

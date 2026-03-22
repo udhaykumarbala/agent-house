@@ -176,7 +176,79 @@ func parseDecision(text string) (*BrainDecision, error) {
 		return nil, fmt.Errorf("missing action field")
 	}
 
+	// If suggestions are empty, try to extract from response text
+	if len(decision.Suggestions) == 0 && decision.Response != "" {
+		decision.Suggestions = extractSuggestionsFromText(decision.Response)
+		// Clean the suggestions text out of the response
+		if len(decision.Suggestions) > 0 {
+			decision.Response = cleanSuggestionsFromText(decision.Response)
+		}
+	}
+
 	return &decision, nil
+}
+
+// extractSuggestionsFromText pulls suggestion-like lines from response text.
+// Looks for patterns like: • "Draft reply" or - "Check status" or * "View files"
+func extractSuggestionsFromText(text string) []string {
+	var suggestions []string
+	lines := strings.Split(text, "\n")
+	inSuggestions := false
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		lower := strings.ToLower(trimmed)
+
+		// Detect suggestions section
+		if strings.Contains(lower, "suggestion") || strings.Contains(lower, "you can") || strings.Contains(lower, "next steps") || strings.Contains(lower, "options:") {
+			inSuggestions = true
+			continue
+		}
+
+		if inSuggestions {
+			// Extract quoted text from bullet lines
+			if strings.HasPrefix(trimmed, "•") || strings.HasPrefix(trimmed, "-") || strings.HasPrefix(trimmed, "*") {
+				s := strings.TrimLeft(trimmed, "•-* ")
+				// Remove surrounding quotes
+				s = strings.Trim(s, "\"'`")
+				s = strings.TrimSpace(s)
+				if len(s) > 3 && len(s) < 80 {
+					suggestions = append(suggestions, s)
+				}
+			}
+		}
+	}
+
+	// Cap at 4
+	if len(suggestions) > 4 {
+		suggestions = suggestions[:4]
+	}
+	return suggestions
+}
+
+// cleanSuggestionsFromText removes the suggestions section from response text.
+func cleanSuggestionsFromText(text string) string {
+	lines := strings.Split(text, "\n")
+	var cleaned []string
+	skip := false
+
+	for _, line := range lines {
+		lower := strings.ToLower(strings.TrimSpace(line))
+		if strings.Contains(lower, "suggestion") || strings.Contains(lower, "next steps") {
+			skip = true
+			continue
+		}
+		if skip && (strings.HasPrefix(strings.TrimSpace(line), "•") || strings.HasPrefix(strings.TrimSpace(line), "-") || strings.HasPrefix(strings.TrimSpace(line), "*")) {
+			continue
+		}
+		skip = false
+		cleaned = append(cleaned, line)
+	}
+
+	result := strings.TrimSpace(strings.Join(cleaned, "\n"))
+	// Remove trailing "---" dividers
+	result = strings.TrimRight(result, "-\n ")
+	return strings.TrimSpace(result)
 }
 
 func readFileContent(path string) (string, error) {

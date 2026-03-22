@@ -691,11 +691,12 @@ function renderMd(s){
   var lines=s.split('\n');
   var i=0;
   while(i<lines.length){
-    // Detect table: line starts with |
-    if(lines[i].trim().indexOf('|')===0){
+    // Detect table: line contains | and has table-like structure
+    var trimLine = lines[i].trim();
+    if(trimLine.indexOf('|')>=0 && (trimLine.indexOf('|')===0 || trimLine.split('|').length>=3)){
       var tableLines=[];
-      while(i<lines.length && lines[i].trim().indexOf('|')===0){
-        tableLines.push(lines[i]); i++;
+      while(i<lines.length && lines[i].trim().indexOf('|')>=0 && lines[i].trim().split('|').length>=3){
+        tableLines.push(lines[i].trim()); i++;
       }
       // Build HTML table
       var dataRows=tableLines.filter(function(r){return !/^[\s|:-]+$/.test(r.replace(/[^|\-:\s]/g,''));});

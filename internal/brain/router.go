@@ -206,11 +206,13 @@ func parseDecision(text string) (*BrainDecision, error) {
 
 parsed:
 
-	// If suggestions are empty, try to extract from response text
-	if len(decision.Suggestions) == 0 && decision.Response != "" {
-		decision.Suggestions = extractSuggestionsFromText(decision.Response)
-		if len(decision.Suggestions) > 0 {
-			decision.Response = cleanSuggestionsFromText(decision.Response)
+	// ALWAYS clean suggestion text from response (even if JSON suggestions exist)
+	if decision.Response != "" {
+		extracted := extractSuggestionsFromText(decision.Response)
+		decision.Response = cleanSuggestionsFromText(decision.Response)
+		// Use extracted suggestions if JSON field was empty
+		if len(decision.Suggestions) == 0 && len(extracted) > 0 {
+			decision.Suggestions = extracted
 		}
 	}
 

@@ -378,8 +378,11 @@ async function sendChat() {
       el.scrollTop = el.scrollHeight;
     }
 
-    // Refresh mail badges after email actions
-    if(d.action==='delete_email'||d.action==='send_reply') { fetchInbox(); }
+    // Refresh mail badges after any email-related action or response
+    if(d.action==='delete_email'||d.action==='send_reply'||d.action==='archive_email'||
+       (d.response&&(d.response.indexOf('deleted')>-1||d.response.indexOf('sent')>-1||d.response.indexOf('Deleted')>-1||d.response.indexOf('Sent')>-1))) {
+      fetchInbox();
+    }
 
     if(d.action==='create_project'&&d.success&&d.project_id) {
       S.projectId=d.project_id;
@@ -680,40 +683,71 @@ function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace
 function formatToolShort(name,input){try{const p=JSON.parse(input||'{}');switch(name){case'Read':return p.file_path||'';case'Write':return(p.file_path||'')+'';case'Edit':return p.file_path||'';case'Bash':return'$ '+(p.command||'').substring(0,40);case'Grep':return'"'+(p.pattern||'')+'"';default:return''}}catch(e){return''}}
 function renderMd(s){
   if(!s)return'';
-  s=esc(s);
-  // Tables: detect lines with |
-  s=s.replace(/((?:^|\n)\|.+\|(?:\n\|[-| :]+\|)?(?:\n\|.+\|)+)/g, function(table){
-    var rows=table.trim().split('\n').filter(function(r){return r.trim()&&!/^[\|\s\-:]+$/.test(r.replace(/[^|\-:\s]/g,''));});
-    if(rows.length<1)return table;
-    var html='<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:11px">';
-    rows.forEach(function(row,i){
-      var cells=row.split('|').filter(function(c){return c.trim()!=='';});
-      var tag=i===0?'th':'td';
-      html+='<tr>'+cells.map(function(c){return'<'+tag+' style="padding:4px 8px;border:1px solid var(--border);text-align:left;'+(i===0?'background:rgba(255,255,255,0.03);font-weight:500':'')+'">'+ c.trim()+'</'+tag+'>';}).join('')+'</tr>';
-    });
-    return html+'</table>';
-  });
-  // Headers
-  s=s.replace(/^### (.+)/gm,'<div style="font-size:13px;font-weight:600;margin:10px 0 4px;color:var(--text)">$1</div>');
-  s=s.replace(/^## (.+)/gm,'<div style="font-size:14px;font-weight:600;margin:10px 0 4px;color:var(--text)">$1</div>');
-  // HR
-  s=s.replace(/^---+$/gm,'<hr style="border:none;border-top:1px solid var(--border);margin:8px 0">');
-  // Bold
-  s=s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
-  // Inline code
-  var bt=String.fromCharCode(96);
-  var codeRe=new RegExp(bt+'([^'+bt+']+)'+bt,'g');
-  s=s.replace(codeRe,'<code style="font-family:var(--mono);font-size:11px;background:rgba(255,255,255,0.05);padding:1px 4px;border-radius:3px">$1</code>');
-  // Lists
-  s=s.replace(/^- (.+)/gm,'<div style="padding-left:12px">• $1</div>');
-  s=s.replace(/^\* (.+)/gm,'<div style="padding-left:12px">• $1</div>');
-  // Blockquotes
-  s=s.replace(/^&gt; (.+)/gm,'<div style="border-left:2px solid var(--accent);padding-left:10px;color:var(--text2);font-style:italic;margin:4px 0">$1</div>');
-  // Newlines (but not after block elements)
-  s=s.replace(/\n/g,'<br>');
-  s=s.replace(/<br><(div|table|hr)/g,'<$1');
-  s=s.replace(/<\/(div|table)><br>/g,'</$1>');
-  return s;
+  // Parse tables BEFORE escaping (pipes and dashes need to be raw)
+  var parts=[];
+  var lines=s.split('\n');
+  var i=0;
+  while(i<lines.length){
+    // Detect table: line starts with |
+    if(lines[i].trim().indexOf('|')===0){
+      var tableLines=[];
+      while(i<lines.length && lines[i].trim().indexOf('|')===0){
+        tableLines.push(lines[i]); i++;
+      }
+      // Build HTML table
+      var dataRows=tableLines.filter(function(r){return !/^[\s|:-]+$/.test(r.replace(/[^|\-:\s]/g,''));});
+      if(dataRows.length>0){
+        var t='<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:11px">';
+        dataRows.forEach(function(row,ri){
+          var cells=row.split('|').filter(function(c,ci,a){return ci>0&&ci<a.length-1||c.trim()!=='';});
+          // Clean edge empty cells
+          if(cells.length>0&&cells[0].trim()==='')cells.shift();
+          if(cells.length>0&&cells[cells.length-1].trim()==='')cells.pop();
+          var tag=ri===0?'th':'td';
+          var bg=ri===0?'background:rgba(255,255,255,0.04);font-weight:500;color:var(--text)':'';
+          t+='<tr>'+cells.map(function(c){return'<'+tag+' style="padding:5px 10px;border:1px solid var(--border);'+bg+'">'+esc(c.trim())+'</'+tag+'>';}).join('')+'</tr>';
+        });
+        t+='</table>';
+        parts.push(t);
+      } else {
+        tableLines.forEach(function(l){parts.push(esc(l));});
+      }
+    } else {
+      parts.push(null); // placeholder — process later
+      i++;
+    }
+  }
+  // Now process non-table lines
+  var lineIdx=0;
+  var result=[];
+  for(var p=0;p<parts.length;p++){
+    if(parts[p]!==null){result.push(parts[p]);continue;}
+    var line=lines[lineIdx]||'';lineIdx++;
+    // Skip if we already consumed this line in table parsing
+    while(parts[lineIdx]!==undefined&&parts[lineIdx]!==null)lineIdx++;
+    var l=esc(line);
+    // Headers
+    if(/^### /.test(line))l='<div style="font-size:13px;font-weight:600;margin:10px 0 4px;color:var(--text)">'+esc(line.substring(4))+'</div>';
+    else if(/^## /.test(line))l='<div style="font-size:14px;font-weight:600;margin:10px 0 4px;color:var(--text)">'+esc(line.substring(3))+'</div>';
+    // HR
+    else if(/^---+$/.test(line.trim()))l='<hr style="border:none;border-top:1px solid var(--border);margin:8px 0">';
+    // Blockquote
+    else if(/^> /.test(line))l='<div style="border-left:2px solid var(--accent);padding-left:10px;color:var(--text2);font-style:italic;margin:4px 0">'+esc(line.substring(2))+'</div>';
+    // Bullet
+    else if(/^[-*] /.test(line.trim())){var t=line.trim().substring(2);l='<div style="padding-left:12px">• '+esc(t)+'</div>';}
+    // Bold (inline)
+    l=l.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    // Inline code
+    var bt=String.fromCharCode(96);
+    var codeRe=new RegExp(bt+'([^'+bt+']+)'+bt,'g');
+    l=l.replace(codeRe,'<code style="font-family:var(--mono);font-size:11px;background:rgba(255,255,255,0.05);padding:1px 4px;border-radius:3px">$1</code>');
+    // Emoji status
+    l=l.replace(/✅/g,'<span style="color:var(--green)">✅</span>');
+    l=l.replace(/⚠️/g,'<span style="color:var(--yellow)">⚠️</span>');
+    l=l.replace(/🚨/g,'<span style="color:var(--red)">🚨</span>');
+    result.push(l);
+  }
+  return result.join('<br>').replace(/<br><(div|table|hr)/g,'<$1').replace(/<\/(div|table)><br>/g,'</$1>').replace(/<br><br><br>/g,'<br><br>');
 }
 function toast(title,text,type){const c=document.getElementById('toasts');const t=document.createElement('div');t.className='toast';t.innerHTML='<strong>'+esc(title)+'</strong><br><span style="color:var(--text2)">'+esc(text)+'</span>';c.appendChild(t);setTimeout(()=>t.remove(),5000)}
 

@@ -9,7 +9,15 @@
       "accounts@vendorxyz.com"
     ],
     "contact_person": "Ahmed Rahman",
-    "contract_active": true
+    "contract_active": true,
+    "contract_terms": {
+      "max_delay_days": 7,
+      "penalty_per_day": "0.5% of order value",
+      "payment_terms": "Net 30",
+      "current_orders": [
+        {"order_id": "ST-2026-0847", "item": "Structural steel 150 tons", "value": "$340,000", "delivery": "April 5, 2026"}
+      ]
+    }
   },
   {
     "id": "vendor_pqr",
@@ -20,7 +28,16 @@
       "dispatch@pqrconcrete.com"
     ],
     "contact_person": "Ravi Patel",
-    "contract_active": true
+    "contract_active": true,
+    "contract_terms": {
+      "max_delay_days": 5,
+      "penalty_per_day": "1% of invoice value",
+      "payment_terms": "Net 30",
+      "contract_amount": "$38,000",
+      "current_orders": [
+        {"order_id": "PO-2026-0312", "item": "M30 grade concrete 450m³", "value": "$38,000", "delivery": "March 15, 2026"}
+      ]
+    }
   },
   {
     "id": "vendor_lmn",
@@ -31,7 +48,11 @@
       "billing@lmnelectrical.com"
     ],
     "contact_person": "Lisa Nguyen",
-    "contract_active": true
+    "contract_active": true,
+    "contract_terms": {
+      "payment_terms": "Net 45",
+      "contract_amount": "$30,000"
+    }
   },
   {
     "id": "vendor_abc_heavy",
@@ -41,6 +62,10 @@
       "rentals@abcheavy.com"
     ],
     "contact_person": "Mike Torres",
-    "contract_active": true
+    "contract_active": true,
+    "contract_terms": {
+      "payment_terms": "Weekly rental",
+      "daily_rate": "$1,200"
+    }
   }
 ]

@@ -15,6 +15,26 @@ type WorkspaceContext struct {
 	ActiveAgents   []string         `json:"active_agents,omitempty"`
 	RunningTasks   []string         `json:"running_tasks,omitempty"`
 	RecentActivity []string         `json:"recent_activity,omitempty"`
+	Vendors        []VendorSummary  `json:"vendors,omitempty"`
+	RecentEmails   []EmailSummary   `json:"recent_emails,omitempty"`
+}
+
+// VendorSummary is a compact vendor view with contract info.
+type VendorSummary struct {
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Domain        string `json:"domain"`
+	Contact       string `json:"contact"`
+	Active        bool   `json:"active"`
+	ContractTerms string `json:"contract_terms,omitempty"` // serialized terms
+}
+
+// EmailSummary is a compact email for Brain context.
+type EmailSummary struct {
+	From    string `json:"from"`
+	Subject string `json:"subject"`
+	Trust   string `json:"trust"`
+	Category string `json:"category"`
 }
 
 // ProjectSummary is a compact view of a project for the Brain's context.
@@ -94,6 +114,61 @@ func AssembleContext(projectsDir string) string {
 		ctx.Projects = append(ctx.Projects, summary)
 	}
 
+	// Load vendors
+	vendorsPath := filepath.Join(projectsDir, "vendors.json")
+	if data, err := os.ReadFile(vendorsPath); err == nil {
+		var vendors []struct {
+			ID            string          `json:"id"`
+			Name          string          `json:"name"`
+			Domain        string          `json:"domain"`
+			ContactPerson string          `json:"contact_person"`
+			ContractActive bool           `json:"contract_active"`
+			ContractTerms json.RawMessage `json:"contract_terms"`
+		}
+		if json.Unmarshal(data, &vendors) == nil {
+			for _, v := range vendors {
+				terms := ""
+				if v.ContractTerms != nil {
+					terms = string(v.ContractTerms)
+				}
+				ctx.Vendors = append(ctx.Vendors, VendorSummary{
+					ID: v.ID, Name: v.Name, Domain: v.Domain,
+					Contact: v.ContactPerson, Active: v.ContractActive,
+					ContractTerms: terms,
+				})
+			}
+		}
+	}
+
+	// Load recent emails from inbox
+	inboxDir := filepath.Join(projectsDir, "inbox")
+	if entries, err := os.ReadDir(inboxDir); err == nil {
+		for _, entry := range entries {
+			if !strings.HasSuffix(entry.Name(), ".json") {
+				continue
+			}
+			data, err := os.ReadFile(filepath.Join(inboxDir, entry.Name()))
+			if err != nil {
+				continue
+			}
+			var email struct {
+				From        string `json:"from"`
+				FromName    string `json:"from_name"`
+				Subject     string `json:"subject"`
+				TrustStatus string `json:"trust_status"`
+				Category    string `json:"category"`
+			}
+			if json.Unmarshal(data, &email) == nil {
+				ctx.RecentEmails = append(ctx.RecentEmails, EmailSummary{
+					From:    email.FromName + " <" + email.From + ">",
+					Subject: email.Subject,
+					Trust:   email.TrustStatus,
+					Category: email.Category,
+				})
+			}
+		}
+	}
+
 	return formatContext(ctx)
 }
 
@@ -120,6 +195,28 @@ func formatContext(ctx WorkspaceContext) string {
 			}
 			sb.WriteString(fmt.Sprintf(" [%d files]", p.FileCount))
 			sb.WriteString("\n")
+		}
+	}
+
+	if len(ctx.Vendors) > 0 {
+		sb.WriteString("\n**Vendors & Contracts:**\n")
+		for _, v := range ctx.Vendors {
+			active := "active"
+			if !v.Active { active = "inactive" }
+			sb.WriteString(fmt.Sprintf("- **%s** (%s) — contact: %s [%s]\n", v.Name, v.Domain, v.Contact, active))
+			if v.ContractTerms != "" {
+				sb.WriteString(fmt.Sprintf("  Contract: %s\n", v.ContractTerms))
+			}
+		}
+	}
+
+	if len(ctx.RecentEmails) > 0 {
+		sb.WriteString(fmt.Sprintf("\n**Inbox (%d emails):**\n", len(ctx.RecentEmails)))
+		for _, e := range ctx.RecentEmails {
+			trust := ""
+			if e.Trust == "impersonation" { trust = " 🚨IMPERSONATION" }
+			if e.Trust == "new_contact" { trust = " ⚠️NEW" }
+			sb.WriteString(fmt.Sprintf("- %s: \"%s\" [%s]%s\n", e.From, truncate(e.Subject, 60), e.Category, trust))
 		}
 	}
 

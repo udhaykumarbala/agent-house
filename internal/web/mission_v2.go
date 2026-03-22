@@ -378,6 +378,9 @@ async function sendChat() {
       el.scrollTop = el.scrollHeight;
     }
 
+    // Refresh mail badges after email actions
+    if(d.action==='delete_email'||d.action==='send_reply') { fetchInbox(); }
+
     if(d.action==='create_project'&&d.success&&d.project_id) {
       S.projectId=d.project_id;
       await fetchProjects();

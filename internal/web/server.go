@@ -712,6 +712,12 @@ func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 
 	if r.URL.Path == "/mission" {
 		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(missionV2HTML))
+		return
+	}
+
+	if r.URL.Path == "/mission-v1" {
+		w.Header().Set("Content-Type", "text/html")
 		w.Write([]byte(missionHTML))
 		return
 	}

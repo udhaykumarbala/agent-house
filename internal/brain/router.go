@@ -88,6 +88,26 @@ func (r *Router) Route(ctx context.Context, userID, message string) (*BrainDecis
 		decision.Response = "This requires deeper analysis. Let me look into it more thoroughly."
 	}
 
+	// Safety: if Brain tries to send_reply without user confirmation, show draft first
+	if decision.Action == ActionSendReply || decision.Action == ActionDeleteEmail {
+		isConfirmation := strings.Contains(strings.ToLower(message), "yes") ||
+			strings.Contains(strings.ToLower(message), "send") ||
+			strings.Contains(strings.ToLower(message), "confirm") ||
+			strings.Contains(strings.ToLower(message), "go ahead") ||
+			strings.Contains(strings.ToLower(message), "delete")
+
+		if !isConfirmation && decision.Action == ActionSendReply && decision.Params["body"] != "" {
+			log.Printf("[BRAIN] Converting premature send_reply to draft preview")
+			draft := fmt.Sprintf("**Draft Reply:**\n\n---\n\nTo: %s\nSubject: %s\n\n%s\n\n---\n\nConfirm to send?",
+				decision.Params["to"], decision.Params["subject"], decision.Params["body"])
+			decision = &BrainDecision{
+				Action:      ActionRespond,
+				Response:    draft,
+				Suggestions: []string{"Send this reply", "Edit draft", "Cancel"},
+			}
+		}
+	}
+
 	// Store assistant response
 	if decision.Response != "" {
 		r.conversations.Add(userID, "assistant", decision.Response)
@@ -432,10 +452,14 @@ You manage projects built by teams of AI agents (CEO, PM, UX, UI, Security, Arch
 ## Critical Rules
 
 1. ALWAYS respond with a single JSON object. No other text outside the JSON.
-2. Each response MUST be self-contained. NEVER say "above", "as shown", "draft ready above". Always include the full content in your response.
-3. When drafting an email reply, ALWAYS include the full draft text in your response.
-4. For send_reply action, include email_id of the original email in params so it can be marked as replied.
-5. Put suggestions in the JSON "suggestions" array field, NEVER as bullet text in the response.
+2. NEVER say "above", "as shown", "draft ready above", "review the draft above". Each response is SELF-CONTAINED — the user can ONLY see your response field.
+3. When drafting an email, ALWAYS include the FULL draft text in your response field. Example:
+
+{"action": "respond", "response": "Here is the draft reply:\n\n---\n\nSubject: Re: Steel Delivery\n\nDear Ahmed,\n\n[full email body here]\n\nRegards,\n[Name]\n\n---\n\nConfirm to send?", "suggestions": ["Send this reply", "Edit draft", "Cancel"]}
+
+4. ONLY use send_reply action AFTER the user confirms (says "yes", "send", "confirm"). First show the draft with action "respond", then send on confirmation.
+5. For send_reply, include email_id of the original email in params.
+6. Put suggestions in the JSON "suggestions" array, NEVER as bullet text in the response.
 
 ## Available Actions
 

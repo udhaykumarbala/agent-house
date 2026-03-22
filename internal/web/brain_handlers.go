@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"pty-claude-test/internal/agent"
@@ -19,13 +20,14 @@ import (
 
 // BrainHandler manages the Brain chat interface.
 type BrainHandler struct {
-	router   *brain.Router
-	executor *brain.Executor
-	convos   *brain.ConversationStore
-	orch     *orchestrator.Orchestrator
-	store    *message.Store
-	projDir  string
-	hub      *Hub
+	router       *brain.Router
+	executor     *brain.Executor
+	convos       *brain.ConversationStore
+	orch         *orchestrator.Orchestrator
+	store        *message.Store
+	projDir      string
+	hub          *Hub
+	emailEngine  interface{ MarkReplied(string); DeleteEmail(string) bool }
 }
 
 // NewBrainHandler creates the Brain handler with all dependencies wired.
@@ -188,40 +190,59 @@ func (bh *BrainHandler) handleDelegate(projectID, agentRole, taskStr string) err
 // handleSendReply sends a reply and marks the original email as replied.
 func (bh *BrainHandler) handleSendReply(to, subject, body, emailID string) error {
 	log.Printf("[BRAIN] Sending reply to %s: %s (original: %s)", to, subject, emailID)
-	// Mark original as replied if we have the email engine
+
+	// Mark original as replied — try email_id first, then find by sender
 	if emailID != "" {
 		bh.handleMarkReplied(emailID)
+	} else if to != "" {
+		// Find email by sender address and mark it
+		emails := bh.getEmailsBySender(to)
+		for _, eid := range emails {
+			bh.handleMarkReplied(eid)
+		}
 	}
 	return nil
+}
+
+// getEmailsBySender finds email IDs by sender address.
+func (bh *BrainHandler) getEmailsBySender(sender string) []string {
+	var ids []string
+	inboxDir := bh.projDir + "/inbox"
+	entries, _ := os.ReadDir(inboxDir)
+	for _, entry := range entries {
+		if !strings.HasSuffix(entry.Name(), ".json") {
+			continue
+		}
+		data, err := os.ReadFile(inboxDir + "/" + entry.Name())
+		if err != nil {
+			continue
+		}
+		var email struct {
+			ID   string `json:"id"`
+			From string `json:"from"`
+		}
+		if json.Unmarshal(data, &email) == nil && strings.EqualFold(email.From, sender) {
+			ids = append(ids, email.ID)
+		}
+	}
+	return ids
 }
 
 // handleDeleteEmail deletes an email from the inbox.
 func (bh *BrainHandler) handleDeleteEmail(emailID string) error {
 	log.Printf("[BRAIN] Deleting email: %s", emailID)
-	// Delete via email engine if available
-	path := bh.projDir + "/inbox/" + emailID + ".json"
-	os.Remove(path)
+	if bh.emailEngine != nil {
+		bh.emailEngine.DeleteEmail(emailID)
+	}
 	return nil
 }
 
-// handleMarkReplied marks an email as replied.
+// handleMarkReplied marks an email as replied via the engine (updates memory + disk).
 func (bh *BrainHandler) handleMarkReplied(emailID string) {
 	log.Printf("[BRAIN] Marking email %s as replied", emailID)
-	// Update the email file
-	path := bh.projDir + "/inbox/" + emailID + ".json"
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return
+	if bh.emailEngine != nil {
+		bh.emailEngine.MarkReplied(emailID)
 	}
-	var email map[string]interface{}
-	if json.Unmarshal(data, &email) != nil {
-		return
-	}
-	email["read"] = true
-	email["replied"] = true
-	email["replied_at"] = time.Now().Format(time.RFC3339)
-	updated, _ := json.MarshalIndent(email, "", "  ")
-	os.WriteFile(path, updated, 0644)
 }
 
 // handleBrainChat is the Server method that routes to BrainHandler.

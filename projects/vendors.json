@@ -1,0 +1,46 @@
+[
+  {
+    "id": "vendor_xyz",
+    "name": "XYZ Steel Corp",
+    "domain": "vendorxyz.com",
+    "trusted_emails": [
+      "ahmed.rahman@vendorxyz.com",
+      "sales@vendorxyz.com",
+      "accounts@vendorxyz.com"
+    ],
+    "contact_person": "Ahmed Rahman",
+    "contract_active": true
+  },
+  {
+    "id": "vendor_pqr",
+    "name": "PQR Concrete Ltd",
+    "domain": "pqrconcrete.com",
+    "trusted_emails": [
+      "accounts@pqrconcrete.com",
+      "dispatch@pqrconcrete.com"
+    ],
+    "contact_person": "Ravi Patel",
+    "contract_active": true
+  },
+  {
+    "id": "vendor_lmn",
+    "name": "LMN Electrical Works",
+    "domain": "lmnelectrical.com",
+    "trusted_emails": [
+      "projects@lmnelectrical.com",
+      "billing@lmnelectrical.com"
+    ],
+    "contact_person": "Lisa Nguyen",
+    "contract_active": true
+  },
+  {
+    "id": "vendor_abc_heavy",
+    "name": "ABC Heavy Equipment",
+    "domain": "abcheavy.com",
+    "trusted_emails": [
+      "rentals@abcheavy.com"
+    ],
+    "contact_person": "Mike Torres",
+    "contract_active": true
+  }
+]

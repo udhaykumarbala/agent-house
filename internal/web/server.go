@@ -722,6 +722,12 @@ func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.URL.Path == "/email-sim" {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(emailSimHTML))
+		return
+	}
+
 	if strings.HasPrefix(r.URL.Path, "/project/") {
 		w.Header().Set("Content-Type", "text/html")
 		w.Write([]byte(projectDetailHTML))

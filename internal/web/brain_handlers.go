@@ -27,7 +27,7 @@ type BrainHandler struct {
 	store        *message.Store
 	projDir      string
 	hub          *Hub
-	emailEngine  interface{ MarkReplied(string); DeleteEmail(string) bool }
+	emailEngine  interface{ MarkReplied(string); DeleteEmail(string) bool; UpdateApplicantStatus(string,string) bool }
 }
 
 // NewBrainHandler creates the Brain handler with all dependencies wired.
@@ -52,6 +52,7 @@ func NewBrainHandler(apiClient *session.APIClient, orch *orchestrator.Orchestrat
 	executor.OnSendReply = bh.handleSendReply
 	executor.OnDeleteEmail = bh.handleDeleteEmail
 	executor.OnMarkRead = bh.handleMarkReplied
+	executor.OnShortlist = bh.handleShortlist
 
 	return bh
 }
@@ -242,6 +243,13 @@ func (bh *BrainHandler) handleMarkReplied(emailID string) {
 	log.Printf("[BRAIN] Marking email %s as replied", emailID)
 	if bh.emailEngine != nil {
 		bh.emailEngine.MarkReplied(emailID)
+	}
+}
+
+// handleShortlist updates applicant status via email engine.
+func (bh *BrainHandler) handleShortlist(applicantID, status string) {
+	if bh.emailEngine != nil {
+		bh.emailEngine.UpdateApplicantStatus(applicantID, status)
 	}
 }
 

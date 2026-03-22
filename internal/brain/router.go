@@ -110,12 +110,9 @@ func (r *Router) callBrain(ctx context.Context, prompt string) (*BrainDecision, 
 	// Parse structured JSON from response
 	decision, err := parseDecision(resp.Text)
 	if err != nil {
-		// If parsing fails, treat the whole response as a text reply
-		log.Printf("[BRAIN] Failed to parse decision JSON, treating as text response: %v", err)
-		return &BrainDecision{
-			Action:   ActionRespond,
-			Response: resp.Text,
-		}, nil
+		// JSON parsing failed — infer action from text content
+		log.Printf("[BRAIN] JSON parse failed, inferring action from text: %v", err)
+		decision = inferActionFromText(resp.Text)
 	}
 
 	log.Printf("[BRAIN] Decision: action=%s", decision.Action)
@@ -303,6 +300,90 @@ func cleanSuggestionsFromText(text string) string {
 	// Strip trailing commas, quotes, braces from JSON remnants
 	result = strings.TrimRight(result, " ,}\"")
 	return strings.TrimSpace(result)
+}
+
+// inferActionFromText analyzes text response to determine the intended action.
+// Called when the LLM doesn't return valid JSON.
+func inferActionFromText(text string) *BrainDecision {
+	lower := strings.ToLower(text)
+
+	// Check for send/reply intent
+	if (strings.Contains(lower, "reply sent") || strings.Contains(lower, "email sent") ||
+		strings.Contains(lower, "message sent") || strings.Contains(lower, "sending reply")) &&
+		!strings.Contains(lower, "draft") {
+		// Extract "to" address from text
+		to := extractEmailAddr(text)
+		return &BrainDecision{
+			Action:   ActionSendReply,
+			Params:   map[string]string{"to": to, "subject": "Re:", "body": text},
+			Response: text,
+		}
+	}
+
+	// Check for delete intent
+	if strings.Contains(lower, "deleted") || strings.Contains(lower, "removed") ||
+		(strings.Contains(lower, "delete") && (strings.Contains(lower, "email") || strings.Contains(lower, "impersonation") || strings.Contains(lower, "scam"))) ||
+		strings.Contains(lower, "delete_email") {
+		emailID := extractIDFromText(text, "email_")
+		return &BrainDecision{
+			Action:   ActionDeleteEmail,
+			Params:   map[string]string{"email_id": emailID},
+			Response: text,
+		}
+	}
+
+	// Check for shortlist intent
+	if strings.Contains(lower, "shortlist") || strings.Contains(lower, "shortlisted") {
+		appID := extractIDFromText(text, "app_")
+		return &BrainDecision{
+			Action:   ActionShortlistApplicant,
+			Params:   map[string]string{"applicant_id": appID},
+			Response: text,
+		}
+	}
+
+	// Check for project creation
+	if strings.Contains(lower, "creating project") || strings.Contains(lower, "project created") {
+		return &BrainDecision{
+			Action:   ActionCreateProject,
+			Response: text,
+		}
+	}
+
+	// Default: treat as text response
+	return &BrainDecision{
+		Action:   ActionRespond,
+		Response: text,
+	}
+}
+
+// extractEmailAddr finds an email address in text.
+func extractEmailAddr(text string) string {
+	words := strings.Fields(text)
+	for _, w := range words {
+		w = strings.Trim(w, "<>(),;\"'")
+		if strings.Contains(w, "@") && strings.Contains(w, ".") {
+			return w
+		}
+	}
+	return ""
+}
+
+// extractIDFromText finds an ID with a given prefix in text.
+func extractIDFromText(text, prefix string) string {
+	idx := strings.Index(text, prefix)
+	if idx < 0 {
+		return ""
+	}
+	// Extract until non-alphanumeric/underscore
+	end := idx + len(prefix)
+	for end < len(text) && (text[end] >= '0' && text[end] <= '9' || text[end] == '_') {
+		end++
+	}
+	if end > idx+len(prefix) {
+		return text[idx:end]
+	}
+	return ""
 }
 
 // generateDefaultSuggestions creates contextual suggestions when the LLM didn't provide any.

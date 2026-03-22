@@ -157,6 +157,21 @@ func (e *Engine) DeleteEmail(id string) bool {
 	return false
 }
 
+// UpdateApplicantStatus updates an applicant's status.
+func (e *Engine) UpdateApplicantStatus(applicantID, status string) bool {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	for _, a := range e.applicants {
+		if a.ID == applicantID {
+			a.Status = status
+			e.saveApplicants()
+			log.Printf("[EMAIL] Applicant %s status → %s", applicantID, status)
+			return true
+		}
+	}
+	return false
+}
+
 // AddTrustedEmail adds an email to a vendor's trusted list.
 func (e *Engine) AddTrustedEmail(vendorID, emailAddr string) bool {
 	e.mu.Lock()

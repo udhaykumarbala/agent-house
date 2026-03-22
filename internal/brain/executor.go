@@ -29,6 +29,7 @@ type Executor struct {
 	OnDeleteEmail   func(emailID string) error
 	OnSendReply     func(to, subject, body, emailID string) error
 	OnMarkRead      func(emailID string)
+	OnShortlist     func(applicantID, status string)
 }
 
 // NewExecutor creates an executor with the given project directory.
@@ -195,36 +196,15 @@ func (e *Executor) executeSendReply(decision *BrainDecision) *ExecutionResult {
 
 func (e *Executor) executeShortlistApplicant(decision *BrainDecision) *ExecutionResult {
 	applicantID := decision.Params["applicant_id"]
-	notes := decision.Params["notes"]
 
-	// Load, update, save applicants.json
-	path := e.projectsDir + "/applicants.json"
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return &ExecutionResult{Response: "No applicants found.", Action: ActionRespond, Success: false}
+	if applicantID == "" {
+		return &ExecutionResult{Response: "No applicant ID specified.", Action: ActionRespond, Success: false}
 	}
 
-	var applicants []map[string]interface{}
-	json.Unmarshal(data, &applicants)
-
-	found := false
-	for _, a := range applicants {
-		if a["id"] == applicantID {
-			a["status"] = "shortlisted"
-			if notes != "" {
-				a["notes"] = notes
-			}
-			found = true
-			break
-		}
+	// Use callback to update via engine (updates memory + disk)
+	if e.OnShortlist != nil {
+		e.OnShortlist(applicantID, "shortlisted")
 	}
-
-	if !found {
-		return &ExecutionResult{Response: "Applicant " + applicantID + " not found.", Action: ActionRespond, Success: false}
-	}
-
-	updated, _ := json.MarshalIndent(applicants, "", "  ")
-	os.WriteFile(path, updated, 0644)
 
 	log.Printf("[BRAIN] Shortlisted applicant: %s", applicantID)
 	return &ExecutionResult{Response: decision.Response, Action: ActionShortlistApplicant, Success: true}

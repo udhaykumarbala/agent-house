@@ -18,8 +18,10 @@ const (
 	ActionReadFile      = "read_file"      // Server reads file, re-calls Brain
 	ActionEscalate      = "escalate"       // Spawn session for deep analysis
 	ActionSetReminder   = "set_reminder"   // Create cron job
-	ActionDeleteEmail   = "delete_email"   // Delete/archive an email
-	ActionSendReply     = "send_reply"     // Send email reply
+	ActionDeleteEmail        = "delete_email"        // Delete/archive an email
+	ActionSendReply          = "send_reply"          // Send email reply
+	ActionShortlistApplicant = "shortlist_applicant" // Mark applicant as shortlisted
+	ActionArchiveEmail       = "archive_email"       // Archive (not delete) an email
 )
 
 // ChatMessage represents a message in the conversation.

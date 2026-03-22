@@ -1,0 +1,62 @@
+[
+  {
+    "id": "alpha",
+    "name": "Project Alpha — Solar Farm",
+    "status": "in_progress",
+    "completion": 60,
+    "budget": {"allocated": 6800000, "spent": 4200000, "currency": "USD"},
+    "timeline": {
+      "start": "2025-10-01",
+      "planned_end": "2026-07-15",
+      "current_phase": "Foundation & Structural"
+    },
+    "milestones": [
+      {"name": "Site Preparation", "due": "2025-12-15", "status": "completed"},
+      {"name": "Foundation Work", "due": "2026-03-30", "status": "in_progress", "depends_on": "Steel delivery from XYZ"},
+      {"name": "Structural Erection", "due": "2026-05-15", "status": "pending", "depends_on": "Foundation completion"},
+      {"name": "Panel Installation", "due": "2026-06-30", "status": "pending"},
+      {"name": "Grid Connection & Testing", "due": "2026-07-15", "status": "pending"}
+    ],
+    "risks": [
+      {"description": "Steel delivery delay from XYZ Steel (2 weeks)", "severity": "high", "impact": "Delays foundation by 10+ days, cascades to structural"}
+    ],
+    "team_on_site": 45
+  },
+  {
+    "id": "beta",
+    "name": "Project Beta — Water Treatment Plant",
+    "status": "bidding",
+    "completion": 0,
+    "budget": {"allocated": 120000, "spent": 15000, "currency": "USD", "note": "Pre-bid costs only"},
+    "timeline": {
+      "start": "TBD",
+      "planned_end": "TBD",
+      "current_phase": "Bid submitted, awaiting client response"
+    },
+    "milestones": [
+      {"name": "Bid Submission", "due": "2026-03-10", "status": "completed"},
+      {"name": "Client Response", "due": "2026-03-28", "status": "pending"}
+    ],
+    "risks": [],
+    "team_on_site": 0
+  },
+  {
+    "id": "gamma",
+    "name": "Project Gamma — Highway Bridge",
+    "status": "evaluation",
+    "completion": 0,
+    "budget": {"allocated": 0, "spent": 0, "currency": "USD", "note": "Tender received, not yet evaluated"},
+    "timeline": {
+      "start": "TBD",
+      "planned_end": "TBD",
+      "current_phase": "Tender evaluation"
+    },
+    "milestones": [
+      {"name": "Tender Received", "due": "2026-03-21", "status": "completed"},
+      {"name": "Feasibility Review", "due": "2026-04-01", "status": "pending"},
+      {"name": "Bid Decision", "due": "2026-04-10", "status": "pending"}
+    ],
+    "risks": [],
+    "team_on_site": 0
+  }
+]

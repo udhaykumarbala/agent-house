@@ -17,6 +17,8 @@ type WorkspaceContext struct {
 	RecentActivity []string         `json:"recent_activity,omitempty"`
 	Vendors        []VendorSummary  `json:"vendors,omitempty"`
 	RecentEmails   []EmailSummary   `json:"recent_emails,omitempty"`
+	ProjectData    string           `json:"-"` // raw JSON of EPC project data
+	ApplicantData  string           `json:"-"` // formatted applicant info
 }
 
 // VendorSummary is a compact vendor view with contract info.
@@ -185,6 +187,34 @@ func AssembleContext(projectsDir string) string {
 		}
 	}
 
+	// Load applicants
+	applicantsPath := filepath.Join(projectsDir, "applicants.json")
+	if data, err := os.ReadFile(applicantsPath); err == nil {
+		var applicants []struct {
+			ID         string `json:"id"`
+			Name       string `json:"name"`
+			Email      string `json:"email"`
+			AppliedFor string `json:"applied_for"`
+			Status     string `json:"status"`
+		}
+		if json.Unmarshal(data, &applicants) == nil && len(applicants) > 0 {
+			var lines []string
+			for _, a := range applicants {
+				lines = append(lines, fmt.Sprintf("- **%s** (id: %s) applied for: %s, status: %s, email: %s", a.Name, a.ID, a.AppliedFor, a.Status, a.Email))
+			}
+			ctx.ApplicantData = fmt.Sprintf("**Applicants (%d):**\n%s", len(applicants), strings.Join(lines, "\n"))
+		}
+	}
+
+	// Load EPC project data (schedules, milestones, budgets)
+	projDataPath := filepath.Join(projectsDir, "projects_data.json")
+	if data, err := os.ReadFile(projDataPath); err == nil {
+		var projects []json.RawMessage
+		if json.Unmarshal(data, &projects) == nil && len(projects) > 0 {
+			ctx.ProjectData = string(data)
+		}
+	}
+
 	return formatContext(ctx)
 }
 
@@ -234,13 +264,23 @@ func formatContext(ctx WorkspaceContext) string {
 			if e.Trust == "new_contact" { trust = " ⚠️NEW CONTACT — " + e.TrustReason }
 			readStatus := "UNREAD"
 			if e.Read { readStatus = "read" }
-			sb.WriteString(fmt.Sprintf("**Email %d** [%s] [%s]%s\n", i+1, e.Category, readStatus, trust))
+			sb.WriteString(fmt.Sprintf("**Email %d** (id: %s) [%s] [%s]%s\n", i+1, e.ID, e.Category, readStatus, trust))
 			sb.WriteString(fmt.Sprintf("From: %s\nSubject: %s\n", e.From, e.Subject))
 			if e.Body != "" {
 				sb.WriteString(fmt.Sprintf("Body:\n%s\n", e.Body))
 			}
 			sb.WriteString("\n")
 		}
+	}
+
+	if ctx.ProjectData != "" {
+		sb.WriteString("\n**EPC Projects (schedules & budgets):**\n")
+		sb.WriteString(ctx.ProjectData)
+		sb.WriteString("\n")
+	}
+
+	if ctx.ApplicantData != "" {
+		sb.WriteString("\n" + ctx.ApplicantData + "\n")
 	}
 
 	return sb.String()

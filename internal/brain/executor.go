@@ -62,11 +62,14 @@ func (e *Executor) Execute(decision *BrainDecision) *ExecutionResult {
 	case ActionEscalate:
 		return e.executeEscalate(decision)
 
-	case ActionDeleteEmail:
+	case ActionDeleteEmail, ActionArchiveEmail:
 		return e.executeDeleteEmail(decision)
 
 	case ActionSendReply:
 		return e.executeSendReply(decision)
+
+	case ActionShortlistApplicant:
+		return e.executeShortlistApplicant(decision)
 
 	case ActionSetReminder:
 		return &ExecutionResult{
@@ -186,6 +189,43 @@ func (e *Executor) executeSendReply(decision *BrainDecision) *ExecutionResult {
 
 	log.Printf("[BRAIN] Sent reply to %s: %s", to, subject)
 	return &ExecutionResult{Response: decision.Response, Action: ActionSendReply, Success: true}
+}
+
+func (e *Executor) executeShortlistApplicant(decision *BrainDecision) *ExecutionResult {
+	applicantID := decision.Params["applicant_id"]
+	notes := decision.Params["notes"]
+
+	// Load, update, save applicants.json
+	path := e.projectsDir + "/applicants.json"
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return &ExecutionResult{Response: "No applicants found.", Action: ActionRespond, Success: false}
+	}
+
+	var applicants []map[string]interface{}
+	json.Unmarshal(data, &applicants)
+
+	found := false
+	for _, a := range applicants {
+		if a["id"] == applicantID {
+			a["status"] = "shortlisted"
+			if notes != "" {
+				a["notes"] = notes
+			}
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return &ExecutionResult{Response: "Applicant " + applicantID + " not found.", Action: ActionRespond, Success: false}
+	}
+
+	updated, _ := json.MarshalIndent(applicants, "", "  ")
+	os.WriteFile(path, updated, 0644)
+
+	log.Printf("[BRAIN] Shortlisted applicant: %s", applicantID)
+	return &ExecutionResult{Response: decision.Response, Action: ActionShortlistApplicant, Success: true}
 }
 
 func (e *Executor) executeListProjects(decision *BrainDecision) *ExecutionResult {

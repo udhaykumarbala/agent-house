@@ -237,20 +237,32 @@ func cleanSuggestionsFromText(text string) string {
 	skip := false
 
 	for _, line := range lines {
-		lower := strings.ToLower(strings.TrimSpace(line))
-		if strings.Contains(lower, "suggestion") || strings.Contains(lower, "next steps") {
+		trimmed := strings.TrimSpace(line)
+		lower := strings.ToLower(trimmed)
+
+		// Start skipping at suggestion headers
+		if strings.Contains(lower, "suggestion") || strings.Contains(lower, "next steps") ||
+			strings.Contains(lower, "would you like") || strings.Contains(lower, "what would you like") ||
+			strings.Contains(lower, "options:") || strings.Contains(lower, "actions available") {
 			skip = true
 			continue
 		}
-		if skip && (strings.HasPrefix(strings.TrimSpace(line), "•") || strings.HasPrefix(strings.TrimSpace(line), "-") || strings.HasPrefix(strings.TrimSpace(line), "*")) {
-			continue
+
+		// Skip bullet lines and JSON-style arrays
+		if skip {
+			if strings.HasPrefix(trimmed, "•") || strings.HasPrefix(trimmed, "-") ||
+				strings.HasPrefix(trimmed, "*") || strings.HasPrefix(trimmed, "[") ||
+				strings.HasPrefix(trimmed, "\"") || trimmed == "" {
+				continue
+			}
+			// Non-bullet, non-empty line after suggestions → stop skipping
+			skip = false
 		}
-		skip = false
+
 		cleaned = append(cleaned, line)
 	}
 
 	result := strings.TrimSpace(strings.Join(cleaned, "\n"))
-	// Remove trailing "---" dividers
 	result = strings.TrimRight(result, "-\n ")
 	return strings.TrimSpace(result)
 }
@@ -331,6 +343,12 @@ ALWAYS respond with a single JSON object. No other text outside the JSON.
 {"action": "send_reply", "params": {"to": "email@example.com", "subject": "Re: ...", "body": "Dear..."}, "response": "Reply sent."}
   → Send an email reply. User must confirm before this is executed.
 
+{"action": "shortlist_applicant", "params": {"applicant_id": "app_123", "notes": "Strong candidate"}, "response": "Applicant shortlisted."}
+  → Mark a job applicant as shortlisted for a position.
+
+{"action": "archive_email", "params": {"email_id": "email_123"}, "response": "Email archived."}
+  → Archive an email (move out of active inbox).
+
 ## Decision Rules
 
 1. Greeting or simple question → respond
@@ -341,6 +359,15 @@ ALWAYS respond with a single JSON object. No other text outside the JSON.
 6. "Show me [file] from [project]" → read_file
 7. Complex analysis across multiple files → escalate
 8. If unsure, ask for clarification via respond
+
+## Confirmation for Destructive Actions
+
+For these actions, FIRST show the user what will happen and ask for confirmation:
+- delete_email: Show which email will be deleted, ask "Confirm delete?"
+- send_reply: Show the full draft, ask "Send this reply?" with suggestions ["Send it", "Edit draft", "Cancel"]
+- Only execute the action when the user explicitly confirms (says "yes", "send it", "confirm", "delete it")
+
+When the user confirms, use the ACTUAL email_id or applicant_id from the context (e.g., email_1774159516188, not email_2).
 
 ## Vendor & Email Awareness
 

@@ -251,40 +251,268 @@ The audience watches the live dashboard as agents work:
 
 ---
 
+---
+
+## Email System (Approach B — Built-in)
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  EMAIL SIMULATOR UI                       │
+│            /email-sim (separate page)                     │
+│                                                          │
+│  [Vendor Delay] [Invoice] [Job Application] [Client]     │
+│  [Impersonation Attempt] [Internal Request]               │
+│                                                          │
+│  From: ___________  Subject: ___________                 │
+│  Body: ________________________________                  │
+│                          [Send to Agent House]            │
+└──────────────────────────┬──────────────────────────────┘
+                           │ POST /api/email/receive
+┌──────────────────────────▼──────────────────────────────┐
+│                  EMAIL ENGINE                             │
+│                                                          │
+│  1. Store in inbox.json                                  │
+│  2. Classify: vendor | job_application | client | unknown│
+│  3. TRUST CHECK (vendor emails):                         │
+│     · Is sender in vendor.trusted_emails?                │
+│     · Domain match vendor.domain?                        │
+│     · Historical communication exists?                    │
+│     → Trusted: process normally                          │
+│     → Untrusted: ALERT user + show reasoning             │
+│  4. JOB APPLICATION: parse & store in applicants.json    │
+│  5. Route to Brain → delegate to appropriate agent       │
+└──────────────────────────┬──────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────┐
+│                  AGENT PROCESSING                        │
+│                                                          │
+│  Procurement → vendor emails, quotes, delays             │
+│  Cost Controller → invoices                              │
+│  HR Screener → job applications                          │
+│  Report Generator → client update requests               │
+│  Brain → everything else (routes intelligently)          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Email Data Model
+
+```json
+// inbox/{id}.json
+{
+  "id": "email_001",
+  "from": "ahmed.rahman@vendorxyz.com",
+  "from_name": "Ahmed Rahman",
+  "to": "projects@epc-demo.com",
+  "subject": "Steel Delivery Update — Project Alpha",
+  "body": "Dear Sir, We regret to inform you that...",
+  "date": "2026-03-22T08:30:00Z",
+  "read": false,
+  "category": "vendor",
+  "vendor_id": "vendor_xyz",
+  "trust_status": "trusted",
+  "trust_reason": "Sender matches vendor trusted email list"
+}
+```
+
+### Vendor Trust Verification
+
+```json
+// vendors.json (each vendor has trusted_emails)
+{
+  "id": "vendor_xyz",
+  "name": "XYZ Steel Corp",
+  "domain": "vendorxyz.com",
+  "trusted_emails": [
+    "ahmed.rahman@vendorxyz.com",
+    "sales@vendorxyz.com",
+    "accounts@vendorxyz.com"
+  ],
+  "contact_person": "Ahmed Rahman",
+  "contract_active": true
+}
+```
+
+**Trust Check Logic:**
+
+| Check | Result | Action |
+|-------|--------|--------|
+| Sender in `trusted_emails` list | ✅ Trusted | Process normally |
+| Sender domain matches `vendor.domain` but email not in list | ⚠️ New contact | Alert: "New email from XYZ's domain. Add to trusted?" |
+| Sender domain doesn't match ANY vendor | 🔴 Unknown | Alert: "Unknown sender. Not associated with any vendor." |
+| Sender claims to be vendor but domain is different | 🚨 Impersonation | Alert: "IMPERSONATION RISK — claims to be XYZ but sending from @gmail.com" |
+| Email mentions invoice/payment but sender untrusted | 🚨 High Risk | Alert: "PAYMENT REQUEST from untrusted source. Possible BEC fraud." |
+
+**Alert Format in Brain:**
+```
+🚨 TRUST ALERT — Incoming Email
+
+From: ahmed.r@gmail.com
+Claims: Vendor XYZ Steel Corp
+Subject: Urgent — Updated Payment Details
+
+⚠️ RISK FACTORS:
+1. Sender domain (gmail.com) does not match vendor domain (vendorxyz.com)
+2. Known contact is ahmed.rahman@vendorxyz.com — this is ahmed.r@gmail.com
+3. Email requests payment detail changes — common BEC tactic
+
+RECOMMENDATION: DO NOT process. Verify with vendor via known phone number.
+
+Actions:
+  [Add to Trusted List]  [Reject & Flag]  [Verify Manually]
+```
+
+### Job Application Storage
+
+When an email is classified as a job application:
+
+```json
+// applicants.json (auto-built from emails)
+[
+  {
+    "id": "app_001",
+    "name": "Raj Kumar",
+    "email": "raj.kumar@email.com",
+    "applied_for": "Site Supervisor",
+    "experience_years": 12,
+    "key_skills": ["bridge construction", "team management", "OSHA-30"],
+    "certifications": ["PE", "PMP"],
+    "resume_email_id": "email_005",
+    "received_date": "2026-03-20",
+    "status": "new"
+  }
+]
+```
+
+**When HR has a requirement:**
+> "We need a site supervisor for the Gamma bridge project"
+
+Brain → searches `applicants.json` → returns matches ranked by relevance.
+
+### Email Simulator UI (`/email-sim`)
+
+A standalone page for the demo. Pre-built scenarios with one-click send:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  📧 Email Simulator                       [Agent House]  │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  SCENARIOS:                                              │
+│                                                          │
+│  [📦 Vendor Delay]  [💰 Invoice]  [📋 Job Application]  │
+│  [👤 Client Query]  [🚨 Impersonation]  [📝 Internal]   │
+│                                                          │
+│  ─────────────────────────────────────────────────────  │
+│                                                          │
+│  From:    [ahmed.rahman@vendorxyz.com          ]         │
+│  Name:    [Ahmed Rahman                        ]         │
+│  To:      [projects@epc-demo.com               ]         │
+│  Subject: [Steel Delivery Update               ]         │
+│                                                          │
+│  Body:                                                   │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │ Dear Sir,                                         │  │
+│  │                                                    │  │
+│  │ We regret to inform you that the structural steel │  │
+│  │ delivery for Project Alpha will be delayed by     │  │
+│  │ approximately 2 weeks due to...                   │  │
+│  └───────────────────────────────────────────────────┘  │
+│                                                          │
+│               [Send to Agent House →]                    │
+│                                                          │
+│  ─────────────────────────────────────────────────────  │
+│  SENT LOG:                                               │
+│  ✅ 10:30 — Vendor delay email sent                     │
+│  ✅ 10:31 — Agent House processing...                   │
+│  ✅ 10:32 — Procurement agent drafted reply              │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Scenarios:**
+
+| Button | From | Subject | Category | Trust |
+|--------|------|---------|----------|-------|
+| 📦 Vendor Delay | ahmed.rahman@vendorxyz.com | Steel Delivery Delayed | vendor | ✅ Trusted |
+| 💰 Invoice | accounts@pqrconcrete.com | Invoice #1042 — Concrete Supply | vendor/invoice | ✅ Trusted |
+| 📋 Job Application | raj.kumar@email.com | Application — Site Supervisor | job_application | N/A |
+| 👤 Client Query | sarah.jones@clientabc.com | Phase 2 Update Request | client | ✅ Known |
+| 🚨 Impersonation | ahmed.r@gmail.com | URGENT — Updated Bank Details | vendor/payment | 🚨 ALERT |
+| 📝 Internal | site.engineer@company.com | Additional Resources Needed | internal | ✅ Internal |
+
+**Impersonation scenario is the wow moment:**
+- User clicks "Impersonation" button
+- Email arrives claiming to be Vendor XYZ but from a Gmail address
+- Brain immediately alerts: domain mismatch, BEC risk, payment request from untrusted source
+- Director sees the alert, clicks "Reject & Flag"
+- Audience: "This catches fraud before it costs us $50K"
+
+### Outbound Email (Resend Integration)
+
+When Director approves a draft reply:
+
+```
+POST https://api.resend.com/emails
+{
+  "from": "projects@epc-demo.com",
+  "to": "ahmed.rahman@vendorxyz.com",
+  "subject": "Re: Steel Delivery Update — Project Alpha",
+  "html": "<p>Dear Mr. Rahman,...</p>"
+}
+```
+
+**Env var:** `RESEND_API_KEY` — set once, works immediately.
+
+For the demo, we can actually send real emails to a test address to prove it works live.
+
+---
+
 ## What We Need to Build
 
-### 1. Sample Data Files (2 hours)
-Create realistic JSON data files:
+### 1. Email Engine — `/api/email/*` (3 hours)
+- `POST /api/email/receive` — Receive email (from simulator or webhook)
+- `GET /api/email/inbox` — List inbox with trust status
+- `GET /api/email/inbox/{id}` — Read single email
+- `POST /api/email/send` — Send via Resend API (needs `RESEND_API_KEY`)
+- Trust verification logic (domain match, trusted list, BEC detection)
+- Auto-classify: vendor, job_application, client, internal, unknown
+- Job application parser → stores in `applicants.json`
+- Brain wiring: "check email" → reads inbox, "send that" → sends via Resend
+
+### 2. Email Simulator UI — `/email-sim` (2 hours)
+- Standalone page with 6 scenario buttons
+- Pre-fills from/to/subject/body per scenario
+- User can edit before sending
+- Sends to `POST /api/email/receive`
+- Sent log shows what happened after each email
+- Impersonation scenario demonstrates BEC detection
+
+### 3. Sample Data Files (2 hours)
 - `projects.json` — 3 projects with detailed status
-- `vendors.json` — 15 vendors with contracts
+- `vendors.json` — 15 vendors with contracts + trusted_emails
 - `invoices.json` — 8 invoices (some with discrepancies)
 - `costs.json` — Historical cost data
 - `employees.json` — Team roster
+- `applicants.json` — Pre-seeded with 3 past applicants
 - `schedules.json` — Milestones and deadlines
-- 5 email JSON files in `inbox/`
 
-### 2. EPC Agent Configurations (1 hour)
-Already created in `agents/demos/epc/`. Need to:
-- Tune system prompts for the demo scenario
-- Add context about the specific projects/vendors in prompts
-- Set up the project directory with data files
+### 4. EPC Agent Tuning (1 hour)
+- Tune agent prompts for the demo scenario
+- Add trust-checking instructions to Procurement agent
+- Add resume parsing instructions to HR Screener
+- Wire Brain to check vendor trust on incoming emails
 
-### 3. Email System — Simple File-Based (1 hour)
-- `inbox/` — JSON files with: from, to, subject, body, date, read status
-- `outbox/` — Agent-written draft replies
-- No actual SMTP needed — just file read/write
-- Brain shows inbox summary in briefing
-- Agents write drafts that Director reviews
+### 5. Resend Integration (30 min)
+- Simple HTTP POST to Resend API
+- `RESEND_API_KEY` env var
+- Template for outbound emails
+- Draft review before send (Director approves in UI)
 
-### 4. Report Template (30 min)
-- Report Generator agent prompt tuned for EPC report format
-- Standard sections: Executive Summary, Per-Project Status, Costs, Risks, Actions
-- Output as markdown (converts to PDF in production)
-
-### 5. Demo Script (30 min)
-- Exact commands to type
-- Expected outputs
-- Talking points for each scene
+### 6. Demo Script (30 min)
+- Exact commands/clicks for each scene
+- Expected outputs and talking points
+- Impersonation scenario script (the wow moment)
 - Fallback plan if something goes wrong
 
 ---
@@ -319,10 +547,13 @@ The demo is successful if the audience:
 
 | Day | Task | Hours |
 |-----|------|-------|
-| Day 1 | Create sample data files (projects, vendors, invoices, emails) | 3h |
-| Day 1 | Tune EPC agent prompts for demo scenario | 2h |
-| Day 2 | End-to-end test of all 6 scenes | 3h |
-| Day 2 | Fix issues, polish Brain responses | 2h |
+| Day 1 | Email engine (receive, inbox, send, trust check, classify) | 3h |
+| Day 1 | Email simulator UI with 6 scenario buttons | 2h |
+| Day 2 | Sample data files (projects, vendors, invoices, applicants) | 2h |
+| Day 2 | EPC agent prompt tuning + Brain wiring for email | 2h |
+| Day 2 | Resend integration for real outbound email | 0.5h |
+| Day 3 | End-to-end test of all 6 scenes + impersonation scenario | 2h |
+| Day 3 | Fix issues, polish Brain responses | 1.5h |
 | Day 3 | Write demo script with talking points | 1h |
 | Day 3 | Rehearsal run | 1h |
-| **Total** | | **12h** |
+| **Total** | | **15h** |

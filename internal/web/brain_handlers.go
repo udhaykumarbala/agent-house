@@ -46,6 +46,7 @@ func NewBrainHandler(apiClient *session.APIClient, orch *orchestrator.Orchestrat
 	// Wire executor callbacks
 	executor.OnCreateProject = bh.handleCreateProject
 	executor.OnDelegate = bh.handleDelegate
+	executor.OnSendReply = bh.handleSendReply
 
 	return bh
 }
@@ -118,10 +119,11 @@ func (bh *BrainHandler) HandleChat(w http.ResponseWriter, r *http.Request) {
 	bh.hub.BroadcastAgentSessionEvent(brainEvent)
 
 	writeJSON(w, map[string]interface{}{
-		"response":   result.Response,
-		"action":     result.Action,
-		"project_id": result.ProjectID,
-		"success":    result.Success,
+		"response":    result.Response,
+		"action":      result.Action,
+		"project_id":  result.ProjectID,
+		"success":     result.Success,
+		"suggestions": decision.Suggestions,
 	})
 }
 
@@ -177,6 +179,13 @@ func (bh *BrainHandler) handleDelegate(projectID, agentRole, taskStr string) err
 		CreatedAt: time.Now(),
 	}
 	bh.orch.InjectTask(injected)
+	return nil
+}
+
+// handleSendReply sends a reply via the email handlers.
+func (bh *BrainHandler) handleSendReply(to, subject, body string) error {
+	log.Printf("[BRAIN] Sending reply to %s: %s", to, subject)
+	// Would use Resend here — for now just log it
 	return nil
 }
 

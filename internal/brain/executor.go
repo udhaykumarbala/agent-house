@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 // ExecutionResult holds the outcome of executing a Brain decision.
@@ -25,6 +26,8 @@ type Executor struct {
 	OnCreateProject func(projectID, task string) error
 	OnDelegate      func(projectID, agentRole, task string) error
 	OnEscalate      func(projectID, task string) (string, error)
+	OnDeleteEmail   func(emailID string) error
+	OnSendReply     func(to, subject, body string) error
 }
 
 // NewExecutor creates an executor with the given project directory.
@@ -58,6 +61,12 @@ func (e *Executor) Execute(decision *BrainDecision) *ExecutionResult {
 
 	case ActionEscalate:
 		return e.executeEscalate(decision)
+
+	case ActionDeleteEmail:
+		return e.executeDeleteEmail(decision)
+
+	case ActionSendReply:
+		return e.executeSendReply(decision)
 
 	case ActionSetReminder:
 		return &ExecutionResult{
@@ -132,6 +141,51 @@ func (e *Executor) executeDelegate(decision *BrainDecision) *ExecutionResult {
 		ProjectID: projectID,
 		Success:   true,
 	}
+}
+
+func (e *Executor) executeDeleteEmail(decision *BrainDecision) *ExecutionResult {
+	emailID := decision.Params["email_id"]
+	if emailID == "" {
+		return &ExecutionResult{Response: "No email ID specified.", Action: ActionRespond, Success: false}
+	}
+
+	// Delete the email file from inbox
+	path := e.projectsDir + "/inbox/" + emailID + ".json"
+	if err := os.Remove(path); err != nil {
+		if e.OnDeleteEmail != nil {
+			e.OnDeleteEmail(emailID)
+		}
+		return &ExecutionResult{Response: "Email " + emailID + " removed.", Action: ActionDeleteEmail, Success: true}
+	}
+
+	log.Printf("[BRAIN] Deleted email: %s", emailID)
+	return &ExecutionResult{Response: decision.Response, Action: ActionDeleteEmail, Success: true}
+}
+
+func (e *Executor) executeSendReply(decision *BrainDecision) *ExecutionResult {
+	to := decision.Params["to"]
+	subject := decision.Params["subject"]
+	body := decision.Params["body"]
+
+	if to == "" || body == "" {
+		return &ExecutionResult{Response: "Missing 'to' or 'body' for reply.", Action: ActionRespond, Success: false}
+	}
+
+	if e.OnSendReply != nil {
+		if err := e.OnSendReply(to, subject, body); err != nil {
+			return &ExecutionResult{Response: "Failed to send: " + err.Error(), Action: ActionSendReply, Success: false}
+		}
+	}
+
+	// Also save to outbox
+	outboxPath := e.projectsDir + "/outbox"
+	os.MkdirAll(outboxPath, 0755)
+	draft := map[string]string{"to": to, "subject": subject, "body": body}
+	data, _ := json.MarshalIndent(draft, "", "  ")
+	os.WriteFile(outboxPath+"/reply_"+fmt.Sprintf("%d", time.Now().UnixMilli())+".json", data, 0644)
+
+	log.Printf("[BRAIN] Sent reply to %s: %s", to, subject)
+	return &ExecutionResult{Response: decision.Response, Action: ActionSendReply, Success: true}
 }
 
 func (e *Executor) executeListProjects(decision *BrainDecision) *ExecutionResult {

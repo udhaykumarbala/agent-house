@@ -2,9 +2,10 @@ package brain
 
 // BrainDecision is the structured output from the Brain router.
 type BrainDecision struct {
-	Action   string            `json:"action"`
-	Params   map[string]string `json:"params,omitempty"`
-	Response string            `json:"response"`
+	Action      string            `json:"action"`
+	Params      map[string]string `json:"params,omitempty"`
+	Response    string            `json:"response"`
+	Suggestions []string          `json:"suggestions,omitempty"` // Quick action buttons for the user
 }
 
 // Action types
@@ -17,6 +18,8 @@ const (
 	ActionReadFile      = "read_file"      // Server reads file, re-calls Brain
 	ActionEscalate      = "escalate"       // Spawn session for deep analysis
 	ActionSetReminder   = "set_reminder"   // Create cron job
+	ActionDeleteEmail   = "delete_email"   // Delete/archive an email
+	ActionSendReply     = "send_reply"     // Send email reply
 )
 
 // ChatMessage represents a message in the conversation.

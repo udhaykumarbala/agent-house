@@ -363,8 +363,20 @@ async function sendChat() {
   try {
     const res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,user_id:'default'})});
     const d = await res.json();
-    const icon = d.action==='create_project'?'🚀':d.action==='delegate'?'📌':d.action==='list_projects'?'📋':d.action==='project_status'?'📊':'';
+    const icon = d.action==='create_project'?'🚀':d.action==='delegate'?'📌':d.action==='list_projects'?'📋':d.action==='project_status'?'📊':d.action==='delete_email'?'🗑️':d.action==='send_reply'?'📤':'';
     addChatMsg('brain', (icon?icon+' ':'')+(d.response||'Done'));
+
+    // Render suggestion buttons
+    if(d.suggestions && d.suggestions.length) {
+      const el = document.getElementById('chatMessages');
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;padding:4px 38px;margin-top:-4px';
+      div.innerHTML = d.suggestions.map(s =>
+        '<button onclick="useSuggestion(this)" style="background:var(--elevated);border:1px solid var(--border);color:var(--text2);padding:5px 12px;border-radius:16px;font-size:11px;cursor:pointer;font-family:var(--font);transition:all 0.1s" onmouseover="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--text)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.color=\'var(--text2)\'">' + esc(s) + '</button>'
+      ).join('');
+      el.appendChild(div);
+      el.scrollTop = el.scrollHeight;
+    }
 
     if(d.action==='create_project'&&d.success&&d.project_id) {
       S.projectId=d.project_id;
@@ -375,6 +387,16 @@ async function sendChat() {
     addChatMsg('brain','❌ Error: '+e.message);
   }
   document.getElementById('chatSend').disabled=false;
+}
+
+function useSuggestion(btn) {
+  const text = btn.textContent;
+  // Remove all suggestion buttons
+  const parent = btn.parentElement;
+  if(parent) parent.remove();
+  // Set as input and send
+  document.getElementById('chatInput').value = text;
+  sendChat();
 }
 
 function addChatMsg(role, text) {

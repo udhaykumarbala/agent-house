@@ -678,7 +678,43 @@ function updateStatus(agentRole, toolName) {
 // ═══ HELPERS ═══
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function formatToolShort(name,input){try{const p=JSON.parse(input||'{}');switch(name){case'Read':return p.file_path||'';case'Write':return(p.file_path||'')+'';case'Edit':return p.file_path||'';case'Bash':return'$ '+(p.command||'').substring(0,40);case'Grep':return'"'+(p.pattern||'')+'"';default:return''}}catch(e){return''}}
-function renderMd(s){if(!s)return'';s=esc(s);s=s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');var bt=String.fromCharCode(96);var codeRe=new RegExp(bt+'([^'+bt+']+)'+bt,'g');s=s.replace(codeRe,'<code>$1</code>');s=s.replace(/^- (.+)/gm,'• $1');s=s.replace(/\n/g,'<br>');return s}
+function renderMd(s){
+  if(!s)return'';
+  s=esc(s);
+  // Tables: detect lines with |
+  s=s.replace(/((?:^|\n)\|.+\|(?:\n\|[-| :]+\|)?(?:\n\|.+\|)+)/g, function(table){
+    var rows=table.trim().split('\n').filter(function(r){return r.trim()&&!/^[\|\s\-:]+$/.test(r.replace(/[^|\-:\s]/g,''));});
+    if(rows.length<1)return table;
+    var html='<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:11px">';
+    rows.forEach(function(row,i){
+      var cells=row.split('|').filter(function(c){return c.trim()!=='';});
+      var tag=i===0?'th':'td';
+      html+='<tr>'+cells.map(function(c){return'<'+tag+' style="padding:4px 8px;border:1px solid var(--border);text-align:left;'+(i===0?'background:rgba(255,255,255,0.03);font-weight:500':'')+'">'+ c.trim()+'</'+tag+'>';}).join('')+'</tr>';
+    });
+    return html+'</table>';
+  });
+  // Headers
+  s=s.replace(/^### (.+)/gm,'<div style="font-size:13px;font-weight:600;margin:10px 0 4px;color:var(--text)">$1</div>');
+  s=s.replace(/^## (.+)/gm,'<div style="font-size:14px;font-weight:600;margin:10px 0 4px;color:var(--text)">$1</div>');
+  // HR
+  s=s.replace(/^---+$/gm,'<hr style="border:none;border-top:1px solid var(--border);margin:8px 0">');
+  // Bold
+  s=s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  // Inline code
+  var bt=String.fromCharCode(96);
+  var codeRe=new RegExp(bt+'([^'+bt+']+)'+bt,'g');
+  s=s.replace(codeRe,'<code style="font-family:var(--mono);font-size:11px;background:rgba(255,255,255,0.05);padding:1px 4px;border-radius:3px">$1</code>');
+  // Lists
+  s=s.replace(/^- (.+)/gm,'<div style="padding-left:12px">• $1</div>');
+  s=s.replace(/^\* (.+)/gm,'<div style="padding-left:12px">• $1</div>');
+  // Blockquotes
+  s=s.replace(/^&gt; (.+)/gm,'<div style="border-left:2px solid var(--accent);padding-left:10px;color:var(--text2);font-style:italic;margin:4px 0">$1</div>');
+  // Newlines (but not after block elements)
+  s=s.replace(/\n/g,'<br>');
+  s=s.replace(/<br><(div|table|hr)/g,'<$1');
+  s=s.replace(/<\/(div|table)><br>/g,'</$1>');
+  return s;
+}
 function toast(title,text,type){const c=document.getElementById('toasts');const t=document.createElement('div');t.className='toast';t.innerHTML='<strong>'+esc(title)+'</strong><br><span style="color:var(--text2)">'+esc(text)+'</span>';c.appendChild(t);setTimeout(()=>t.remove(),5000)}
 
 init();

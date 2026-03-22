@@ -179,10 +179,14 @@ func parseDecision(text string) (*BrainDecision, error) {
 	// If suggestions are empty, try to extract from response text
 	if len(decision.Suggestions) == 0 && decision.Response != "" {
 		decision.Suggestions = extractSuggestionsFromText(decision.Response)
-		// Clean the suggestions text out of the response
 		if len(decision.Suggestions) > 0 {
 			decision.Response = cleanSuggestionsFromText(decision.Response)
 		}
+	}
+
+	// If STILL no suggestions, generate defaults based on context
+	if len(decision.Suggestions) == 0 {
+		decision.Suggestions = generateDefaultSuggestions(&decision)
 	}
 
 	return &decision, nil
@@ -249,6 +253,29 @@ func cleanSuggestionsFromText(text string) string {
 	// Remove trailing "---" dividers
 	result = strings.TrimRight(result, "-\n ")
 	return strings.TrimSpace(result)
+}
+
+// generateDefaultSuggestions creates contextual suggestions when the LLM didn't provide any.
+func generateDefaultSuggestions(d *BrainDecision) []string {
+	resp := strings.ToLower(d.Response)
+
+	// Email-related responses
+	if strings.Contains(resp, "email") || strings.Contains(resp, "inbox") || strings.Contains(resp, "mail") {
+		return []string{"Draft reply to vendor", "Delete suspicious email", "Review next email", "Check contract terms"}
+	}
+	// Project-related
+	if d.Action == "create_project" {
+		return []string{"Check progress", "View live dashboard", "Add requirements"}
+	}
+	if d.Action == "project_status" || d.Action == "list_projects" {
+		return []string{"Create new project", "Check emails", "Generate report"}
+	}
+	// Vendor-related
+	if strings.Contains(resp, "vendor") || strings.Contains(resp, "contract") || strings.Contains(resp, "delivery") {
+		return []string{"Draft firm reply", "Check penalty terms", "Escalate to management", "View all vendors"}
+	}
+	// Default
+	return []string{"Show inbox", "List projects", "Create a project"}
 }
 
 func readFileContent(path string) (string, error) {

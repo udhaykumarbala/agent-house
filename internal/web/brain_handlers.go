@@ -124,12 +124,18 @@ func (bh *BrainHandler) HandleChat(w http.ResponseWriter, r *http.Request) {
 	})
 	bh.hub.BroadcastAgentSessionEvent(brainEvent)
 
+	// Ensure suggestions is never nil
+	suggestions := decision.Suggestions
+	if len(suggestions) == 0 {
+		suggestions = []string{"Show inbox", "List projects", "Check status"}
+	}
+
 	writeJSON(w, map[string]interface{}{
 		"response":    result.Response,
 		"action":      result.Action,
 		"project_id":  result.ProjectID,
 		"success":     result.Success,
-		"suggestions": decision.Suggestions,
+		"suggestions": suggestions,
 	})
 }
 

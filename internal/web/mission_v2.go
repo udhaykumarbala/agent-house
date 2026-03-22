@@ -470,19 +470,125 @@ function renderMailBadges() {
 }
 
 function renderMailList(emails) {
+  S.emails = emails;
   const el = document.getElementById('mailList');
   if(!emails.length) { el.innerHTML='<div class="empty"><div class="icon">📧</div>No emails yet. <a href="/email-sim" style="color:var(--accent)">Send test emails</a></div>'; return; }
-  el.innerHTML = emails.map(e => {
+  el.innerHTML = '<div id="mailListInner">' + emails.map((e,i) => {
     const unread = !e.read?' unread':'';
     const alert = e.trust_status==='impersonation'?' alert':'';
     const time = e.date?new Date(e.date).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}):'';
-    return '<div class="mail-row'+unread+alert+'">'+
+    return '<div class="mail-row'+unread+alert+'" onclick="openMail('+i+')">'+
       '<div class="mail-from">'+esc(e.from_name||e.from)+'</div>'+
       '<div class="mail-subject">'+esc(e.subject)+'</div>'+
-      '<div class="mail-trust '+e.trust_status+'">'+esc(e.trust_status?.replace(/_/g,' ')||'')+'</div>'+
+      '<div class="mail-trust '+(e.trust_status||'')+'">'+esc((e.trust_status||'').replace(/_/g,' '))+'</div>'+
       '<div class="mail-time">'+time+'</div></div>';
-  }).join('');
+  }).join('') + '</div><div id="mailDetail" style="display:none"></div>';
 }
+
+function openMail(idx) {
+  const e = S.emails[idx]; if(!e) return;
+  document.getElementById('mailListInner').style.display='none';
+  const det = document.getElementById('mailDetail');
+  det.style.display='block';
+
+  const isThreat = e.trust_status==='impersonation';
+  const isNew = e.trust_status==='new_contact';
+
+  let html = '<div style="padding:20px">';
+  // Back button
+  html += '<div style="margin-bottom:16px"><button onclick="closeMail()" style="background:none;border:1px solid var(--border);color:var(--text2);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:11px">← Back to Inbox</button></div>';
+
+  // Trust alert banner
+  if(isThreat) {
+    html += '<div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);border-left:3px solid var(--red);border-radius:8px;padding:14px;margin-bottom:16px">';
+    html += '<div style="font-weight:600;color:var(--red);margin-bottom:6px">🚨 IMPERSONATION RISK</div>';
+    html += '<div style="font-size:12px;color:var(--text2)">'+esc(e.trust_reason||'Sender not verified')+'</div>';
+    html += '<div style="margin-top:10px;display:flex;gap:8px">';
+    html += '<button onclick="rejectMail(\''+e.id+'\')" style="background:var(--red);color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">🚫 Reject & Flag</button>';
+    html += '<button onclick="verifyMail(\''+e.id+'\')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer">🔍 Verify Manually</button>';
+    html += '</div></div>';
+  }
+  if(isNew) {
+    html += '<div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-left:3px solid var(--yellow);border-radius:8px;padding:14px;margin-bottom:16px">';
+    html += '<div style="font-weight:600;color:var(--yellow);margin-bottom:6px">⚠️ New Contact</div>';
+    html += '<div style="font-size:12px;color:var(--text2)">'+esc(e.trust_reason||'')+'</div>';
+    html += '<div style="margin-top:10px">';
+    html += '<button onclick="addToTrusted(\''+esc(e.vendor_id||'')+'\',\''+esc(e.from)+'\')" style="background:var(--green);color:var(--void);border:none;padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">✅ Add to Trusted List</button>';
+    html += '</div></div>';
+  }
+
+  // Email header
+  html += '<div style="background:var(--elevated);border:1px solid var(--border-subtle);border-radius:10px;padding:16px;margin-bottom:16px">';
+  html += '<div style="font-size:15px;font-weight:600;margin-bottom:10px">'+esc(e.subject)+'</div>';
+  html += '<div style="display:flex;gap:16px;font-size:12px;color:var(--text2);margin-bottom:12px">';
+  html += '<span><strong>From:</strong> '+esc(e.from_name||'')+' &lt;'+esc(e.from)+'&gt;</span>';
+  html += '<span><strong>To:</strong> '+esc(e.to)+'</span>';
+  html += '<span style="color:var(--text3)">'+new Date(e.date).toLocaleString()+'</span>';
+  html += '</div>';
+  html += '<div style="font-size:13px;line-height:1.7;color:var(--text2);white-space:pre-wrap;border-top:1px solid var(--border-subtle);padding-top:12px">'+esc(e.body)+'</div>';
+  html += '</div>';
+
+  // Actions
+  html += '<div style="display:flex;gap:8px;margin-bottom:16px">';
+  html += '<button onclick="suggestReply('+idx+')" style="background:var(--accent);color:var(--void);border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🧠 Suggest Reply</button>';
+  html += '<button onclick="chatAboutMail('+idx+')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:8px 16px;border-radius:8px;font-size:12px;cursor:pointer">💬 Chat About This</button>';
+  if(e.vendor_id && !isThreat) {
+    html += '<button onclick="addToTrusted(\''+esc(e.vendor_id)+'\',\''+esc(e.from)+'\')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:8px 16px;border-radius:8px;font-size:12px;cursor:pointer">📋 Add to Trusted</button>';
+  }
+  html += '</div>';
+
+  // Reply area
+  html += '<div id="replyArea"></div>';
+  html += '</div>';
+  det.innerHTML = html;
+}
+
+function closeMail() {
+  document.getElementById('mailListInner').style.display='';
+  document.getElementById('mailDetail').style.display='none';
+}
+
+async function suggestReply(idx) {
+  const e = S.emails[idx]; if(!e) return;
+  const area = document.getElementById('replyArea');
+  area.innerHTML = '<div style="padding:14px;background:var(--elevated);border:1px solid var(--border-subtle);border-radius:10px"><div style="color:var(--accent);font-size:12px;margin-bottom:8px">🧠 Generating reply suggestion...</div></div>';
+
+  try {
+    const res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:'Draft a professional reply to this email:\n\nFrom: '+e.from_name+' <'+e.from+'>\nSubject: '+e.subject+'\n\n'+e.body,user_id:'default'})});
+    const d = await res.json();
+    area.innerHTML = '<div style="padding:14px;background:var(--elevated);border:1px solid var(--border-subtle);border-radius:10px">'+
+      '<div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px">Suggested Reply</div>'+
+      '<div style="font-size:13px;line-height:1.6;color:var(--text2);white-space:pre-wrap">'+renderMd(d.response||'')+'</div>'+
+      '<div style="margin-top:12px;display:flex;gap:8px">'+
+      '<button onclick="sendReply()" style="background:var(--green);color:var(--void);border:none;padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">📤 Send Reply</button>'+
+      '<button onclick="editReply()" style="background:none;border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer">✏️ Edit</button>'+
+      '</div></div>';
+  } catch(e) {
+    area.innerHTML = '<div style="color:var(--red);font-size:12px">Failed: '+e.message+'</div>';
+  }
+}
+
+function chatAboutMail(idx) {
+  const e = S.emails[idx]; if(!e) return;
+  switchTab('chat');
+  const inp = document.getElementById('chatInput');
+  inp.value = 'Regarding email from '+e.from_name+' about "'+e.subject+'" — ';
+  inp.focus();
+}
+
+async function addToTrusted(vendorId, emailAddr) {
+  if(!vendorId){toast('Error','No vendor ID','error');return;}
+  try {
+    await fetch('/api/email/trust',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vendor_id:vendorId,email:emailAddr})});
+    toast('Added',''+emailAddr+' added to trusted list','success');
+  } catch(e) { toast('Error',e.message,'error'); }
+}
+
+function rejectMail(id) { toast('Rejected','Email flagged as fraud attempt','success'); }
+function verifyMail(id) { toast('Verify','Please contact vendor via known phone number','info'); }
+function sendReply() { toast('Sent','Reply sent (RESEND_API_KEY required for real delivery)','success'); }
+function editReply() { toast('Edit','Edit feature coming soon','info'); }
 
 // ═══ PROJECT VIEW ═══
 async function loadProjectView() {

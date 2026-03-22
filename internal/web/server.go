@@ -34,6 +34,7 @@ type Server struct {
 	agentTaskMgr    *agentask.Manager // Agent task tracking
 	cronScheduler   *CronScheduler     // Cron scheduler for recurring tasks
 	brainHandler    *BrainHandler      // Brain chat handler
+	emailHandlers   *EmailHandlers     // Email engine handlers
 }
 
 // Config holds server configuration
@@ -88,6 +89,9 @@ func NewServer(config Config) *Server {
 	// Load file-based agent registry
 	agentRegistry := agent.NewRegistry("agents")
 	server.orchestrator.SetAgentRegistry(agentRegistry)
+
+	// Initialize email handlers
+	server.emailHandlers = NewEmailHandlers(config.ProjectDir)
 
 	// Initialize Brain handler
 	apiClient := session.NewAPIClient()
@@ -191,6 +195,9 @@ func (s *Server) Start(port int) error {
 
 	// Project detail endpoint
 	mux.HandleFunc("/api/projects/", s.handleProjectDetail)
+
+	// Email endpoints
+	mux.HandleFunc("/api/email/", s.handleEmail)
 
 	// Brain chat endpoint
 	mux.HandleFunc("/api/chat", s.handleBrainChat)

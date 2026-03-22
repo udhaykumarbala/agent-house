@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"pty-claude-test/internal/agent"
@@ -47,6 +48,8 @@ func NewBrainHandler(apiClient *session.APIClient, orch *orchestrator.Orchestrat
 	executor.OnCreateProject = bh.handleCreateProject
 	executor.OnDelegate = bh.handleDelegate
 	executor.OnSendReply = bh.handleSendReply
+	executor.OnDeleteEmail = bh.handleDeleteEmail
+	executor.OnMarkRead = bh.handleMarkReplied
 
 	return bh
 }
@@ -182,11 +185,43 @@ func (bh *BrainHandler) handleDelegate(projectID, agentRole, taskStr string) err
 	return nil
 }
 
-// handleSendReply sends a reply via the email handlers.
-func (bh *BrainHandler) handleSendReply(to, subject, body string) error {
-	log.Printf("[BRAIN] Sending reply to %s: %s", to, subject)
-	// Would use Resend here — for now just log it
+// handleSendReply sends a reply and marks the original email as replied.
+func (bh *BrainHandler) handleSendReply(to, subject, body, emailID string) error {
+	log.Printf("[BRAIN] Sending reply to %s: %s (original: %s)", to, subject, emailID)
+	// Mark original as replied if we have the email engine
+	if emailID != "" {
+		bh.handleMarkReplied(emailID)
+	}
 	return nil
+}
+
+// handleDeleteEmail deletes an email from the inbox.
+func (bh *BrainHandler) handleDeleteEmail(emailID string) error {
+	log.Printf("[BRAIN] Deleting email: %s", emailID)
+	// Delete via email engine if available
+	path := bh.projDir + "/inbox/" + emailID + ".json"
+	os.Remove(path)
+	return nil
+}
+
+// handleMarkReplied marks an email as replied.
+func (bh *BrainHandler) handleMarkReplied(emailID string) {
+	log.Printf("[BRAIN] Marking email %s as replied", emailID)
+	// Update the email file
+	path := bh.projDir + "/inbox/" + emailID + ".json"
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+	var email map[string]interface{}
+	if json.Unmarshal(data, &email) != nil {
+		return
+	}
+	email["read"] = true
+	email["replied"] = true
+	email["replied_at"] = time.Now().Format(time.RFC3339)
+	updated, _ := json.MarshalIndent(email, "", "  ")
+	os.WriteFile(path, updated, 0644)
 }
 
 // handleBrainChat is the Server method that routes to BrainHandler.

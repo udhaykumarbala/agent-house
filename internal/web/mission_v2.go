@@ -378,9 +378,11 @@ async function sendChat() {
       el.scrollTop = el.scrollHeight;
     }
 
-    // Refresh mail badges after any email-related action or response
+    // Refresh mail badges after email-related actions
+    var r = (d.response||'').toLowerCase();
     if(d.action==='delete_email'||d.action==='send_reply'||d.action==='archive_email'||
-       (d.response&&(d.response.indexOf('deleted')>-1||d.response.indexOf('sent')>-1||d.response.indexOf('Deleted')>-1||d.response.indexOf('Sent')>-1))) {
+       r.indexOf('deleted')>-1||r.indexOf('sent')>-1||r.indexOf('replied')>-1||
+       r.indexOf('email')>-1||r.indexOf('inbox')>-1||r.indexOf('mail')>-1) {
       fetchInbox();
     }
 
@@ -505,8 +507,9 @@ function renderMailList(emails) {
     const unread = !e.read?' unread':'';
     const alert = e.trust_status==='impersonation'?' alert':'';
     const time = e.date?new Date(e.date).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}):'';
+    var replied = e.replied ? '<span style="color:var(--green);font-size:9px;margin-left:4px">✓ replied</span>' : '';
     return '<div class="mail-row'+unread+alert+'" onclick="openMail('+i+')">'+
-      '<div class="mail-from">'+esc(e.from_name||e.from)+'</div>'+
+      '<div class="mail-from">'+esc(e.from_name||e.from)+replied+'</div>'+
       '<div class="mail-subject">'+esc(e.subject)+'</div>'+
       '<div class="mail-trust '+(e.trust_status||'')+'">'+esc((e.trust_status||'').replace(/_/g,' '))+'</div>'+
       '<div class="mail-time">'+time+'</div></div>';

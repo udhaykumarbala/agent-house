@@ -12,6 +12,8 @@ type Email struct {
 	Body        string    `json:"body"`
 	Date        time.Time `json:"date"`
 	Read        bool      `json:"read"`
+	Replied     bool      `json:"replied"`
+	RepliedAt   string    `json:"replied_at,omitempty"`
 	Category    string    `json:"category"`     // vendor, job_application, client, internal, unknown
 	VendorID    string    `json:"vendor_id,omitempty"`
 	TrustStatus string    `json:"trust_status"` // trusted, new_contact, untrusted, impersonation

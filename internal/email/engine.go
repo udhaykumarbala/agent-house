@@ -112,6 +112,51 @@ func (e *Engine) GetApplicants() []*Applicant {
 	return e.applicants
 }
 
+// MarkRead marks an email as read.
+func (e *Engine) MarkRead(id string) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	for _, email := range e.inbox {
+		if email.ID == id {
+			email.Read = true
+			e.saveEmail(email)
+			return
+		}
+	}
+}
+
+// MarkReplied marks an email as replied and read.
+func (e *Engine) MarkReplied(id string) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	for _, email := range e.inbox {
+		if email.ID == id {
+			email.Read = true
+			email.Replied = true
+			email.RepliedAt = time.Now().Format(time.RFC3339)
+			e.saveEmail(email)
+			log.Printf("[EMAIL] Marked %s as replied", id)
+			return
+		}
+	}
+}
+
+// DeleteEmail removes an email from inbox.
+func (e *Engine) DeleteEmail(id string) bool {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	for i, email := range e.inbox {
+		if email.ID == id {
+			e.inbox = append(e.inbox[:i], e.inbox[i+1:]...)
+			path := filepath.Join(e.dataDir, "inbox", id+".json")
+			os.Remove(path)
+			log.Printf("[EMAIL] Deleted email %s", id)
+			return true
+		}
+	}
+	return false
+}
+
 // AddTrustedEmail adds an email to a vendor's trusted list.
 func (e *Engine) AddTrustedEmail(vendorID, emailAddr string) bool {
 	e.mu.Lock()

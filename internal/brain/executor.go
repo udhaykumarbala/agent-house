@@ -27,7 +27,8 @@ type Executor struct {
 	OnDelegate      func(projectID, agentRole, task string) error
 	OnEscalate      func(projectID, task string) (string, error)
 	OnDeleteEmail   func(emailID string) error
-	OnSendReply     func(to, subject, body string) error
+	OnSendReply     func(to, subject, body, emailID string) error
+	OnMarkRead      func(emailID string)
 }
 
 // NewExecutor creates an executor with the given project directory.
@@ -152,13 +153,8 @@ func (e *Executor) executeDeleteEmail(decision *BrainDecision) *ExecutionResult 
 		return &ExecutionResult{Response: "No email ID specified.", Action: ActionRespond, Success: false}
 	}
 
-	// Delete the email file from inbox
-	path := e.projectsDir + "/inbox/" + emailID + ".json"
-	if err := os.Remove(path); err != nil {
-		if e.OnDeleteEmail != nil {
-			e.OnDeleteEmail(emailID)
-		}
-		return &ExecutionResult{Response: "Email " + emailID + " removed.", Action: ActionDeleteEmail, Success: true}
+	if e.OnDeleteEmail != nil {
+		e.OnDeleteEmail(emailID)
 	}
 
 	log.Printf("[BRAIN] Deleted email: %s", emailID)
@@ -169,15 +165,21 @@ func (e *Executor) executeSendReply(decision *BrainDecision) *ExecutionResult {
 	to := decision.Params["to"]
 	subject := decision.Params["subject"]
 	body := decision.Params["body"]
+	emailID := decision.Params["email_id"]
 
 	if to == "" || body == "" {
 		return &ExecutionResult{Response: "Missing 'to' or 'body' for reply.", Action: ActionRespond, Success: false}
 	}
 
 	if e.OnSendReply != nil {
-		if err := e.OnSendReply(to, subject, body); err != nil {
+		if err := e.OnSendReply(to, subject, body, emailID); err != nil {
 			return &ExecutionResult{Response: "Failed to send: " + err.Error(), Action: ActionSendReply, Success: false}
 		}
+	}
+
+	// Mark original email as replied
+	if emailID != "" && e.OnMarkRead != nil {
+		e.OnMarkRead(emailID)
 	}
 
 	// Also save to outbox

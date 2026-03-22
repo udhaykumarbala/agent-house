@@ -149,32 +149,45 @@ func (r *Router) buildPrompt(workspaceCtx string, history []ChatMessage, current
 func parseDecision(text string) (*BrainDecision, error) {
 	text = strings.TrimSpace(text)
 
-	// Try to extract JSON from the response (may be wrapped in markdown code blocks)
-	jsonStr := text
-	if idx := strings.Index(text, "{"); idx >= 0 {
-		// Find the matching closing brace
-		depth := 0
-		for i := idx; i < len(text); i++ {
-			if text[i] == '{' {
-				depth++
-			} else if text[i] == '}' {
-				depth--
-				if depth == 0 {
-					jsonStr = text[idx : i+1]
-					break
-				}
+	// Strip markdown code block wrappers
+	if strings.HasPrefix(text, "```") {
+		lines := strings.Split(text, "\n")
+		var clean []string
+		for _, l := range lines {
+			if strings.HasPrefix(strings.TrimSpace(l), "```") {
+				continue
 			}
+			clean = append(clean, l)
 		}
+		text = strings.Join(clean, "\n")
 	}
 
 	var decision BrainDecision
-	if err := json.Unmarshal([]byte(jsonStr), &decision); err != nil {
-		return nil, fmt.Errorf("invalid JSON: %w (text: %.200s)", err, text)
+
+	// Try 1: Direct unmarshal of full text
+	if err := json.Unmarshal([]byte(text), &decision); err == nil && decision.Action != "" {
+		goto parsed
 	}
 
-	if decision.Action == "" {
-		return nil, fmt.Errorf("missing action field")
+	// Try 2: Find {"action" and use json.Decoder (handles strings with special chars)
+	if idx := strings.Index(text, `{"action"`); idx >= 0 {
+		dec := json.NewDecoder(strings.NewReader(text[idx:]))
+		if err := dec.Decode(&decision); err == nil && decision.Action != "" {
+			goto parsed
+		}
 	}
+
+	// Try 3: Find any { and use json.Decoder
+	if idx := strings.Index(text, "{"); idx >= 0 {
+		dec := json.NewDecoder(strings.NewReader(text[idx:]))
+		if err := dec.Decode(&decision); err == nil && decision.Action != "" {
+			goto parsed
+		}
+	}
+
+	return nil, fmt.Errorf("no valid JSON action found in response (%.200s)", text)
+
+parsed:
 
 	// If suggestions are empty, try to extract from response text
 	if len(decision.Suggestions) == 0 && decision.Response != "" {
@@ -193,8 +206,21 @@ func parseDecision(text string) (*BrainDecision, error) {
 }
 
 // extractSuggestionsFromText pulls suggestion-like lines from response text.
-// Looks for patterns like: • "Draft reply" or - "Check status" or * "View files"
 func extractSuggestionsFromText(text string) []string {
+	// First try to extract JSON array: "suggestions": ["a", "b"]
+	if idx := strings.Index(text, `"suggestions"`); idx >= 0 {
+		rest := text[idx:]
+		if start := strings.Index(rest, "["); start >= 0 {
+			if end := strings.Index(rest[start:], "]"); end >= 0 {
+				var arr []string
+				if json.Unmarshal([]byte(rest[start:start+end+1]), &arr) == nil && len(arr) > 0 {
+					return arr
+				}
+			}
+		}
+	}
+
+	// Fallback: extract from bullet lines
 	var suggestions []string
 	lines := strings.Split(text, "\n")
 	inSuggestions := false
@@ -264,6 +290,18 @@ func cleanSuggestionsFromText(text string) string {
 
 	result := strings.TrimSpace(strings.Join(cleaned, "\n"))
 	result = strings.TrimRight(result, "-\n ")
+
+	// Also strip inline JSON suggestion arrays like: "suggestions": ["a", "b"]
+	if idx := strings.Index(result, `"suggestions"`); idx >= 0 {
+		// Find the end of the array
+		rest := result[idx:]
+		if end := strings.Index(rest, "]"); end >= 0 {
+			result = strings.TrimSpace(result[:idx] + result[idx+end+1:])
+		}
+	}
+
+	// Strip trailing commas, quotes, braces from JSON remnants
+	result = strings.TrimRight(result, " ,}\"")
 	return strings.TrimSpace(result)
 }
 
@@ -310,9 +348,13 @@ var brainSystemPrompt = `You are the Brain of Agent House — an AI workspace ma
 
 You manage projects built by teams of AI agents (CEO, PM, UX, UI, Security, Architect, Senior Dev, Junior Dev).
 
-## How to Respond
+## Critical Rules
 
-ALWAYS respond with a single JSON object. No other text outside the JSON.
+1. ALWAYS respond with a single JSON object. No other text outside the JSON.
+2. Each response MUST be self-contained. NEVER say "above", "as shown", "draft ready above". Always include the full content in your response.
+3. When drafting an email reply, ALWAYS include the full draft text in your response.
+4. For send_reply action, include email_id of the original email in params so it can be marked as replied.
+5. Put suggestions in the JSON "suggestions" array field, NEVER as bullet text in the response.
 
 ## Available Actions
 
@@ -340,8 +382,8 @@ ALWAYS respond with a single JSON object. No other text outside the JSON.
 {"action": "delete_email", "params": {"email_id": "email_123"}, "response": "Email deleted."}
   → Delete/archive a specific email from inbox.
 
-{"action": "send_reply", "params": {"to": "email@example.com", "subject": "Re: ...", "body": "Dear..."}, "response": "Reply sent."}
-  → Send an email reply. User must confirm before this is executed.
+{"action": "send_reply", "params": {"to": "email@example.com", "subject": "Re: ...", "body": "Dear...", "email_id": "original_email_id"}, "response": "Reply sent."}
+  → Send an email reply. Include email_id of the original email. User must confirm before executing.
 
 {"action": "shortlist_applicant", "params": {"applicant_id": "app_123", "notes": "Strong candidate"}, "response": "Applicant shortlisted."}
   → Mark a job applicant as shortlisted for a position.

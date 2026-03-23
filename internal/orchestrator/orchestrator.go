@@ -99,23 +99,98 @@ func New(config Config, store *message.Store) *Orchestrator {
 	}
 }
 
-// InjectTask adds a human-injected task to the queue.
-// It will be executed between phases or during the next available slot.
+// InjectTask adds a human-injected task to the queue if a pipeline is running,
+// or executes immediately if no pipeline is active.
 func (o *Orchestrator) InjectTask(task *InjectedTask) {
+	log.Printf("[INJECT] Task received: role=%s task=%q", task.AgentRole, truncateStr(task.Task, 80))
+
+	// Broadcast to listeners
+	msg := message.NewMessage("system", "human", string(task.AgentRole),
+		fmt.Sprintf("Injected task for %s: %s", task.AgentRole, truncateStr(task.Task, 100)))
+	msg.Metadata.ProjectID = task.ProjectID
+	o.store.Add(msg)
+	o.notify(msg)
+
+	// Try to queue (non-blocking) — if a pipeline is running, it will drain between phases
 	select {
 	case o.injectedTasks <- task:
-		log.Printf("[INJECT] Task queued: role=%s task=%q", task.AgentRole, truncateStr(task.Task, 80))
-		// Broadcast to listeners
-		msg := message.NewMessage("system", "human", string(task.AgentRole),
-			fmt.Sprintf("Injected task for %s: %s", task.AgentRole, truncateStr(task.Task, 100)))
-		msg.Metadata.ProjectID = task.ProjectID
-		if task.Priority == "high" {
-			msg.Metadata.Priority = "high"
-		}
-		o.store.Add(msg)
-		o.notify(msg)
+		log.Printf("[INJECT] Queued for pipeline drain")
 	default:
-		log.Printf("[INJECT] Queue full, dropping task: %s", truncateStr(task.Task, 60))
+		// Queue full — execute immediately
+		log.Printf("[INJECT] Queue full, executing immediately")
+		go o.executeImmediateTask(task)
+		return
+	}
+
+	// If no pipeline is running, execute immediately instead of waiting
+	go func() {
+		// Small delay to let pipeline drain pick it up if running
+		time.Sleep(2 * time.Second)
+
+		// Check if task is still in the channel (wasn't consumed by pipeline)
+		select {
+		case t := <-o.injectedTasks:
+			// Still there — no pipeline consumed it. Execute now.
+			log.Printf("[INJECT] No active pipeline, executing immediately: %s", t.AgentRole)
+			o.executeImmediateTask(t)
+		default:
+			// Already consumed by pipeline drain — nothing to do
+		}
+	}()
+}
+
+// executeImmediateTask runs an injected task immediately without a pipeline context.
+func (o *Orchestrator) executeImmediateTask(task *InjectedTask) {
+	role := task.AgentRole
+	if role == "" {
+		role = agent.RoleSeniorDev
+	}
+
+	projectDir := o.config.ProjectDir
+	if task.ProjectID != "" {
+		// Try project subdirectory first
+		candidate := filepath.Join(o.config.ProjectDir, task.ProjectID)
+		if _, err := os.Stat(candidate); err == nil {
+			projectDir = candidate
+		}
+	}
+
+	log.Printf("[INJECT] Immediate execution: role=%s project=%s", role, task.ProjectID)
+
+	// Get or create agent
+	a, err := o.getAgent(role)
+	if err != nil {
+		log.Printf("[INJECT] Failed to get agent %s: %v", role, err)
+		return
+	}
+
+	// Execute via session if available
+	if a.SessionManager != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		resp, err := a.ExecuteWithSession(ctx, task.ProjectID, projectDir, task.Task)
+		cancel()
+
+		if err != nil {
+			log.Printf("[INJECT] Execution failed: %v", err)
+		} else {
+			log.Printf("[INJECT] Completed: %d chars, %d tools", len(resp.Text), resp.ToolCalls)
+			// Broadcast result
+			resultMsg := message.NewMessage("response", string(role), "human", resp.Text)
+			resultMsg.Metadata.ProjectID = task.ProjectID
+			o.store.Add(resultMsg)
+			o.notify(resultMsg)
+		}
+	} else {
+		// Legacy execution
+		resp, err := a.ProcessInDir(task.Task, projectDir)
+		if err != nil {
+			log.Printf("[INJECT] Legacy execution failed: %v", err)
+		} else if resp != nil {
+			resultMsg := message.NewMessage("response", string(role), "human", resp.Content)
+			resultMsg.Metadata.ProjectID = task.ProjectID
+			o.store.Add(resultMsg)
+			o.notify(resultMsg)
+		}
 	}
 }
 

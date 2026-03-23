@@ -271,9 +271,28 @@ const S = {
 // ═══ INIT ═══
 async function init() {
   connectWS();
-  await Promise.all([fetchProjects(), fetchAgentModes(), fetchInbox()]);
+  await Promise.all([fetchProjects(), fetchAgentModes(), fetchInbox(), fetchActiveSessions()]);
   renderAgentList();
   renderTeamGrid();
+  // Refresh sessions every 10s to catch new agents
+  setInterval(fetchActiveSessions, 10000);
+}
+
+async function fetchActiveSessions() {
+  try {
+    const d = await(await fetch('/api/sessions')).json();
+    (d.sessions||[]).forEach(s => {
+      const r = s.agent_role;
+      if(!r) return;
+      if(!S.agentModes[r]) S.agentModes[r] = 'session';
+      if(!S.agents[r]) S.agents[r] = {state:'idle',tools:0,activity:''};
+      // Update from session stats
+      const a = S.agents[r];
+      a.tools = s.stats?.total_tool_calls || a.tools;
+      if(s.state === 'active') a.state = 'working';
+    });
+    renderAgentList();
+  } catch(e) {}
 }
 
 // ═══ WEBSOCKET ═══
@@ -298,6 +317,8 @@ function handleWS(data) {
 function handleAgentEvent(ev) {
   const r = ev.agent_role; if(!r) return;
   if(!S.agents[r]) S.agents[r]={state:'idle',tools:0,activity:''};
+  // Ensure agent appears in modes (for sidebar)
+  if(!S.agentModes[r]) { S.agentModes[r]='session'; }
   const a = S.agents[r];
   switch(ev.type) {
     case 'text_delta': a.state='working'; a.activity=ev.content?.substring(0,50)||''; break;

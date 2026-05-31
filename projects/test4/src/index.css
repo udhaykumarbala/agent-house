@@ -1,0 +1,349 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   DesignFlow — Global Styles & Design Tokens
+   Based on: .plans/specs/ui-spec.md
+   ============================================================ */
+
+/* === CSS Custom Properties: Light Theme (Default) === */
+:root {
+  /* Font families */
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+  /* Primary palette */
+  --color-primary:       #3730A3;
+  --color-primary-hover:  #312E81;
+  --color-primary-light:  #EEF2FF;
+  --color-accent:         #F97316;
+  --color-accent-light:   #FFF7ED;
+
+  /* Backgrounds */
+  --color-background:      #FAF8F5;
+  --color-surface:          #FFFFFF;
+  --color-surface-hover:    #FAFAF8;
+
+  /* Borders */
+  --color-border:        #E7E5E4;
+  --color-border-focus:   #3730A3;
+
+  /* Text */
+  --color-text-primary:   #1C1917;
+  --color-text-secondary: #78716C;
+  --color-text-tertiary:  #A8A29E;
+
+  /* Semantic */
+  --color-success:      #4D7C0F;
+  --color-success-light:#F7F8E8;
+  --color-error:        #DC2626;
+  --color-warning:      #D97706;
+
+  /* Category colors (light mode) */
+  --color-category-research:  #4D7C0F;
+  --color-category-design:    #3730A3;
+  --color-category-testing:    #D97706;
+  --color-category-review:     #BE185D;
+  --color-category-discovery:  #0D9488;
+  --color-category-handoff:    #475569;
+  --color-category-admin:      #6B7280;
+
+  /* Shadows (warm-tinted) */
+  --shadow-sm: 0 1px 2px rgba(28,25,23,0.05);
+  --shadow-md: 0 4px 12px rgba(28,25,23,0.08);
+  --shadow-lg: 0 12px 32px rgba(28,25,23,0.12);
+  --shadow-xl: 0 24px 48px rgba(28,25,23,0.16);
+}
+
+/* === CSS Custom Properties: Dark Theme === */
+.dark {
+  --color-primary:       #818CF8;
+  --color-primary-hover: #6366F1;
+  --color-primary-light: #312E81;
+  --color-accent:        #FB923C;
+  --color-accent-light:  #292524;
+
+  --color-background:      #0C0A09;
+  --color-surface:          #1C1917;
+  --color-surface-hover:     #292524;
+
+  --color-border:        #292524;
+  --color-border-focus:   #818CF8;
+
+  --color-text-primary:   #FAFAF9;
+  --color-text-secondary: #A8A29E;
+  --color-text-tertiary:  #78716C;
+
+  --color-success:      #84CC16;
+  --color-success-light:#1C1917;
+  --color-error:        #EF4444;
+  --color-warning:      #FBBF24;
+
+  /* Category colors (dark mode) */
+  --color-category-research:  #84CC16;
+  --color-category-design:    #818CF8;
+  --color-category-testing:    #FBBF24;
+  --color-category-review:     #F472B6;
+  --color-category-discovery:  #2DD4BF;
+  --color-category-handoff:    #94A3B8;
+  --color-category-admin:      #9CA3AF;
+
+  /* Dark shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.5);
+  --shadow-xl: 0 24px 48px rgba(0,0,0,0.6);
+}
+
+/* ============================================================
+   Base Reset & Globals
+   ============================================================ */
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-text-primary font-body;
+    min-height: 100dvh;
+  }
+
+  /* Text selection */
+  ::selection {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+  }
+
+  /* Focus visible — custom ring */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-tertiary);
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
+
+  /* Remove default button styles */
+  button {
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+  }
+
+  /* Remove default input styles */
+  input, textarea, select {
+    font: inherit;
+  }
+}
+
+/* ============================================================
+   Typography Utilities
+   ============================================================ */
+
+@layer utilities {
+  .font-heading {
+    font-family: 'Cabinet Grotesk', Inter, system-ui, -apple-system, sans-serif;
+  }
+
+  .font-mono-estimate {
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  }
+
+  /* Line clamp utilities */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* ============================================================
+   Reduced Motion
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 100ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 100ms !important;
+  }
+}
+
+/* ============================================================
+   Component Base Classes
+   ============================================================ */
+
+@layer components {
+  /* Card */
+  .card {
+    @apply bg-surface rounded-lg border border-border transition-all duration-base;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  .card-dragging {
+    box-shadow: var(--shadow-lg) !important;
+    transform: rotate(1.5deg) scale(1.02) !important;
+    opacity: 0.9;
+  }
+
+  .card-selected {
+    @apply border-2;
+    border-color: var(--color-primary) !important;
+    background: var(--color-primary-light) !important;
+  }
+
+  .card-completed {
+    opacity: 0.6;
+    background: var(--color-success-light) !important;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply bg-primary text-white rounded-md px-4 py-2 font-body text-sm font-medium;
+    transition: all 150ms ease-out;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-primary-hover);
+  }
+
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent text-primary border border-border rounded-md px-4 py-2 font-body text-sm font-medium;
+    transition: all 150ms ease-out;
+  }
+
+  .btn-secondary:hover {
+    background: var(--color-primary-light);
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-primary px-4 py-2 font-body text-sm font-medium rounded-md;
+    transition: all 150ms ease-out;
+  }
+
+  .btn-ghost:hover {
+    background: var(--color-primary-light);
+  }
+
+  .btn-destructive {
+    @apply bg-error text-white rounded-md px-4 py-2 font-body text-sm font-medium;
+    transition: opacity 150ms ease-out;
+  }
+
+  .btn-destructive:hover {
+    opacity: 0.9;
+  }
+
+  .btn-icon {
+    @apply bg-transparent text-text-secondary p-2 rounded-full;
+    transition: all 150ms ease-out;
+  }
+
+  .btn-icon:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+  }
+
+  /* Input */
+  .input {
+    @apply bg-surface border border-border rounded-md px-3 py-2 text-sm leading-5;
+    color: var(--color-text-primary);
+    transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+  }
+
+  .input::placeholder {
+    color: var(--color-text-tertiary);
+  }
+
+  .input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(55, 48, 163, 0.15);
+  }
+
+  .input:disabled {
+    background: var(--color-surface-hover);
+    color: var(--color-text-tertiary);
+    cursor: not-allowed;
+  }
+
+  .dark .input:focus {
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+  }
+
+  .input-error {
+    border-color: var(--color-error) !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
+  }
+
+  /* Textarea */
+  .textarea {
+    @apply input resize-y min-h-[120px];
+  }
+
+  /* Category chip */
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full text-chip px-2 py-0.5 transition-colors duration-150;
+  }
+
+  /* Status badge */
+  .badge {
+    @apply rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+}

@@ -18,9 +18,14 @@ import (
 	"pty-claude-test/internal/agentask"
 	"pty-claude-test/internal/message"
 	"pty-claude-test/internal/orchestrator"
+	"pty-claude-test/internal/scenario"
 	"pty-claude-test/internal/session"
 	"pty-claude-test/internal/task"
+	"pty-claude-test/internal/web/webui"
 )
+
+// nextUI serves the embedded Next.js static export (the new design system).
+var nextUI = http.FileServer(http.FS(webui.FS()))
 
 // Server handles HTTP requests for the dashboard
 type Server struct {
@@ -35,6 +40,7 @@ type Server struct {
 	cronScheduler   *CronScheduler     // Cron scheduler for recurring tasks
 	brainHandler    *BrainHandler      // Brain chat handler
 	emailHandlers   *EmailHandlers     // Email engine handlers
+	scenarioEngine  *scenario.Engine   // Capability-composing scenario runners
 }
 
 // Config holds server configuration
@@ -99,7 +105,7 @@ func NewServer(config Config) *Server {
 	server.brainHandler.emailEngine = server.emailHandlers.GetEngine()
 
 	// Start cron scheduler
-	server.cronScheduler = NewCronScheduler(server.orchestrator)
+	server.cronScheduler = NewCronScheduler(server.orchestrator, server.store, server.hub)
 
 	// Wire WebSocket session action handler (approve/deny/abort via WS)
 	hub.SetSessionActionHandler(func(projectID, agentRole, action, toolUseID string) {
@@ -223,6 +229,31 @@ func (s *Server) Start(port int) error {
 	// Project report endpoints
 	mux.HandleFunc("/api/reports/", s.handleProjectReport)
 
+	// Capability endpoints — per-agent backing data + business logic
+	mux.HandleFunc("/api/capabilities", s.handleCapabilities)
+	mux.HandleFunc("/api/cap/hr/applicants", s.handleHRApplicants)
+	mux.HandleFunc("/api/cap/hr/applicants/", s.handleHRApplicantOne)
+	mux.HandleFunc("/api/cap/hr/match", s.handleHRMatch)
+	mux.HandleFunc("/api/cap/procurement/vendors", s.handleProcurementVendors)
+	mux.HandleFunc("/api/cap/procurement/validate-invoice", s.handleProcurementValidate)
+	mux.HandleFunc("/api/cap/schedule/milestones", s.handleScheduleMilestones)
+	mux.HandleFunc("/api/cap/schedule/slips", s.handleScheduleSlips)
+	mux.HandleFunc("/api/cap/email/inbox", s.handleInboxList)
+	mux.HandleFunc("/api/cap/email/summary", s.handleInboxSummary)
+
+	// Scenario engine — capability-composing multi-step flows
+	s.registerScenarios()
+	mux.HandleFunc("/api/scenarios", s.handleScenarioList)
+	mux.HandleFunc("/api/scenario/", s.handleScenarioRun)
+
+	// Conversation lifecycle (named threads + command-palette search).
+	// Note ordering: the "/api/conversations/search" and "/api/conversations"
+	// (exact) handlers must register before the catch-all "/api/conversations/"
+	// prefix so they're matched first.
+	mux.HandleFunc("/api/conversations/search", s.handleConversationSearch)
+	mux.HandleFunc("/api/conversations", s.handleConversationsRouter)
+	mux.HandleFunc("/api/conversations/", s.handleConversationOne)
+
 	// WebSocket endpoint
 	mux.HandleFunc("/ws", s.hub.ServeWS)
 
@@ -301,10 +332,14 @@ func (s *Server) handleAgents(w http.ResponseWriter, r *http.Request) {
 	// Get active agents from orchestrator
 	activeAgents := s.orchestrator.GetAgents()
 
-	// Build response with all roles
+	// Build response with all roles — IT pack + EPC pack. Without the EPC
+	// roles here, scenario message authors like "hr"/"procurement" had no
+	// row to pulse in the Conductor workforce panel.
 	roles := []agent.Role{
 		agent.RoleCEO, agent.RolePM, agent.RoleUX, agent.RoleUI,
 		agent.RoleSecurity, agent.RoleArchitect, agent.RoleSeniorDev, agent.RoleJuniorDev,
+		agent.RoleHR, agent.RoleProjectMgr, agent.RoleProcurement,
+		agent.RoleSiteEngineer, agent.RoleHSE, agent.RoleQAInspector,
 	}
 
 	agentInfos := make([]map[string]interface{}, 0)
@@ -711,7 +746,27 @@ func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.URL.Path == "/mission" {
+	// New design-system UI (embedded Next.js static export).
+	if strings.HasPrefix(r.URL.Path, "/_next/") {
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		nextUI.ServeHTTP(w, r)
+		return
+	}
+	// Embedded design-system pages (Next.js static export routes).
+	for _, p := range []string{"mission", "conductor", "triggers", "agents", "lab"} {
+		if r.URL.Path == "/"+p || r.URL.Path == "/"+p+"/" {
+			page, err := fs.ReadFile(webui.FS(), p+"/index.html")
+			if err != nil {
+				http.Error(w, "UI not built (run scripts/build-ui.sh)", http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Write(page)
+			return
+		}
+	}
+	// Legacy Mission v2 kept for rollback.
+	if r.URL.Path == "/mission-legacy" {
 		w.Header().Set("Content-Type", "text/html")
 		w.Write([]byte(missionV2HTML))
 		return

@@ -1,0 +1,12 @@
+{
+  "taskId": "task_1773105154866279000",
+  "projectId": "test-calc",
+  "task": "Build a simple calculator with add, subtract, multiply, divide operations. Use plain HTML, CSS and JavaScript. Keep it minimal.",
+  "createdAt": "2026-03-10T06:42:34.867697+05:30",
+  "completedAt": "2026-03-10T06:42:35.901285+05:30",
+  "status": "failed",
+  "turns": 14,
+  "duration": "1s",
+  "filesCreated": [],
+  "error": "phase discussion failed: agent ceo failed: claude error: command error: exit status 1"
+}

@@ -24,6 +24,14 @@ var DefaultModes = map[Role]ExecutionMode{
 	RoleArchitect: ModeSession, // Needs to browse codebase
 	RoleSeniorDev: ModeSession, // Full tool access for coding
 	RoleJuniorDev: ModeSession, // Full tool access for coding
+
+	// EPC roles
+	RoleHR:           ModeOneshot, // Workforce planning, applicant review — text
+	RoleProjectMgr:   ModeOneshot, // Timelines, milestones, resource allocation — text
+	RoleProcurement:  ModeOneshot, // Vendor management, RFQs, purchase orders — text
+	RoleSiteEngineer: ModeSession, // Field reports, needs file access for drawings/docs
+	RoleHSE:          ModeOneshot, // Safety compliance, incident reports — text
+	RoleQAInspector:  ModeSession, // Quality inspections, needs file access for checklists
 }
 
 // ModeOverrides stores runtime mode overrides set by the user.

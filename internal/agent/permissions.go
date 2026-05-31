@@ -75,6 +75,50 @@ var RolePermissions = map[Role]Permission{
 		AllowedPaths:      []string{"src/", "test/", "tests/", "lib/"},
 		DeniedPaths:       []string{".git/", ".env", "secrets/", "config/"},
 	},
+
+	// EPC roles
+	RoleHR: {
+		CanCreateFiles:    true,
+		CanModifyFiles:    true,
+		CanExecuteCode:    false,
+		AllowedExtensions: []string{".md", ".txt", ".json", ".csv"},
+		AllowedPaths:      []string{"docs/", "hr/", "applicants/"},
+	},
+	RoleProjectMgr: {
+		CanCreateFiles:    true,
+		CanModifyFiles:    true,
+		CanExecuteCode:    false,
+		AllowedExtensions: []string{".md", ".txt", ".json", ".csv"},
+		AllowedPaths:      []string{"docs/", "plans/", "schedules/", "reports/"},
+	},
+	RoleProcurement: {
+		CanCreateFiles:    true,
+		CanModifyFiles:    true,
+		CanExecuteCode:    false,
+		AllowedExtensions: []string{".md", ".txt", ".json", ".csv"},
+		AllowedPaths:      []string{"docs/", "procurement/", "vendors/", "rfq/"},
+	},
+	RoleSiteEngineer: {
+		CanCreateFiles:    true,
+		CanModifyFiles:    true,
+		CanExecuteCode:    false,
+		AllowedExtensions: []string{".md", ".txt", ".json", ".csv", ".pdf"},
+		AllowedPaths:      []string{"docs/", "site/", "drawings/", "reports/"},
+	},
+	RoleHSE: {
+		CanCreateFiles:    true,
+		CanModifyFiles:    true,
+		CanExecuteCode:    false,
+		AllowedExtensions: []string{".md", ".txt", ".json", ".csv"},
+		AllowedPaths:      []string{"docs/", "safety/", "compliance/", "incidents/"},
+	},
+	RoleQAInspector: {
+		CanCreateFiles:    true,
+		CanModifyFiles:    true,
+		CanExecuteCode:    false,
+		AllowedExtensions: []string{".md", ".txt", ".json", ".csv"},
+		AllowedPaths:      []string{"docs/", "qa/", "inspections/", "checklists/"},
+	},
 }
 
 // GetPermission returns the permission for a role

@@ -1,0 +1,287 @@
+{
+  "task_id": "memecreator",
+  "created_by": "architect",
+  "approved_by": "",
+  "created_at": "2026-03-16T12:00:00Z",
+  "phases": [
+    {
+      "index": 1,
+      "name": "Core Features",
+      "description": "Set up project structure, canvas rendering, image upload, basic text overlays with drag positioning, and export functionality. This phase delivers a working meme creator with essential features.",
+      "subtasks": [
+        {
+          "id": "st_001",
+          "title": "Set up project scaffolding and HTML layout",
+          "description": "Initialize Vite + Tailwind + TypeScript project. Create index.html with the two-panel layout: canvas area (left/center) and controls sidebar (right). Include Google Fonts loading (DM Sans for UI, Impact + 5 meme fonts). Set up Tailwind config with custom dark theme colors from ui-spec.",
+          "assigned_agents": ["senior_dev"],
+          "dependencies": [],
+          "completion_criteria": [
+            "Vite project builds and serves successfully",
+            "Tailwind configured with custom color tokens from architecture spec",
+            "Google Fonts loaded: DM Sans (UI), Impact, Anton, Bebas Neue, Bangers, Permanent Marker, Oswald",
+            "HTML layout has canvas area and controls sidebar matching architecture spec wireframe",
+            "Dark theme applied: #1A1A2E background, #16213E sidebar, #F8F8F2 text",
+            "Responsive: sidebar stacks below canvas on mobile"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_002",
+          "title": "Implement image upload with security validation",
+          "description": "Build the upload module (upload.ts) with drag-and-drop zone and file input. Implement the full validation chain: MIME type whitelist, extension check, magic byte verification, file size limit (10MB), dimension limit (4096x4096). Show the uploaded image on canvas scaled to fit display area. Store original Image for export.",
+          "assigned_agents": ["senior_dev"],
+          "dependencies": ["st_001"],
+          "completion_criteria": [
+            "Drag-and-drop upload zone visible on empty state with clear prompt text",
+            "File input button also available as fallback",
+            "SVG files are blocked with user-friendly error message",
+            "Files over 10MB are rejected with error message",
+            "Images over 4096x4096 are rejected with error message",
+            "Magic byte validation catches misnamed files (e.g., .html renamed to .png)",
+            "Valid images display on canvas maintaining aspect ratio",
+            "Original Image object stored for full-resolution export"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_003",
+          "title": "Implement canvas rendering engine and text overlays",
+          "description": "Build canvas.ts and overlays.ts. Implement the rendering pipeline: clear canvas, draw image, draw all text overlays with styling (font, fill color, stroke). Implement TextOverlay data model and CRUD operations (add, update, delete). Add 'Add Text' button that creates a new overlay with meme preset defaults (Impact, white, black stroke). Implement text selection via click hit-testing using measureText().",
+          "assigned_agents": ["senior_dev"],
+          "dependencies": ["st_002"],
+          "completion_criteria": [
+            "Canvas renders uploaded image correctly",
+            "'Add Text' button creates new text overlay with meme preset (Impact, white fill, black stroke)",
+            "Text overlays render on canvas with correct font, color, and stroke",
+            "Clicking on a text overlay selects it (magenta dashed border shown)",
+            "Clicking empty canvas area deselects",
+            "Selected overlay's properties shown in controls panel",
+            "Delete button removes selected overlay",
+            "Multiple overlays can coexist and render in correct order"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_004",
+          "title": "Implement drag-to-position for text overlays",
+          "description": "Build drag.ts using Pointer Events API for unified mouse/touch support. Implement pointerdown hit-testing, pointermove position updates, and pointerup release. Use requestAnimationFrame for smooth rendering during drag. Add touch-action: none on canvas.",
+          "assigned_agents": ["senior_dev"],
+          "dependencies": ["st_003"],
+          "completion_criteria": [
+            "Text overlays can be dragged to any position on the canvas with mouse",
+            "Drag uses Pointer Events (works with mouse and touch)",
+            "Canvas has touch-action: none to prevent scroll during drag",
+            "Rendering during drag is smooth (uses requestAnimationFrame)",
+            "Dragging a text also selects it",
+            "Text cannot be dragged outside canvas bounds"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_005",
+          "title": "Build controls panel UI for text styling",
+          "description": "Build ui.ts with the controls sidebar. Include: font family dropdown (6 meme fonts), font size slider (16-200px), text color picker, stroke color picker, stroke width slider, bold/italic toggles, text alignment buttons (L/C/R), all-caps toggle, text content input field. All changes update the selected overlay in real-time on canvas. Controls disabled when no text is selected.",
+          "assigned_agents": ["junior_dev"],
+          "dependencies": ["st_003"],
+          "completion_criteria": [
+            "Font family dropdown with 6 meme fonts, Impact pre-selected",
+            "Font size slider (16-200px range) updates text in real-time",
+            "Text color picker updates fill color in real-time",
+            "Stroke color picker and stroke width slider work correctly",
+            "Bold and italic toggle buttons work",
+            "Text alignment buttons (left/center/right) work",
+            "All-caps toggle transforms text to uppercase on canvas",
+            "Text content input allows editing the overlay text",
+            "Controls are disabled/hidden when no text is selected",
+            "All controls use textContent (not innerHTML) for XSS safety"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_006",
+          "title": "Implement image export and download",
+          "description": "Build export.ts. Create offscreen canvas at original image dimensions. Scale all overlay positions and font sizes proportionally. Render image + overlays at full resolution. Export as PNG (default) or JPEG with quality setting. Trigger download with sanitized filename (meme_[timestamp].png). Revoke blob URL after download.",
+          "assigned_agents": ["senior_dev"],
+          "dependencies": ["st_003"],
+          "completion_criteria": [
+            "Download button in header triggers export",
+            "Exported image is at original uploaded image resolution (not display size)",
+            "Text overlays are scaled proportionally and positioned correctly in export",
+            "Default export format is PNG",
+            "Download filename is sanitized: meme_[timestamp].png",
+            "Blob URL is revoked after download to free memory",
+            "Export works correctly with multiple text overlays"
+          ],
+          "status": "pending",
+          "iteration": 1
+        }
+      ],
+      "status": "pending",
+      "qa_status": "pending",
+      "iteration": 1
+    },
+    {
+      "index": 2,
+      "name": "Enhanced Features",
+      "description": "Add text layer management, undo/redo, meme preset button, format selection, shadow controls, keyboard shortcuts, and visual polish.",
+      "subtasks": [
+        {
+          "id": "st_007",
+          "title": "Implement undo/redo system",
+          "description": "Build history.ts with snapshot-based undo/redo. Deep clone overlays array on each action. Max 30 snapshots. Wire Ctrl+Z / Cmd+Z for undo and Ctrl+Shift+Z / Cmd+Shift+Z for redo. Add undo/redo buttons to the header.",
+          "assigned_agents": ["senior_dev"],
+          "dependencies": ["st_004"],
+          "completion_criteria": [
+            "Undo reverses the last action (add, delete, move, style change)",
+            "Redo re-applies an undone action",
+            "Ctrl+Z / Cmd+Z triggers undo",
+            "Ctrl+Shift+Z / Cmd+Shift+Z triggers redo",
+            "Undo/redo buttons visible in header with proper disabled states",
+            "History limited to 30 snapshots",
+            "Undo/redo works correctly after drag (snapshot on pointerup)"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_008",
+          "title": "Add text layer list and management panel",
+          "description": "Add a text layers section to the controls sidebar showing all overlay names. Click a layer to select it. Each layer has a delete button. Layers listed in render order. Show layer count.",
+          "assigned_agents": ["junior_dev"],
+          "dependencies": ["st_005"],
+          "completion_criteria": [
+            "Text layers section visible in sidebar below styling controls",
+            "Each overlay appears as a list item with truncated text preview",
+            "Clicking a layer selects that overlay on canvas",
+            "Delete button (x) on each layer removes the overlay",
+            "Currently selected layer is highlighted with accent color",
+            "Layer list updates in real-time when overlays are added/removed"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_009",
+          "title": "Add meme preset button and export format options",
+          "description": "Add a 'Meme Style' one-click button that applies classic meme preset (Impact, white, black stroke, all-caps, centered) to selected text. Add export format dropdown (PNG/JPEG) and quality slider for JPEG to the download button area.",
+          "assigned_agents": ["junior_dev"],
+          "dependencies": ["st_005", "st_006"],
+          "completion_criteria": [
+            "'Meme Style' button applies Impact/white/black-stroke/caps preset to selected text",
+            "Export format dropdown offers PNG and JPEG options",
+            "JPEG quality slider (0.1-1.0) appears when JPEG is selected",
+            "Export uses the selected format and quality",
+            "Meme preset button is prominently placed near 'Add Text' button"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_010",
+          "title": "Add shadow controls and opacity",
+          "description": "Add text shadow controls to the styling panel: shadow toggle, shadow color picker, shadow blur slider, shadow offset X/Y sliders. Add opacity slider for text overlay transparency. Render shadows and opacity on canvas.",
+          "assigned_agents": ["junior_dev"],
+          "dependencies": ["st_005"],
+          "completion_criteria": [
+            "Shadow toggle enables/disables text shadow",
+            "Shadow color picker works",
+            "Shadow blur slider (0-20px) works",
+            "Shadow offset X/Y sliders (-20 to 20px) work",
+            "Opacity slider (0-100%) controls text transparency",
+            "Shadow and opacity render correctly on canvas",
+            "Shadow and opacity export correctly at full resolution"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_011",
+          "title": "Add keyboard shortcuts and arrow-key positioning",
+          "description": "Implement keyboard support: arrow keys to fine-position selected text (1px per press, 10px with Shift held), Delete/Backspace to remove selected overlay, Escape to deselect. Show keyboard shortcut hints in UI.",
+          "assigned_agents": ["senior_dev"],
+          "dependencies": ["st_004", "st_007"],
+          "completion_criteria": [
+            "Arrow keys move selected text by 1px",
+            "Shift+Arrow moves selected text by 10px",
+            "Delete/Backspace removes selected overlay",
+            "Escape deselects current overlay",
+            "Keyboard shortcuts don't interfere with text input fields",
+            "Shortcut hints shown subtly in the UI (tooltip or footer)"
+          ],
+          "status": "pending",
+          "iteration": 1
+        }
+      ],
+      "status": "pending",
+      "qa_status": "pending",
+      "iteration": 1
+    },
+    {
+      "index": 3,
+      "name": "Polish & Refinement",
+      "description": "Visual polish, animations, empty states, error handling, accessibility improvements, and responsive refinements.",
+      "subtasks": [
+        {
+          "id": "st_012",
+          "title": "Add empty state, loading states, and toast notifications",
+          "description": "Design the empty state (no image uploaded) with a prominent upload zone, illustration/icon, and helpful text. Add loading indicator during image processing. Add toast notifications for: successful download, upload errors, validation failures.",
+          "assigned_agents": ["junior_dev"],
+          "dependencies": ["st_002", "st_006"],
+          "completion_criteria": [
+            "Empty state shows large upload zone with drag-and-drop icon and text",
+            "Upload zone has hover/drag-over visual feedback",
+            "Loading spinner shows briefly during large image processing",
+            "Success toast on download ('Image downloaded!')",
+            "Error toast on invalid file upload with specific reason",
+            "Toasts auto-dismiss after 3 seconds"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_013",
+          "title": "Add micro-interactions and visual polish",
+          "description": "Add CSS transitions and animations: button hover effects, panel transitions, selected text element magenta glow, drag handle visual feedback, download button shimmer when meme has content. Ensure all interactive elements have focus indicators.",
+          "assigned_agents": ["junior_dev"],
+          "dependencies": ["st_008", "st_009"],
+          "completion_criteria": [
+            "Buttons have smooth hover transitions",
+            "Selected text overlay has magenta border glow on canvas",
+            "Controls panel elements have subtle transitions",
+            "Download button has visual emphasis when meme is ready",
+            "All focusable elements have visible focus rings",
+            "Animations are smooth and not distracting"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_014",
+          "title": "Responsive layout and accessibility pass",
+          "description": "Refine responsive behavior: controls below canvas on mobile, collapsible sections, larger touch targets (44x44px minimum). Add aria-labels on all controls, aria-live region for status announcements, proper tab order, and high contrast for all control text on dark background.",
+          "assigned_agents": ["senior_dev"],
+          "dependencies": ["st_012", "st_013"],
+          "completion_criteria": [
+            "Controls stack below canvas on screens < 768px",
+            "All touch targets are minimum 44x44px",
+            "Tab order follows logical flow: header -> canvas -> controls -> layers",
+            "All controls have aria-labels or visible labels",
+            "Status changes announced via aria-live region",
+            "Color contrast meets WCAG AA on dark background",
+            "App is usable with keyboard only"
+          ],
+          "status": "pending",
+          "iteration": 1
+        }
+      ],
+      "status": "pending",
+      "qa_status": "pending",
+      "iteration": 1
+    }
+  ]
+}

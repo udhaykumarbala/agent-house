@@ -1,0 +1,16 @@
+{
+  "id": "email_atlas_5_applicant",
+  "from": "raj.kumar@email.com",
+  "from_name": "Raj Kumar",
+  "to": "ops@atlas-construction.com",
+  "subject": "Application — Site Supervisor · Highway Bridge Project",
+  "body": "Dear HR,\n\nI am applying for the Site Supervisor position on the Highway Bridge Project (Project Gamma).\n\nBrief summary:\n- 12 years civil engineering experience\n- 4 completed bridge projects (including Highway-9 viaduct, 2024)\n- PE and PMP certified\n- Open to relocate to Site 02\n\nCV and references attached. Available for interview from May 22.\n\nSincerely,\nRaj Kumar",
+  "date": "2026-05-18T19:07:11Z",
+  "read": false,
+  "replied": false,
+  "category": "applicant",
+  "vendor_id": null,
+  "trust_status": "new_contact",
+  "trust_reason": "First contact from this sender",
+  "direction": "inbound"
+}

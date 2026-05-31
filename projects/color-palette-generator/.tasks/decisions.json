@@ -1,0 +1,41 @@
+[
+  {
+    "id": "dec_1773656359362421000",
+    "project_id": "color-palette-generator",
+    "task_id": "task_1773655905799523000",
+    "checkpoint_type": "plan_approval",
+    "action": "approved",
+    "decided_by": "user",
+    "decided_at": "2026-03-16T15:49:19.362443+05:30"
+  },
+  {
+    "id": "dec_1773656803363247000",
+    "project_id": "color-palette-generator",
+    "task_id": "task_1773655905799523000",
+    "checkpoint_type": "phase_gate",
+    "phase_index": 1,
+    "action": "approved",
+    "decided_by": "user",
+    "decided_at": "2026-03-16T15:56:43.363262+05:30"
+  },
+  {
+    "id": "dec_1773657494755630000",
+    "project_id": "color-palette-generator",
+    "task_id": "task_1773655905799523000",
+    "checkpoint_type": "phase_gate",
+    "phase_index": 2,
+    "action": "approved",
+    "decided_by": "user",
+    "decided_at": "2026-03-16T16:08:14.755777+05:30"
+  },
+  {
+    "id": "dec_1773657865899134000",
+    "project_id": "memecreator",
+    "task_id": "task_1773655905799523000",
+    "checkpoint_type": "phase_gate",
+    "phase_index": 3,
+    "action": "approved",
+    "decided_by": "user",
+    "decided_at": "2026-03-16T16:14:25.899137+05:30"
+  }
+]

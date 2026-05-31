@@ -18,3 +18,17 @@ agent-house
 
 # Claude local settings
 .claude/
+
+# Secrets / environment
+.env
+.env.*
+!.env.example
+
+# Node (generated, regenerable) — anywhere in tree
+node_modules/
+**/.next/
+frontend/out/
+
+# Generated test/scratch artifacts
+data/test-scope-*/
+output/

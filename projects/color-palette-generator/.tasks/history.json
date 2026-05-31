@@ -1,0 +1,22 @@
+{
+  "projectId": "color-palette-generator",
+  "tasks": [
+    {
+      "taskId": "task_1773655905799523000",
+      "summary": "make design system to brutalism",
+      "createdAt": "2026-03-16T15:41:45.801095+05:30",
+      "status": "running",
+      "turns": 0,
+      "filesCreated": 0
+    },
+    {
+      "taskId": "task_1773550625597307000",
+      "summary": "Build a random color palette generator tool",
+      "createdAt": "2026-03-15T10:27:05.598129+05:30",
+      "completedAt": "2026-03-15T11:01:18.17776+05:30",
+      "status": "completed",
+      "turns": 26,
+      "filesCreated": 0
+    }
+  ]
+}

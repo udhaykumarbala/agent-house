@@ -1,0 +1,59 @@
+[
+  {
+    "id": "app_raj",
+    "name": "Raj Kumar",
+    "email": "raj.kumar@email.com",
+    "applied_for": "Site Supervisor for Highway Bridge Project",
+    "experience_years": 12,
+    "key_skills": [
+      "civil",
+      "bridge",
+      "highway",
+      "concrete",
+      "rebar"
+    ],
+    "certifications": [
+      "PE",
+      "PMP"
+    ],
+    "received_date": "2026-05-22",
+    "status": "new"
+  },
+  {
+    "id": "app_anita",
+    "name": "Anita Verma",
+    "email": "anita.verma@email.com",
+    "applied_for": "Senior Site Engineer",
+    "experience_years": 9,
+    "key_skills": [
+      "civil",
+      "structural",
+      "autocad",
+      "rfi",
+      "qa"
+    ],
+    "certifications": [
+      "PE"
+    ],
+    "received_date": "2026-05-22",
+    "status": "new"
+  },
+  {
+    "id": "app_keshav",
+    "name": "Keshav Iyer",
+    "email": "keshav@email.com",
+    "applied_for": "HSE Officer",
+    "experience_years": 6,
+    "key_skills": [
+      "hse",
+      "safety",
+      "compliance",
+      "incident response"
+    ],
+    "certifications": [
+      "NEBOSH"
+    ],
+    "received_date": "2026-05-22",
+    "status": "new"
+  }
+]

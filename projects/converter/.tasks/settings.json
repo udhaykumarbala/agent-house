@@ -1,0 +1,11 @@
+{
+  "project_id": "converter",
+  "require_template_approval": true,
+  "require_plan_approval": true,
+  "require_phase_gate": true,
+  "require_final_acceptance": true,
+  "require_research_review": false,
+  "require_spec_review": false,
+  "require_pre_qa_review": false,
+  "auto_delegate_minutes": 2
+}

@@ -1,0 +1,746 @@
+[
+  {
+    "id": "kt_1773824224375824000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p1_stst_001",
+    "phase_index": 1,
+    "phase_name": "Foundation \u0026 Core Data Layer",
+    "title": "Scaffold Vite project with Tailwind and base layout",
+    "description": "Initialize Vite project, configure Tailwind CSS with custom design tokens (colors, fonts, spacing from architecture-spec.md), create index.html with sidebar + top bar + content area layout shell. Import Manrope and Inter from Google Fonts. Add Lucide icons via CDN.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Vite dev server runs with HMR",
+        "checked": false
+      },
+      {
+        "text": "Tailwind configured with custom color tokens from spec (indigo + amber palette)",
+        "checked": false
+      },
+      {
+        "text": "index.html has sidebar navigation (5 items), top bar with timer placeholder, and content area",
+        "checked": false
+      },
+      {
+        "text": "Google Fonts (Manrope, Inter) loaded",
+        "checked": false
+      },
+      {
+        "text": "Lucide icons available",
+        "checked": false
+      },
+      {
+        "text": "Responsive: sidebar collapses on mobile",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 0,
+    "created_at": "2026-03-18T14:27:04.375825+05:30",
+    "updated_at": "2026-03-18T14:27:04.375825+05:30"
+  },
+  {
+    "id": "kt_1773824224375827000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p1_stst_002",
+    "phase_index": 1,
+    "phase_name": "Foundation \u0026 Core Data Layer",
+    "title": "Implement localStorage data store and service layer",
+    "description": "Create store.js (localStorage wrapper with caching, error handling, quota monitoring), employeeService.js, projectService.js, and timeEntryService.js with full CRUD operations, validation, and event emission.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "store.js handles read/write with try/catch, caches in memory, handles QuotaExceededError",
+        "checked": false
+      },
+      {
+        "text": "employeeService: create, read, update, delete with validation (name required, max 100 chars, unique check)",
+        "checked": false
+      },
+      {
+        "text": "projectService: project + task CRUD, status transitions",
+        "checked": false
+      },
+      {
+        "text": "timeEntryService: CRUD, clockIn \u003e clockOut validation, overlap detection, duration calculation",
+        "checked": false
+      },
+      {
+        "text": "All services emit events via eventBus on data changes",
+        "checked": false
+      },
+      {
+        "text": "wtt_ prefix on all localStorage keys",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 1,
+    "created_at": "2026-03-18T14:27:04.375827+05:30",
+    "updated_at": "2026-03-18T14:27:04.375827+05:30"
+  },
+  {
+    "id": "kt_1773824224375837000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p1_stst_003",
+    "phase_index": 1,
+    "phase_name": "Foundation \u0026 Core Data Layer",
+    "title": "Build hash-based router and view switching",
+    "description": "Create router.js supporting routes: #/dashboard, #/employees, #/projects, #/timesheet, #/reports. Only the active view renders in the content area. Default route is #/dashboard.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Hash-based routing works for all 5 routes",
+        "checked": false
+      },
+      {
+        "text": "Active sidebar item highlighted on route change",
+        "checked": false
+      },
+      {
+        "text": "Default route (#/ or empty) redirects to #/dashboard",
+        "checked": false
+      },
+      {
+        "text": "Unknown routes redirect to #/dashboard",
+        "checked": false
+      },
+      {
+        "text": "Only active view is in DOM (lazy rendering)",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 2,
+    "created_at": "2026-03-18T14:27:04.375837+05:30",
+    "updated_at": "2026-03-18T14:27:04.375837+05:30"
+  },
+  {
+    "id": "kt_1773824224375839000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p1_stst_004",
+    "phase_index": 1,
+    "phase_name": "Foundation \u0026 Core Data Layer",
+    "title": "Create reusable components: Modal, Toast, DataTable",
+    "description": "Build modal.js (open/close, form content slot, backdrop click to close, Esc to close), toast.js (success/error/info notifications, auto-dismiss), dataTable.js (sortable columns, filterable, row actions).",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Modal opens/closes with 200ms transition, closes on Esc and backdrop click",
+        "checked": false
+      },
+      {
+        "text": "Toast appears top-right, auto-dismisses after 3s, supports success/error/info variants",
+        "checked": false
+      },
+      {
+        "text": "DataTable renders from array of objects, supports column sorting (asc/desc), search filter",
+        "checked": false
+      },
+      {
+        "text": "All components use textContent for user data (XSS prevention)",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 3,
+    "created_at": "2026-03-18T14:27:04.375839+05:30",
+    "updated_at": "2026-03-18T14:27:04.37584+05:30"
+  },
+  {
+    "id": "kt_1773824224375840000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p1_stst_005",
+    "phase_index": 1,
+    "phase_name": "Foundation \u0026 Core Data Layer",
+    "title": "Build utility modules: dates, sanitize, eventBus, export",
+    "description": "Create dates.js (formatting, duration calculation, locale-aware display), sanitize.js (escapeHTML, input validators), eventBus.js (pub/sub), export.js (CSV with formula injection protection).",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "dates.js: formatDate, formatTime, formatDuration (Xh Ym), calcDuration, toUTC, toLocal",
+        "checked": false
+      },
+      {
+        "text": "sanitize.js: escapeHTML function, validateRequired, validateMaxLength, validateEmail, validateTimeRange",
+        "checked": false
+      },
+      {
+        "text": "eventBus.js: on(), off(), emit() methods working",
+        "checked": false
+      },
+      {
+        "text": "export.js: generateCSV with double-quote wrapping, formula character prefixing, UTF-8 BOM, download trigger",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 4,
+    "created_at": "2026-03-18T14:27:04.375841+05:30",
+    "updated_at": "2026-03-18T14:27:04.375841+05:30"
+  },
+  {
+    "id": "kt_1773824224375850000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p2_stst_006",
+    "phase_index": 2,
+    "phase_name": "Core Views — Dashboard, Employees, Projects",
+    "title": "Build Employee Management view",
+    "description": "Create employees.js view: employee list/grid with status indicators (green/gray dots), today's hours per employee, search/filter by name/department/status. Add Employee button opens modal with form (name, role, department, hourly rate, color). Edit and deactivate via row actions. Progressive empty state CTA.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Employee list displays with color-coded status indicators",
+        "checked": false
+      },
+      {
+        "text": "Add Employee modal with validation (name required, max 100 chars)",
+        "checked": false
+      },
+      {
+        "text": "Edit employee via modal, pre-filled with current data",
+        "checked": false
+      },
+      {
+        "text": "Deactivate/activate toggle works",
+        "checked": false
+      },
+      {
+        "text": "Search by name filters list in real-time (300ms debounce)",
+        "checked": false
+      },
+      {
+        "text": "Filter by department and status works",
+        "checked": false
+      },
+      {
+        "text": "Empty state shows 'Add your first employee' CTA",
+        "checked": false
+      },
+      {
+        "text": "Today's hours shown per employee",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 5,
+    "created_at": "2026-03-18T14:27:04.37585+05:30",
+    "updated_at": "2026-03-18T14:27:04.37585+05:30"
+  },
+  {
+    "id": "kt_1773824224375851000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p2_stst_007",
+    "phase_index": 2,
+    "phase_name": "Core Views — Dashboard, Employees, Projects",
+    "title": "Build Project \u0026 Task Management view",
+    "description": "Create projects.js view: project list with color tags, status badges, task count, total hours. Add Project button opens modal. Expand project to see tasks. Add Task inline. Filter by status. Progressive empty state.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Project list with color tags and status badges (active/completed/archived)",
+        "checked": false
+      },
+      {
+        "text": "Add Project modal with name (required), description, color picker, status",
+        "checked": false
+      },
+      {
+        "text": "Expand/collapse project shows tasks underneath",
+        "checked": false
+      },
+      {
+        "text": "Add Task inline within expanded project",
+        "checked": false
+      },
+      {
+        "text": "Edit/delete project and task actions",
+        "checked": false
+      },
+      {
+        "text": "Filter by project status works",
+        "checked": false
+      },
+      {
+        "text": "Total hours logged shown per project",
+        "checked": false
+      },
+      {
+        "text": "Empty state shows 'Create your first project' CTA",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 6,
+    "created_at": "2026-03-18T14:27:04.37587+05:30",
+    "updated_at": "2026-03-18T14:27:04.37587+05:30"
+  },
+  {
+    "id": "kt_1773824224375871000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p2_stst_008",
+    "phase_index": 2,
+    "phase_name": "Core Views — Dashboard, Employees, Projects",
+    "title": "Build Timer Widget and Clock In/Out functionality",
+    "description": "Create timerWidget.js: persistent top-bar component showing active timer (employee name, project, elapsed time, Stop button). Quick clock-in dropdown: select employee → select project → start. Timer updates every second. Timer state saved to localStorage every 30s for crash recovery.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Timer widget visible in top bar across all views",
+        "checked": false
+      },
+      {
+        "text": "Clock-in: select employee and project, timer starts immediately",
+        "checked": false
+      },
+      {
+        "text": "Running timer shows employee name, project, elapsed time (HH:MM:SS)",
+        "checked": false
+      },
+      {
+        "text": "Clock-out: stop button saves time entry with calculated duration",
+        "checked": false
+      },
+      {
+        "text": "Timer state persisted to localStorage every 30s",
+        "checked": false
+      },
+      {
+        "text": "Timer recovers on page reload (active timer restored)",
+        "checked": false
+      },
+      {
+        "text": "Multiple employees can be clocked in simultaneously",
+        "checked": false
+      },
+      {
+        "text": "Visual indicator changes when timer is active (amber accent)",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 7,
+    "created_at": "2026-03-18T14:27:04.375871+05:30",
+    "updated_at": "2026-03-18T14:27:04.375871+05:30"
+  },
+  {
+    "id": "kt_1773824224375872000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p2_stst_009",
+    "phase_index": 2,
+    "phase_name": "Core Views — Dashboard, Employees, Projects",
+    "title": "Build Dashboard view",
+    "description": "Create dashboard.js: summary cards (total hours today, employees clocked in, active projects, entries today), active timers section, quick clock-in button, recent activity timeline (last 10 entries). Progressive empty state for new users.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "4 summary cards with correct real-time data",
+        "checked": false
+      },
+      {
+        "text": "Active timers section lists all currently clocked-in employees with running time",
+        "checked": false
+      },
+      {
+        "text": "Quick clock-in button triggers timer widget clock-in flow",
+        "checked": false
+      },
+      {
+        "text": "Recent activity shows last 10 entries with employee, project, time, duration",
+        "checked": false
+      },
+      {
+        "text": "Empty state guides new users: 'Welcome! Add your first employee to get started'",
+        "checked": false
+      },
+      {
+        "text": "Dashboard updates when timer starts/stops (via eventBus)",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 8,
+    "created_at": "2026-03-18T14:27:04.375872+05:30",
+    "updated_at": "2026-03-18T14:27:04.375872+05:30"
+  },
+  {
+    "id": "kt_1773824224375892000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p3_stst_010",
+    "phase_index": 3,
+    "phase_name": "Timesheet \u0026 Reports with Export",
+    "title": "Build Timesheet view with list and manual entry",
+    "description": "Create timesheet.js: sortable data table of time entries (date, employee, project, task, clock in/out, duration, notes). Add Entry button opens modal for manual entry. Inline edit for quick corrections. Filter bar with date range, employee, project selectors. Delete entry with confirmation.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Time entry table displays all entries sorted by date (newest first)",
+        "checked": false
+      },
+      {
+        "text": "Sortable by any column (date, employee, project, duration)",
+        "checked": false
+      },
+      {
+        "text": "Add manual entry modal: employee (required), project (required), task, date, start time, end time, notes",
+        "checked": false
+      },
+      {
+        "text": "Validation: end time \u003e start time, no overlap with same employee's entries, max 24h",
+        "checked": false
+      },
+      {
+        "text": "Inline editing of duration and notes",
+        "checked": false
+      },
+      {
+        "text": "Delete entry with confirmation toast",
+        "checked": false
+      },
+      {
+        "text": "Filter by date range (presets: Today, This Week, This Month, Custom)",
+        "checked": false
+      },
+      {
+        "text": "Filter by employee and project dropdowns",
+        "checked": false
+      },
+      {
+        "text": "Duration displayed as Xh Ym format",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 9,
+    "created_at": "2026-03-18T14:27:04.375893+05:30",
+    "updated_at": "2026-03-18T14:27:04.375893+05:30"
+  },
+  {
+    "id": "kt_1773824224375894000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p3_stst_011",
+    "phase_index": 3,
+    "phase_name": "Timesheet \u0026 Reports with Export",
+    "title": "Build DateRangePicker component",
+    "description": "Create dateRangePicker.js: presets (Today, This Week, This Month, Last Month, Custom), custom date range with start/end date inputs. Emits date range on change. Used by Timesheet and Reports views.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Preset buttons: Today, This Week, This Month, Last Month, Custom",
+        "checked": false
+      },
+      {
+        "text": "Custom range shows two date inputs (start, end)",
+        "checked": false
+      },
+      {
+        "text": "Validates end \u003e= start",
+        "checked": false
+      },
+      {
+        "text": "Emits selected range via callback",
+        "checked": false
+      },
+      {
+        "text": "Displays current selection clearly",
+        "checked": false
+      },
+      {
+        "text": "Styled consistent with design system",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 10,
+    "created_at": "2026-03-18T14:27:04.375894+05:30",
+    "updated_at": "2026-03-18T14:27:04.375894+05:30"
+  },
+  {
+    "id": "kt_1773824224375895000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p3_stst_012",
+    "phase_index": 3,
+    "phase_name": "Timesheet \u0026 Reports with Export",
+    "title": "Build Reports view with charts and filtering",
+    "description": "Create reports.js: filter bar (report type, date range, employee, project), summary cards (total hours, avg hours/day, top employee, top project), CSS-based horizontal bar chart (hours by employee or by project), detailed data table below chart. Report types: Daily, Weekly, Monthly, By Project.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Report type selector: Daily, Weekly, Monthly, By Project",
+        "checked": false
+      },
+      {
+        "text": "Filters: date range picker, employee dropdown (all/specific), project dropdown (all/specific)",
+        "checked": false
+      },
+      {
+        "text": "Summary cards compute correctly: total hours, average hours/day, top employee, top project",
+        "checked": false
+      },
+      {
+        "text": "CSS horizontal bar chart shows hours distribution (by employee or project depending on report type)",
+        "checked": false
+      },
+      {
+        "text": "Data table below chart with sortable columns",
+        "checked": false
+      },
+      {
+        "text": "Daily report: hours per employee for selected date, broken down by project",
+        "checked": false
+      },
+      {
+        "text": "Weekly report: 7-day breakdown with daily totals per employee",
+        "checked": false
+      },
+      {
+        "text": "Monthly report: totals per employee and per project for selected month",
+        "checked": false
+      },
+      {
+        "text": "Project report: total hours per project, breakdown by employee and task",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 11,
+    "created_at": "2026-03-18T14:27:04.375895+05:30",
+    "updated_at": "2026-03-18T14:27:04.375895+05:30"
+  },
+  {
+    "id": "kt_1773824224375896000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p3_stst_013",
+    "phase_index": 3,
+    "phase_name": "Timesheet \u0026 Reports with Export",
+    "title": "Implement CSV export and Print/PDF for reports",
+    "description": "Add Export CSV button to reports view using export.js utility. CSV includes all visible report data with proper sanitization. Add Print/PDF button using window.print() with print-specific CSS stylesheet. Export button placement: top-right of reports view, prominent.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Export CSV button downloads .csv file with current report data",
+        "checked": false
+      },
+      {
+        "text": "CSV has proper headers, double-quoted values, formula injection protection",
+        "checked": false
+      },
+      {
+        "text": "CSV includes UTF-8 BOM for Excel compatibility",
+        "checked": false
+      },
+      {
+        "text": "Print/PDF button triggers window.print() with clean print layout",
+        "checked": false
+      },
+      {
+        "text": "Print CSS hides sidebar, nav, buttons — shows only report content",
+        "checked": false
+      },
+      {
+        "text": "File name includes report type and date range (e.g., weekly-report-2026-03-11-to-2026-03-17.csv)",
+        "checked": false
+      },
+      {
+        "text": "Export works for all 4 report types",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 12,
+    "created_at": "2026-03-18T14:27:04.375896+05:30",
+    "updated_at": "2026-03-18T14:27:04.375896+05:30"
+  },
+  {
+    "id": "kt_1773824224375897000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p4_stst_014",
+    "phase_index": 4,
+    "phase_name": "Polish \u0026 Data Management",
+    "title": "Build Settings panel with data management",
+    "description": "Add a settings section (accessible from gear icon in top bar): Clear All Data button with confirmation, Export All Data (JSON backup), Import Data (JSON file upload with schema validation), storage usage indicator. Optional: display preferences (date format, time format).",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Settings panel accessible from top bar gear icon",
+        "checked": false
+      },
+      {
+        "text": "Clear All Data button with confirmation dialog — wipes all wtt_ keys",
+        "checked": false
+      },
+      {
+        "text": "Export All Data downloads JSON file with all collections",
+        "checked": false
+      },
+      {
+        "text": "Import Data accepts JSON file, validates schema, offers merge or replace",
+        "checked": false
+      },
+      {
+        "text": "Storage usage bar shows approximate localStorage usage",
+        "checked": false
+      },
+      {
+        "text": "Toast notifications confirm each action",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 13,
+    "created_at": "2026-03-18T14:27:04.375897+05:30",
+    "updated_at": "2026-03-18T14:27:04.375897+05:30"
+  },
+  {
+    "id": "kt_1773824224375898000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p4_stst_015",
+    "phase_index": 4,
+    "phase_name": "Polish \u0026 Data Management",
+    "title": "Add keyboard shortcuts",
+    "description": "Implement global keyboard shortcut handler: Space (clock in/out on dashboard), N (new entry), E (employees), P (projects), R (reports), Esc (close modal). Only active when no input is focused.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Space toggles clock in/out when on dashboard (not when input focused)",
+        "checked": false
+      },
+      {
+        "text": "N opens new time entry modal",
+        "checked": false
+      },
+      {
+        "text": "E, P, R navigate to respective views",
+        "checked": false
+      },
+      {
+        "text": "Esc closes any open modal",
+        "checked": false
+      },
+      {
+        "text": "Shortcuts disabled when typing in input/textarea fields",
+        "checked": false
+      },
+      {
+        "text": "Optional: keyboard shortcut hint tooltip on hover",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 14,
+    "created_at": "2026-03-18T14:27:04.375898+05:30",
+    "updated_at": "2026-03-18T14:27:04.375898+05:30"
+  },
+  {
+    "id": "kt_1773824224375899000",
+    "project_id": "worktimetracker",
+    "subtask_ref": "p4_stst_016",
+    "phase_index": 4,
+    "phase_name": "Polish \u0026 Data Management",
+    "title": "Responsive design and final polish",
+    "description": "Ensure all views work well on mobile (640px), tablet (768px), and desktop (1024px+). Sidebar collapses to hamburger on mobile. Tables scroll horizontally on small screens. Timer widget adapts to compact mode. Add loading states, smooth transitions, and micro-interactions per spec.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Sidebar collapses to hamburger menu on mobile",
+        "checked": false
+      },
+      {
+        "text": "All data tables scroll horizontally on small screens",
+        "checked": false
+      },
+      {
+        "text": "Timer widget shows compact view on mobile",
+        "checked": false
+      },
+      {
+        "text": "Dashboard summary cards stack on mobile (2x2 or 1 column)",
+        "checked": false
+      },
+      {
+        "text": "Modals are full-screen on mobile, centered on desktop",
+        "checked": false
+      },
+      {
+        "text": "200ms transitions on view switches, modal open/close",
+        "checked": false
+      },
+      {
+        "text": "No horizontal overflow on any screen size",
+        "checked": false
+      },
+      {
+        "text": "Print CSS produces clean single-page report output",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 15,
+    "created_at": "2026-03-18T14:27:04.3759+05:30",
+    "updated_at": "2026-03-18T14:27:04.3759+05:30"
+  }
+]

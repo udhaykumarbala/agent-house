@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DesignFlow — API Test</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; background: #FAF8F5; color: #1C1917; padding: 32px; }
+    h1 { font-size: 24px; font-weight: 700; margin-bottom: 24px; }
+    .endpoint { background: #fff; border: 1px solid #E7E5E4; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .method { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+    .get { background: #EEF2FF; color: #3730A3; }
+    .post { background: #F7F8E8; color: #4D7C0F; }
+    .put { background: #FFF7ED; color: #D97706; }
+    .delete { background: #FEE2E2; color: #DC2626; }
+    code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+    .pending { opacity: 0.4; }
+    .note { margin-top: 32px; padding: 16px; background: #fff3cd; border-radius: 8px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>DesignFlow — API Endpoints</h1>
+
+  <div class="note">
+    <strong>Note:</strong> DesignFlow Phase 1 is a frontend-only application using localStorage for persistence.
+    Backend API endpoints will be added in a future phase. This page documents the planned API contract.
+  </div>
+
+  <h2 style="margin-top:32px;font-size:16px;font-weight:600;">Tasks</h2>
+
+  <div class="endpoint pending">
+    <span class="method get">GET</span>
+    <code style="margin-left:12px;">/api/tasks</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">List all tasks. Query params: ?state=backlog&amp;category=design</p>
+  </div>
+
+  <div class="endpoint pending">
+    <span class="method post">POST</span>
+    <code style="margin-left:12px;">/api/tasks</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">Create a new task. Body: { title, category, priority, dueDate, timeEstimate, ... }</p>
+  </div>
+
+  <div class="endpoint pending">
+    <span class="method get">GET</span>
+    <code style="margin-left:12px;">/api/tasks/:id</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">Get a single task by ID</p>
+  </div>
+
+  <div class="endpoint pending">
+    <span class="method put">PUT</span>
+    <code style="margin-left:12px;">/api/tasks/:id</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">Update task fields. Body: Partial&lt;Task&gt;</p>
+  </div>
+
+  <div class="endpoint pending">
+    <span class="method delete">DELETE</span>
+    <code style="margin-left:12px;">/api/tasks/:id</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">Delete a task</p>
+  </div>
+
+  <div class="endpoint pending">
+    <span class="method post">PATCH</span>
+    <code style="margin-left:12px;">/api/tasks/:id/move</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">Move task to a new column. Body: { state: IterationState }</p>
+  </div>
+
+  <div class="endpoint pending">
+    <span class="method post">PATCH</span>
+    <code style="margin-left:12px;">/api/tasks/:id/complete</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">Toggle task completion</p>
+  </div>
+
+  <h2 style="margin-top:32px;font-size:16px;font-weight:600;">Subtasks</h2>
+
+  <div class="endpoint pending">
+    <span class="method post">POST</span>
+    <code style="margin-left:12px;">/api/tasks/:id/subtasks</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">Add a subtask. Body: { title: string }</p>
+  </div>
+
+  <div class="endpoint pending">
+    <span class="method patch">PATCH</span>
+    <code style="margin-left:12px;">/api/tasks/:taskId/subtasks/:subtaskId</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">Toggle subtask completion</p>
+  </div>
+
+  <div class="endpoint pending">
+    <span class="method delete">DELETE</span>
+    <code style="margin-left:12px;">/api/tasks/:taskId/subtasks/:subtaskId</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">Delete a subtask</p>
+  </div>
+
+  <h2 style="margin-top:32px;font-size:16px;font-weight:600;">Attachments</h2>
+
+  <div class="endpoint pending">
+    <span class="method post">POST</span>
+    <code style="margin-left:12px;">/api/tasks/:id/attachments</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">Add URL attachment. Body: { url, label? }</p>
+  </div>
+
+  <div class="endpoint pending">
+    <span class="method delete">DELETE</span>
+    <code style="margin-left:12px;">/api/tasks/:taskId/attachments/:attachmentId</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">Remove an attachment</p>
+  </div>
+
+  <h2 style="margin-top:32px;font-size:16px;font-weight:600;">Settings</h2>
+
+  <div class="endpoint pending">
+    <span class="method get">GET</span>
+    <code style="margin-left:12px;">/api/settings</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">Get user settings (theme, columns, categories, tags)</p>
+  </div>
+
+  <div class="endpoint pending">
+    <span class="method put">PUT</span>
+    <code style="margin-left:12px;">/api/settings</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">Update settings. Body: Partial&lt;Settings&gt;</p>
+  </div>
+
+  <h2 style="margin-top:32px;font-size:16px;font-weight:600;">Data</h2>
+
+  <div class="endpoint pending">
+    <span class="method get">GET</span>
+    <code style="margin-left:12px;">/api/export</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">Export all tasks as JSON file</p>
+  </div>
+
+  <div class="endpoint pending">
+    <span class="method post">POST</span>
+    <code style="margin-left:12px;">/api/import</code>
+    <p style="margin:8px 0 0;font-size:13px;color:#78716C;">Import tasks from JSON. Body: { tasks: Task[], merge?: boolean }</p>
+  </div>
+</body>
+</html>

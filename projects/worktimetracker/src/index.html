@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WorkTime Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles/main.css" />
+</head>
+<body class="min-h-screen bg-background text-content font-body">
+  <!-- Skip to content -->
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-primary focus:text-content focus:rounded-md">
+    Skip to content
+  </a>
+
+  <div id="app" class="flex min-h-screen">
+    <!-- Sidebar Navigation (desktop/tablet) -->
+    <aside id="sidebar" class="sidebar-drawer md:flex flex-col fixed top-0 left-0 h-full bg-background border-r border-divider z-40 transition-all duration-200 w-60 md:w-16 lg:w-60">
+      <!-- Logo -->
+      <div class="flex items-center gap-3 px-4 py-5 lg:px-5">
+        <i data-lucide="clock" class="w-7 h-7 text-accent shrink-0"></i>
+        <span class="font-heading font-semibold text-lg text-content sidebar-label-text">WorkTime</span>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1 mt-2 px-2" role="navigation" aria-label="Main navigation">
+        <a href="#/dashboard" data-route="dashboard" class="nav-item active" aria-current="page">
+          <i data-lucide="layout-dashboard" class="nav-icon"></i>
+          <span class="nav-label">Dashboard</span>
+        </a>
+        <a href="#/employees" data-route="employees" class="nav-item">
+          <i data-lucide="users" class="nav-icon"></i>
+          <span class="nav-label">Team</span>
+        </a>
+        <a href="#/timesheet" data-route="timesheet" class="nav-item">
+          <i data-lucide="clock" class="nav-icon"></i>
+          <span class="nav-label">Track</span>
+        </a>
+        <a href="#/projects" data-route="projects" class="nav-item">
+          <i data-lucide="folder-kanban" class="nav-icon"></i>
+          <span class="nav-label">Projects</span>
+        </a>
+        <a href="#/reports" data-route="reports" class="nav-item">
+          <i data-lucide="bar-chart-3" class="nav-icon"></i>
+          <span class="nav-label">Reports</span>
+        </a>
+      </nav>
+
+      <!-- Settings (bottom) -->
+      <div class="mt-auto px-2 pb-4">
+        <button id="settings-btn" class="nav-item w-full" aria-label="Settings">
+          <i data-lucide="settings" class="nav-icon"></i>
+          <span class="nav-label">Settings</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Mobile sidebar overlay backdrop -->
+    <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/50 z-35 md:hidden" aria-hidden="true"></div>
+
+    <!-- Main content wrapper -->
+    <div class="flex-1 flex flex-col md:ml-16 lg:ml-60 pb-16 md:pb-0">
+      <!-- Mobile top bar with hamburger + logo + settings -->
+      <div id="mobile-topbar" class="md:hidden flex items-center justify-between px-4 py-3 bg-surface border-b border-divider sticky top-0 z-30">
+        <button id="hamburger-btn" type="button" class="btn-ghost btn-sm" aria-label="Open menu">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <div class="flex items-center gap-2">
+          <i data-lucide="clock" class="w-5 h-5 text-accent"></i>
+          <span class="font-heading font-semibold text-sm text-content">WorkTime</span>
+        </div>
+        <button id="mobile-settings-btn" type="button" class="btn-ghost btn-sm" aria-label="Settings">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Timer Bar (hidden by default, shown when timer active) -->
+      <header id="timer-bar" class="hidden sticky top-0 md:top-0 z-30 bg-surface border-b border-divider">
+        <div class="flex items-center justify-between px-4 py-3 lg:px-6">
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="status-dot active shrink-0" aria-hidden="true"></span>
+            <span id="timer-employee" class="text-sm font-medium text-content truncate"></span>
+            <span class="text-content-secondary hidden sm:inline">&mdash;</span>
+            <span id="timer-project" class="text-sm text-content-secondary truncate hidden sm:inline"></span>
+          </div>
+          <div class="flex items-center gap-4 shrink-0">
+            <span id="timer-display" class="text-timer-compact tabular-nums text-accent">00:00:00</span>
+            <button id="timer-stop-btn" class="btn-clock-out text-sm">
+              <i data-lucide="square" class="w-4 h-4 mr-1.5 inline-block"></i>
+              Clock Out
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page content -->
+      <main id="main-content" class="flex-1 p-4 lg:p-8">
+        <div id="view-container" class="max-w-[1200px] mx-auto w-full"></div>
+      </main>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav id="mobile-nav" class="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-divider z-40 safe-area-bottom" role="navigation" aria-label="Mobile navigation">
+      <div class="flex justify-around py-1.5">
+        <a href="#/dashboard" data-route="dashboard" class="mobile-nav-item active">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+          <span>Dash</span>
+        </a>
+        <a href="#/employees" data-route="employees" class="mobile-nav-item">
+          <i data-lucide="users" class="w-5 h-5"></i>
+          <span>Team</span>
+        </a>
+        <a href="#/timesheet" data-route="timesheet" class="mobile-nav-item">
+          <i data-lucide="clock" class="w-5 h-5"></i>
+          <span>Track</span>
+        </a>
+        <a href="#/projects" data-route="projects" class="mobile-nav-item">
+          <i data-lucide="folder-kanban" class="w-5 h-5"></i>
+          <span>Projects</span>
+        </a>
+        <a href="#/reports" data-route="reports" class="mobile-nav-item">
+          <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+          <span>Reports</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- Toast notification container -->
+    <div id="toast-container" class="fixed top-4 md:top-6 right-4 z-50 flex flex-col gap-2 pointer-events-none" role="status" aria-live="polite"></div>
+
+    <!-- Modal mount point -->
+    <div id="modal-container"></div>
+  </div>
+
+  <script type="module" src="./scripts/main.ts"></script>
+</body>
+</html>

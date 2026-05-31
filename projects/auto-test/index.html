@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pomodoro Timer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #0f0f1a;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .timer-card {
+      background-color: #1a1a2e;
+      border-radius: 16px;
+      padding: 40px 48px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      border: 1px solid #2a2a4a;
+    }
+
+    .mode-label {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      transition: color 0.3s ease;
+    }
+
+    .mode-label.work {
+      color: #e07a5f;
+    }
+
+    .mode-label.break {
+      color: #81b29a;
+    }
+
+    .timer-display {
+      font-size: 5rem;
+      font-weight: 300;
+      font-variant-numeric: tabular-nums;
+      margin: 16px 0 32px;
+      color: #f4f1de;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    button {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: transform 0.1s ease, opacity 0.2s ease;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    #startBtn {
+      background-color: #e07a5f;
+      color: #0f0f1a;
+    }
+
+    #startBtn:hover {
+      opacity: 0.85;
+    }
+
+    #pauseBtn {
+      background-color: #f2cc8f;
+      color: #0f0f1a;
+    }
+
+    #pauseBtn:hover {
+      opacity: 0.85;
+    }
+
+    #resetBtn {
+      background-color: #3d405b;
+      color: #e0e0e0;
+      border: 1px solid #4a4a6a;
+    }
+
+    #resetBtn:hover {
+      background-color: #4a4a6a;
+    }
+  </style>
+</head>
+<body>
+  <div class="timer-card">
+    <div id="mode-label" class="mode-label work">Work</div>
+    <div id="timer-display" class="timer-display">25:00</div>
+    <div class="buttons">
+      <button id="startBtn">Start</button>
+      <button id="pauseBtn" style="display:none">Pause</button>
+      <button id="resetBtn">Reset</button>
+    </div>
+  </div>
+
+  <script>
+    const WORK_TIME  = 25 * 60;
+    const BREAK_TIME = 5 * 60;
+
+    let isRunning  = false;
+    let isWorkMode = true;
+    let timeLeft   = WORK_TIME;
+    let intervalId = null;
+
+    const displayEl = document.getElementById('timer-display');
+    const modeEl    = document.getElementById('mode-label');
+    const startBtn  = document.getElementById('startBtn');
+    const pauseBtn  = document.getElementById('pauseBtn');
+    const resetBtn  = document.getElementById('resetBtn');
+
+    function formatTime(seconds) {
+      const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const s = String(seconds % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function updateDisplay() {
+      displayEl.textContent = formatTime(timeLeft);
+      modeEl.textContent    = isWorkMode ? 'Work' : 'Break';
+      modeEl.className      = 'mode-label ' + (isWorkMode ? 'work' : 'break');
+    }
+
+    function switchMode() {
+      isWorkMode = !isWorkMode;
+      timeLeft   = isWorkMode ? WORK_TIME : BREAK_TIME;
+      updateDisplay();
+    }
+
+    function tick() {
+      if (timeLeft > 0) {
+        timeLeft--;
+        updateDisplay();
+      } else {
+        clearInterval(intervalId);
+        intervalId = null;
+        isRunning  = false;
+        startBtn.style.display = 'inline-block';
+        pauseBtn.style.display = 'none';
+        switchMode();
+      }
+    }
+
+    startBtn.addEventListener('click', function () {
+      if (!isRunning) {
+        isRunning = true;
+        startBtn.style.display = 'none';
+        pauseBtn.style.display = 'inline-block';
+        intervalId = setInterval(tick, 1000);
+      }
+    });
+
+    pauseBtn.addEventListener('click', function () {
+      if (isRunning) {
+        isRunning = false;
+        clearInterval(intervalId);
+        intervalId = null;
+        startBtn.style.display = 'inline-block';
+        pauseBtn.style.display = 'none';
+      }
+    });
+
+    resetBtn.addEventListener('click', function () {
+      clearInterval(intervalId);
+      intervalId = null;
+      isRunning  = false;
+      timeLeft   = isWorkMode ? WORK_TIME : BREAK_TIME;
+      updateDisplay();
+      startBtn.style.display = 'inline-block';
+      pauseBtn.style.display = 'none';
+    });
+
+    updateDisplay();
+  </script>
+</body>
+</html>

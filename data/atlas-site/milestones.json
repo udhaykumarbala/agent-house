@@ -1,0 +1,42 @@
+[
+  {
+    "id": "ms_site_prep",
+    "title": "Site preparation",
+    "due_date": "2025-12-15",
+    "status": "completed",
+    "pct_complete": 100,
+    "owner": "site_engineer"
+  },
+  {
+    "id": "ms_foundation",
+    "title": "Foundation work",
+    "due_date": "2026-03-30",
+    "status": "in_progress",
+    "pct_complete": 78,
+    "owner": "site_engineer"
+  },
+  {
+    "id": "ms_slab_c7",
+    "title": "Pour C-7 slab",
+    "due_date": "2026-05-15",
+    "status": "in_progress",
+    "pct_complete": 40,
+    "owner": "site_engineer"
+  },
+  {
+    "id": "ms_steel_erect",
+    "title": "Structural steel erection",
+    "due_date": "2026-06-15",
+    "status": "pending",
+    "pct_complete": 0,
+    "owner": "site_engineer"
+  },
+  {
+    "id": "ms_grid_test",
+    "title": "Grid connection \u0026 testing",
+    "due_date": "2026-07-15",
+    "status": "pending",
+    "pct_complete": 0,
+    "owner": "qa_inspector"
+  }
+]

@@ -17,6 +17,7 @@ const (
 	TypeComplete   MessageType = "complete"    // Task completion signal
 	TypeError      MessageType = "error"       // Error message
 	TypeSystem     MessageType = "system"      // System/orchestrator message (phase changes, etc.)
+	TypeTriggerFired MessageType = "trigger_fired" // A trigger (cron/webhook/file/email) fired and spawned work
 )
 
 // Message represents communication between agents or from user

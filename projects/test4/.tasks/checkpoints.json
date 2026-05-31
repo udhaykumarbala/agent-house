@@ -1,0 +1,42 @@
+[
+  {
+    "id": "cp_1774114953018054000",
+    "project_id": "test4",
+    "task_id": "task_1774114848275121000",
+    "type": "template_approval",
+    "status": "resolved",
+    "artifact_path": "projects/test4/.plans/template.md",
+    "artifact_summary": "Selected template: static-enhanced",
+    "decision": {
+      "id": "dec_1774114956407884000",
+      "project_id": "test4",
+      "task_id": "task_1774114848275121000",
+      "checkpoint_type": "template_approval",
+      "action": "approved",
+      "decided_by": "user",
+      "decided_at": "2026-03-21T23:12:36.407889+05:30"
+    },
+    "created_at": "2026-03-21T23:12:33.018056+05:30",
+    "resolved_at": "2026-03-21T23:12:36.408044+05:30"
+  },
+  {
+    "id": "cp_1774115829478841000",
+    "project_id": "test4",
+    "task_id": "task_1774114848275121000",
+    "type": "plan_approval",
+    "status": "resolved",
+    "artifact_path": "projects/test4/.plans/final/approved-plan.md",
+    "artifact_summary": "Development plan ready for review",
+    "decision": {
+      "id": "dec_1774115836631250000",
+      "project_id": "test4",
+      "task_id": "task_1774114848275121000",
+      "checkpoint_type": "plan_approval",
+      "action": "approved",
+      "decided_by": "user",
+      "decided_at": "2026-03-21T23:27:16.631257+05:30"
+    },
+    "created_at": "2026-03-21T23:27:09.478843+05:30",
+    "resolved_at": "2026-03-21T23:27:16.631755+05:30"
+  }
+]

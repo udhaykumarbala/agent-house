@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Countdown Timer</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏱</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles/main.css" />
+</head>
+<body>
+  <main class="flex min-h-dvh flex-col items-center justify-center px-4">
+    <!-- Progress ring (behind timer) -->
+    <div class="relative flex items-center justify-center">
+      <svg id="progress-svg" class="absolute" width="320" height="320" viewBox="0 0 320 320">
+        <circle
+          cx="160" cy="160" r="148"
+          fill="none"
+          stroke="#1A1A1F"
+          stroke-width="3"
+        />
+        <circle
+          id="progress-ring"
+          class="progress-ring"
+          cx="160" cy="160" r="148"
+          fill="none"
+          stroke="#E8C547"
+          stroke-width="3"
+          stroke-linecap="round"
+          stroke-dasharray="929.91"
+          stroke-dashoffset="0"
+        />
+      </svg>
+
+      <!-- Timer display -->
+      <div id="timer-display" class="relative z-10 flex items-baseline gap-1 select-none">
+        <span id="minutes" class="timer-digit glow">01</span>
+        <span class="timer-separator glow">:</span>
+        <span id="seconds" class="timer-digit glow">00</span>
+      </div>
+    </div>
+
+    <!-- Status label -->
+    <p id="status" class="mt-6 text-sm font-medium uppercase tracking-widest text-text-secondary animate-fade-in">
+      Ready
+    </p>
+
+    <!-- Controls -->
+    <div class="mt-10 flex items-center gap-4">
+      <button id="btn-start" class="btn-primary" type="button">
+        Start
+      </button>
+      <button id="btn-reset" class="btn-ghost hidden" type="button">
+        Reset
+      </button>
+    </div>
+
+    <!-- Subtle branding -->
+    <p class="fixed bottom-6 text-xs text-text-muted tracking-wider">
+      mini · timer
+    </p>
+  </main>
+
+  <script type="module" src="./scripts/main.ts"></script>
+</body>
+</html>

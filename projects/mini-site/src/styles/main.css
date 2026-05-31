@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-feature-settings: 'tnum' 1;
+  }
+
+  body {
+    @apply bg-background text-text-primary font-sans antialiased;
+    min-height: 100dvh;
+  }
+}
+
+@layer components {
+  .timer-digit {
+    @apply font-mono font-light tracking-tight;
+    font-size: clamp(5rem, 20vw, 12rem);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .timer-separator {
+    @apply font-mono font-light text-text-muted;
+    font-size: clamp(4rem, 16vw, 10rem);
+    line-height: 1;
+  }
+
+  .btn {
+    @apply relative overflow-hidden rounded-full px-10 py-4 font-sans font-medium text-sm uppercase tracking-widest;
+    @apply transition-all duration-300 ease-out;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary text-background;
+    @apply hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/20;
+    @apply active:scale-[0.97];
+  }
+
+  .btn-ghost {
+    @apply btn border border-surface-light text-text-secondary;
+    @apply hover:border-text-secondary hover:text-text-primary;
+    @apply active:scale-[0.97];
+  }
+
+  .progress-ring {
+    transition: stroke-dashoffset 0.35s ease;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+}
+
+@layer utilities {
+  .glow {
+    text-shadow: 0 0 40px rgba(232, 197, 71, 0.3),
+                 0 0 80px rgba(232, 197, 71, 0.1);
+  }
+
+  .glow-danger {
+    text-shadow: 0 0 40px rgba(232, 84, 84, 0.4),
+                 0 0 80px rgba(232, 84, 84, 0.15);
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "id": "email_atlas_3_invoice",
+  "from": "ar@vendorxyz.com",
+  "from_name": "XYZ Steel · Accounts Receivable",
+  "to": "ops@atlas-construction.com",
+  "subject": "Invoice #ST-0847 — 150 t structural steel · Project Alpha",
+  "body": "Hello Procurement,\n\nInvoice attached for Order #ST-2026-0847 — 150 metric tons of structural steel for Project Alpha (Solar Farm). PO reference 2294.\n\nAmount: $340,000.00\nNet 30 days.\nBank: Standard Chartered, A/C 1100-2294-77 (on file).\n\nNote: there is a 2-week delivery delay on the next batch — separate email follows.\n\nRegards,\nA/R · XYZ Steel",
+  "date": "2026-05-22T15:07:11Z",
+  "read": false,
+  "replied": false,
+  "category": "vendor",
+  "vendor_id": "vendor_xyz",
+  "trust_status": "trusted",
+  "trust_reason": "Verified sender on @vendorxyz.com",
+  "direction": "inbound"
+}

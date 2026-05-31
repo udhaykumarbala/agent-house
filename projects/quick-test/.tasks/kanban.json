@@ -1,0 +1,58 @@
+[
+  {
+    "id": "kt_1774080646731304000",
+    "project_id": "quick-test",
+    "subtask_ref": "p0_stst_1774080646730_1",
+    "phase_index": 0,
+    "phase_name": "Implementation",
+    "title": "Project Setup \u0026 Structure",
+    "description": "Set up project structure, dependencies, and configuration files",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Project directory structure created",
+        "checked": false
+      },
+      {
+        "text": "Configuration files in place",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 0,
+    "created_at": "2026-03-21T13:40:46.731304+05:30",
+    "updated_at": "2026-03-21T13:40:46.731305+05:30"
+  },
+  {
+    "id": "kt_1774080646731310000",
+    "project_id": "quick-test",
+    "subtask_ref": "p0_stst_1774080646730_2",
+    "phase_index": 0,
+    "phase_name": "Implementation",
+    "title": "Core Implementation",
+    "description": "CEO Direction: Build a polished, single-file rock-paper-scissors game with dark theme, emoji-based UI, score tracking, and smooth animations. Focus on delightful micro-interactions and clean visual design — this is small in scope but should feel premium.\n\nOriginal Task: Build a rock-paper-scissors game in a single HTML file. Dark theme, emoji   buttons for choices, score tracker, animated result display. Inline CSS and JS    only.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "All features implemented per spec",
+        "checked": false
+      },
+      {
+        "text": "Code compiles and runs without errors",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 1,
+    "created_at": "2026-03-21T13:40:46.73131+05:30",
+    "updated_at": "2026-03-21T13:40:46.73131+05:30"
+  }
+]

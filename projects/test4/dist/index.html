@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DesignFlow — UX Designer Todo</title>
+    <!-- Google Fonts: Cabinet Grotesk, Inter, JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Prevent flash of wrong theme -->
+    <script>
+      // Apply saved theme before first paint to prevent flash
+      (function() {
+        const saved = localStorage.getItem('designflow_theme');
+        if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-DIhvKrJW.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DZH8hQu2.css">
+  </head>
+  <body class="bg-background text-text-primary font-body antialiased">
+    <div id="root"></div>
+  </body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "id": "site_engineer",
+  "name": "Site Engineer",
+  "color": "#F97316",
+  "icon": "🏗️",
+  "execution": {
+    "default_mode": "session",
+    "phase_modes": {
+      "research": "oneshot",
+      "planning": "session",
+      "development": "session"
+    },
+    "model": "",
+    "max_turns": 50,
+    "timeout": "10m",
+    "claude_permission": "bypassPermissions"
+  },
+  "phases": ["research", "planning", "development"],
+  "tools": {
+    "builtin": ["Read", "Write", "Glob", "Grep", "Bash"],
+    "mcp_servers": []
+  }
+}

@@ -1,0 +1,129 @@
+[
+  {
+    "id": "cp_1773649598183097000",
+    "project_id": "imageresizer",
+    "task_id": "task_1773649496775918000",
+    "type": "template_approval",
+    "status": "resolved",
+    "artifact_path": "projects/imageresizer/.plans/template.md",
+    "artifact_summary": "Selected template: static-html",
+    "decision": {
+      "id": "dec_1773649618971153000",
+      "project_id": "imageresizer",
+      "task_id": "task_1773649496775918000",
+      "checkpoint_type": "template_approval",
+      "action": "approved",
+      "decided_by": "user",
+      "decided_at": "2026-03-16T13:56:58.971173+05:30"
+    },
+    "created_at": "2026-03-16T13:56:38.183098+05:30",
+    "resolved_at": "2026-03-16T13:56:58.971787+05:30"
+  },
+  {
+    "id": "cp_1773650035707660000",
+    "project_id": "imageresizer",
+    "task_id": "task_1773649496775918000",
+    "type": "plan_approval",
+    "status": "resolved",
+    "artifact_path": "projects/imageresizer/.plans/final/approved-plan.md",
+    "artifact_summary": "Development plan ready for review",
+    "decision": {
+      "id": "dec_1773650058778802000",
+      "project_id": "imageresizer",
+      "task_id": "task_1773649496775918000",
+      "checkpoint_type": "plan_approval",
+      "action": "approved",
+      "decided_by": "user",
+      "decided_at": "2026-03-16T14:04:18.778804+05:30"
+    },
+    "created_at": "2026-03-16T14:03:55.707661+05:30",
+    "resolved_at": "2026-03-16T14:04:18.77915+05:30"
+  },
+  {
+    "id": "cp_1773650525942171000",
+    "project_id": "imageresizer",
+    "task_id": "task_1773649496775918000",
+    "type": "phase_gate",
+    "phase_index": 1,
+    "status": "resolved",
+    "artifact_path": "projects/imageresizer/.plans/development-plan.json",
+    "artifact_summary": "Phase 1: Core Features passed QA — proceed?",
+    "decision": {
+      "id": "dec_1773650704446593000",
+      "project_id": "imageresizer",
+      "task_id": "task_1773649496775918000",
+      "checkpoint_type": "phase_gate",
+      "phase_index": 1,
+      "action": "approved",
+      "feedback": "All 5 subtasks meet their completion criteria. HTML5 is semantic with proper ARIA attributes; CSS design system uses exact Butter \u0026 Charcoal palette via custom properties; typography (Space Grotesk, Inter, JetBrains Mono) loaded correctly; brutalist button/input/card components have proper hover/active transforms and offset shadows; drag-and-drop with file validation works; Canvas-based resizer implements multi-step downscaling; aspect ratio lock, format, and quality controls are wired to debounced preview; download with sanitized filenames and blob URL cleanup is secure; responsive breakpoints cover 320px-1440px. Code is clean, secure (textContent only, no innerHTML), and well-structured. Proceed to Phase 2.",
+      "decided_by": "ceo_auto",
+      "decided_at": "2026-03-16T14:15:04.446594+05:30"
+    },
+    "created_at": "2026-03-16T14:12:05.942172+05:30",
+    "resolved_at": "2026-03-16T14:15:04.44804+05:30"
+  },
+  {
+    "id": "cp_1773651138627066000",
+    "project_id": "imageresizer",
+    "task_id": "task_1773649496775918000",
+    "type": "phase_gate",
+    "phase_index": 2,
+    "status": "resolved",
+    "artifact_path": "projects/imageresizer/.plans/development-plan.json",
+    "artifact_summary": "Phase 2: Enhanced Features \u0026 Polish passed QA — proceed?",
+    "decision": {
+      "id": "dec_1773651297991285000",
+      "project_id": "imageresizer",
+      "task_id": "task_1773649496775918000",
+      "checkpoint_type": "phase_gate",
+      "phase_index": 2,
+      "action": "approved",
+      "feedback": "Phase 2 implementation is solid. All 4 subtasks verified: (1) 5 preset buttons with active state highlighting using butter yellow, click handlers setting dimensions, custom input clearing active preset; (2) 25/50/75% scale buttons correctly calculating from original dimensions; (3) Button hover/active/press animations, dropzone drag-over feedback, fadeIn view transitions, shake error animation, all respecting prefers-reduced-motion; (4) Privacy message with lock icon, format badges (JPG/PNG/WebP), footer with privacy note, inline SVG favicon, playful microcopy throughout, proper meta title/description, all colors matching ui-spec.md exactly.",
+      "decided_by": "ceo_auto",
+      "decided_at": "2026-03-16T14:24:57.991287+05:30"
+    },
+    "created_at": "2026-03-16T14:22:18.627067+05:30",
+    "resolved_at": "2026-03-16T14:24:57.992994+05:30"
+  },
+  {
+    "id": "cp_1773651297995441000",
+    "project_id": "imageresizer",
+    "task_id": "task_1773649496775918000",
+    "type": "final_acceptance",
+    "status": "resolved",
+    "artifact_path": "projects/imageresizer/.plans/development-plan.json",
+    "artifact_summary": "All development phases completed — final acceptance",
+    "decision": {
+      "id": "dec_1773651300668831000",
+      "project_id": "imageresizer",
+      "task_id": "task_1773649496775918000",
+      "checkpoint_type": "final_acceptance",
+      "action": "approved",
+      "decided_by": "user",
+      "decided_at": "2026-03-16T14:25:00.668834+05:30"
+    },
+    "created_at": "2026-03-16T14:24:57.995442+05:30",
+    "resolved_at": "2026-03-16T14:25:00.669075+05:30"
+  },
+  {
+    "id": "cp_1773654986190909000",
+    "project_id": "imageresizer",
+    "task_id": "task_1773654774575483000",
+    "type": "template_approval",
+    "status": "resolved",
+    "artifact_path": "projects/imageresizer/.plans/template.md",
+    "artifact_summary": "Selected template: static-html",
+    "decision": {
+      "id": "dec_1773655120662160000",
+      "project_id": "imageresizer",
+      "task_id": "task_1773654774575483000",
+      "checkpoint_type": "template_approval",
+      "action": "approved",
+      "feedback": "The static-html template is the correct choice. The project is an existing client-side image resizer already built with pure HTML/CSS/JS — switching templates would force an unnecessary rewrite. All proposed features (cropping, rotation, filters, batch processing, dark mode) are achievable with native browser APIs and the Canvas API already in use. Zero build complexity is a strength here, not a limitation. Proceed with research phase.",
+      "decided_by": "ceo_auto",
+      "decided_at": "2026-03-16T15:28:40.662161+05:30"
+    },
+    "created_at": "2026-03-16T15:26:26.19091+05:30",
+    "resolved_at": "2026-03-16T15:28:40.663458+05:30"
+  }
+]

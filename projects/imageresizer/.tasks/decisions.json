@@ -1,0 +1,61 @@
+[
+  {
+    "id": "dec_1773649618971153000",
+    "project_id": "imageresizer",
+    "task_id": "task_1773649496775918000",
+    "checkpoint_type": "template_approval",
+    "action": "approved",
+    "decided_by": "user",
+    "decided_at": "2026-03-16T13:56:58.971173+05:30"
+  },
+  {
+    "id": "dec_1773650058778802000",
+    "project_id": "imageresizer",
+    "task_id": "task_1773649496775918000",
+    "checkpoint_type": "plan_approval",
+    "action": "approved",
+    "decided_by": "user",
+    "decided_at": "2026-03-16T14:04:18.778804+05:30"
+  },
+  {
+    "id": "dec_1773650704446593000",
+    "project_id": "imageresizer",
+    "task_id": "task_1773649496775918000",
+    "checkpoint_type": "phase_gate",
+    "phase_index": 1,
+    "action": "approved",
+    "feedback": "All 5 subtasks meet their completion criteria. HTML5 is semantic with proper ARIA attributes; CSS design system uses exact Butter \u0026 Charcoal palette via custom properties; typography (Space Grotesk, Inter, JetBrains Mono) loaded correctly; brutalist button/input/card components have proper hover/active transforms and offset shadows; drag-and-drop with file validation works; Canvas-based resizer implements multi-step downscaling; aspect ratio lock, format, and quality controls are wired to debounced preview; download with sanitized filenames and blob URL cleanup is secure; responsive breakpoints cover 320px-1440px. Code is clean, secure (textContent only, no innerHTML), and well-structured. Proceed to Phase 2.",
+    "decided_by": "ceo_auto",
+    "decided_at": "2026-03-16T14:15:04.446594+05:30"
+  },
+  {
+    "id": "dec_1773651297991285000",
+    "project_id": "imageresizer",
+    "task_id": "task_1773649496775918000",
+    "checkpoint_type": "phase_gate",
+    "phase_index": 2,
+    "action": "approved",
+    "feedback": "Phase 2 implementation is solid. All 4 subtasks verified: (1) 5 preset buttons with active state highlighting using butter yellow, click handlers setting dimensions, custom input clearing active preset; (2) 25/50/75% scale buttons correctly calculating from original dimensions; (3) Button hover/active/press animations, dropzone drag-over feedback, fadeIn view transitions, shake error animation, all respecting prefers-reduced-motion; (4) Privacy message with lock icon, format badges (JPG/PNG/WebP), footer with privacy note, inline SVG favicon, playful microcopy throughout, proper meta title/description, all colors matching ui-spec.md exactly.",
+    "decided_by": "ceo_auto",
+    "decided_at": "2026-03-16T14:24:57.991287+05:30"
+  },
+  {
+    "id": "dec_1773651300668831000",
+    "project_id": "imageresizer",
+    "task_id": "task_1773649496775918000",
+    "checkpoint_type": "final_acceptance",
+    "action": "approved",
+    "decided_by": "user",
+    "decided_at": "2026-03-16T14:25:00.668834+05:30"
+  },
+  {
+    "id": "dec_1773655120662160000",
+    "project_id": "imageresizer",
+    "task_id": "task_1773654774575483000",
+    "checkpoint_type": "template_approval",
+    "action": "approved",
+    "feedback": "The static-html template is the correct choice. The project is an existing client-side image resizer already built with pure HTML/CSS/JS — switching templates would force an unnecessary rewrite. All proposed features (cropping, rotation, filters, batch processing, dark mode) are achievable with native browser APIs and the Canvas API already in use. Zero build complexity is a strength here, not a limitation. Proceed with research phase.",
+    "decided_by": "ceo_auto",
+    "decided_at": "2026-03-16T15:28:40.662161+05:30"
+  }
+]

@@ -3,7 +3,7 @@ package agent
 // DelegationHierarchy defines which agents can delegate to which.
 // CEO can delegate to anyone. Others follow a logical flow.
 var DelegationHierarchy = map[Role][]Role{
-	RoleCEO:       {RolePM, RoleArchitect, RoleSecurity, RoleUX, RoleUI, RoleSeniorDev, RoleJuniorDev}, // CEO can delegate to anyone
+	RoleCEO:       {RolePM, RoleArchitect, RoleSecurity, RoleUX, RoleUI, RoleSeniorDev, RoleJuniorDev, RoleHR, RoleProjectMgr, RoleProcurement, RoleSiteEngineer, RoleHSE, RoleQAInspector}, // CEO can delegate to anyone
 	RolePM:        {RoleUX, RoleUI, RoleArchitect, RoleSeniorDev},
 	RoleArchitect: {RoleSeniorDev, RoleSecurity},
 	RoleUX:        {RoleUI, RoleSeniorDev},
@@ -11,6 +11,14 @@ var DelegationHierarchy = map[Role][]Role{
 	RoleSecurity:  {RoleSeniorDev},
 	RoleSeniorDev: {RoleJuniorDev},
 	RoleJuniorDev: {}, // Leaf node - cannot delegate
+
+	// EPC hierarchy
+	RoleProjectMgr:   {RoleSiteEngineer, RoleProcurement, RoleHSE, RoleQAInspector, RoleHR},
+	RoleHR:           {},
+	RoleProcurement:  {},
+	RoleSiteEngineer: {RoleQAInspector},
+	RoleHSE:          {},
+	RoleQAInspector:  {},
 }
 
 // ReviewHierarchy defines which agents can escalate to which for decisions/review.
@@ -24,6 +32,14 @@ var ReviewHierarchy = map[Role][]Role{
 	RolePM:        {RoleCEO},
 	RoleSecurity:  {RoleArchitect, RoleCEO},
 	RoleCEO:       {}, // CEO is top - no one to escalate to
+
+	// EPC review hierarchy
+	RoleHR:           {RoleProjectMgr, RoleCEO},
+	RoleProjectMgr:   {RoleCEO},
+	RoleProcurement:  {RoleProjectMgr, RoleCEO},
+	RoleSiteEngineer: {RoleProjectMgr},
+	RoleHSE:          {RoleProjectMgr, RoleCEO},
+	RoleQAInspector:  {RoleSiteEngineer, RoleProjectMgr},
 }
 
 // CanDelegateTo checks if the 'from' role can delegate to the 'to' role

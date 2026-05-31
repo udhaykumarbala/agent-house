@@ -1,0 +1,22 @@
+{
+  "id": "project_manager",
+  "name": "Project Manager",
+  "color": "#F59E0B",
+  "icon": "📊",
+  "execution": {
+    "default_mode": "oneshot",
+    "phase_modes": {
+      "research": "oneshot",
+      "planning": "oneshot"
+    },
+    "model": "",
+    "max_turns": 50,
+    "timeout": "10m",
+    "claude_permission": "bypassPermissions"
+  },
+  "phases": ["research", "planning", "discussion"],
+  "tools": {
+    "builtin": ["Read", "Write", "Glob", "Grep"],
+    "mcp_servers": []
+  }
+}

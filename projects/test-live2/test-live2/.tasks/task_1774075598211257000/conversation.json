@@ -1,0 +1,14 @@
+[
+  {
+    "id": "20260321121638-2yqqii",
+    "type": "task",
+    "from": "user",
+    "to": "ceo",
+    "content": "Create a hello world HTML page with a blue gradient background and centered white text",
+    "metadata": {
+      "project_id": "test-live2",
+      "task_id": "task_1774075598211257000"
+    },
+    "timestamp": "2026-03-21T12:16:38.212104+05:30"
+  }
+]

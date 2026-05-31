@@ -1,0 +1,12 @@
+[
+  {
+    "id": "cp_1774074334295013000",
+    "project_id": "test-live",
+    "task_id": "task_1774074238964127000",
+    "type": "template_approval",
+    "status": "pending",
+    "artifact_path": "projects/test-live/test-live/.plans/template.md",
+    "artifact_summary": "Selected template: static-html",
+    "created_at": "2026-03-21T11:55:34.295014+05:30"
+  }
+]

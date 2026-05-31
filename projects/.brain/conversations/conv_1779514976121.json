@@ -1,0 +1,12 @@
+[
+  {
+    "role": "user",
+    "content": "whats pending",
+    "timestamp": 1779514980296
+  },
+  {
+    "role": "assistant",
+    "content": "Here's what's pending:\n\n## 📋 Project Milestones\n\n**Project Alpha (Solar Farm)** — in_progress\n- ⚠️ **Foundation Work** — due Mar 30 — *blocked by steel delivery*\n- Structural Erection — due May 15\n- Panel Installation — due Jun 30\n- Grid Connection \u0026 Testing — due Jul 15\n\n**Project Beta (Water Treatment)** — bidding\n- Client Response — due Mar 28\n\n**Project Gamma (Highway Bridge)** — evaluation\n- Feasibility Review — due Apr 1\n- Bid Decision — due Apr 10\n\n## 📧 Emails Requiring Response (5)\n\n| # | From | Subject | Action Needed |\n|---|------|---------|-------------|\n| 1 | Sarah Jones (Client ABC) | Phase 2 Progress Update — Project Alpha | Prepare report by end of week |\n| 3 | Ahmed Rahman (XYZ Steel) | Steel delivery delayed 2 weeks | Review contract penalty clause |\n| 4 | Atlas Consulting (RFI Desk) | RFI #18 — Column tolerances | Confirm governing tolerance before pour |\n| 5 | XYZ Steel (A/R) | Invoice #ST-0847 for $340K | Review \u0026 process payment |\n| 6 | Sarah Jones (Client ABC) | Phase 2 Progress Update (duplicate) | Same as #1 |\n\n## 👤 Applicants (1)\n- **Raj Kumar** — Site Supervisor for Highway Bridge Project (app_1774348831941)\n\n## 🚨 Key Risk\n- **Steel delivery delay** — XYZ Steel Corp is 2 weeks behind (April 5 → April 19), impacting Foundation Work milestone.",
+    "timestamp": 1779514985989
+  }
+]

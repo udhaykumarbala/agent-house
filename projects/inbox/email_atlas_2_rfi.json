@@ -1,0 +1,16 @@
+{
+  "id": "email_atlas_2_rfi",
+  "from": "rfi@atlasconsulting.co",
+  "from_name": "Atlas Consulting · RFI Desk",
+  "to": "ops@atlas-construction.com",
+  "subject": "RFI #18 — Column tolerances on grid C-7",
+  "body": "Hi Site 02 team,\n\nPer the drawings revision A-102 v3, we have an open question on column tolerance limits on grid C-7. Specifically: maximum allowable plumb deviation for cast-in-place columns is shown as ±10mm, but the structural spec calls out ±6mm.\n\nPlease confirm the governing tolerance before pour. Attaching the relevant detail sheets (4 PDFs). cc: pm@site02, qa@site02.\n\nBest,\nRFI Desk · Atlas Consulting",
+  "date": "2026-05-22T16:25:11Z",
+  "read": false,
+  "replied": false,
+  "category": "client",
+  "vendor_id": null,
+  "trust_status": "trusted",
+  "trust_reason": "Trusted consulting partner · on whitelist",
+  "direction": "inbound"
+}

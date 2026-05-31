@@ -1,0 +1,22 @@
+[
+  {
+    "role": "user",
+    "content": "Hire a Site Supervisor for the Highway Bridge Project",
+    "timestamp": 1779519041090
+  },
+  {
+    "role": "assistant",
+    "content": "I found one applicant for the Site Supervisor position on the Highway Bridge Project (Project Gamma):\n\n---\n\n**Raj Kumar** (app_1774348831941)\n- **Email:** raj.kumar@email.com  \n- **Experience:** 12 years civil engineering, 4 bridge projects (2 highway, 2 rail)\n- **Certifications:** PE, PMP, OSHA-30  \n- **Key Skills:** Bridge construction, pile driving, team management (50+ workers), Primavera P6, AutoCAD\n- **Available:** May 22 onward\n\n**Assessment:** Strong candidate — relevant experience, professional certifications, and managed large teams on bridge projects.\n\n---\n\n| Action | Description |\n|--------|-------------|\n| **Shortlist** | Move Raj Kumar to shortlisted status for further evaluation |\n| **Escalate** | Full review of his CV and references before decision |\n\nSince there's only one applicant, I'd recommend shortlisting first, then scheduling an interview before formal hiring. The contract/ onboarding process would follow after a successful interview.\n\n**Should I shortlist Raj Kumar now?**",
+    "timestamp": 1779519066111
+  },
+  {
+    "role": "user",
+    "content": "Schedule interview",
+    "timestamp": 1779519086245
+  },
+  {
+    "role": "assistant",
+    "content": "I'll draft an interview invitation email to Raj Kumar. Here's the proposed draft:\n\n---\n\n**Subject:** Interview Invitation — Site Supervisor Position · Project Gamma\n\nDear Mr. Kumar,\n\nThank you for your application for the Site Supervisor position on Project Gamma (Highway Bridge). After reviewing your qualifications, we would like to invite you for a formal interview.\n\n**Role:** Site Supervisor — Project Gamma\n**Project:** Highway Bridge Construction\n**Location:** Site 02\n\nPlease let us know your availability for interviews from **May 22 onwards**. We typically conduct 45–60 minute interviews including a technical round and panel discussion.\n\nKindly reply with your preferred dates/times, and we will coordinate accordingly.\n\nWe look forward to speaking with you.\n\nBest regards,\nHiring Team\nSite 02 Operations\n\n---\n\n**Confirm to send?**\n\n\nNote: Raj Kumar is a new contact (first email from raj.kumar@email.com — ⚠️ impersonation risk is LOW since the same applicant also submitted via the job application system with matching credentials).",
+    "timestamp": 1779519088704
+  }
+]

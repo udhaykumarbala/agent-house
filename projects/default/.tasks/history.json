@@ -1,0 +1,14 @@
+{
+  "projectId": "default",
+  "tasks": [
+    {
+      "taskId": "task_1773067193513248000",
+      "summary": "Create a static webpage about a agenthouse appl...",
+      "createdAt": "2026-03-09T20:09:53.516477+05:30",
+      "completedAt": "2026-03-09T20:09:54.399447+05:30",
+      "status": "failed",
+      "turns": 14,
+      "filesCreated": 0
+    }
+  ]
+}

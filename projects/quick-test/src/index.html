@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rock Paper Scissors</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles/main.css" />
+</head>
+<body class="bg-background min-h-screen font-body text-text-primary flex flex-col items-center justify-center p-4 select-none">
+
+  <div class="w-full max-w-md mx-auto flex flex-col items-center gap-8">
+
+    <!-- Header -->
+    <header class="text-center">
+      <h1 class="font-display text-3xl sm:text-4xl font-bold text-text-primary tracking-tight">
+        Rock Paper Scissors
+      </h1>
+      <p class="text-text-muted text-sm mt-1 font-medium tracking-wide uppercase">Best of luck</p>
+    </header>
+
+    <!-- Scoreboard -->
+    <div id="scoreboard" class="flex items-center justify-center gap-6 w-full">
+      <div class="flex flex-col items-center gap-1">
+        <span class="text-text-secondary text-xs font-medium uppercase tracking-wider">You</span>
+        <span id="player-score" class="font-display text-4xl font-bold text-text-primary tabular-nums">0</span>
+      </div>
+      <div class="w-px h-12 bg-surface-border"></div>
+      <div class="flex flex-col items-center gap-1">
+        <span class="text-text-secondary text-xs font-medium uppercase tracking-wider">Draws</span>
+        <span id="draw-score" class="font-display text-2xl font-semibold text-accent-draw tabular-nums">0</span>
+      </div>
+      <div class="w-px h-12 bg-surface-border"></div>
+      <div class="flex flex-col items-center gap-1">
+        <span class="text-text-secondary text-xs font-medium uppercase tracking-wider">CPU</span>
+        <span id="cpu-score" class="font-display text-4xl font-bold text-text-primary tabular-nums">0</span>
+      </div>
+    </div>
+
+    <!-- Result Display -->
+    <div id="result-area" class="w-full bg-surface rounded-2xl border border-surface-border p-6 text-center min-h-[140px] flex flex-col items-center justify-center transition-all duration-300">
+      <p id="result-emoji" class="text-5xl mb-2 opacity-50">⚔️</p>
+      <p id="result-text" class="font-display text-lg font-semibold text-text-secondary">Choose your weapon</p>
+      <p id="result-detail" class="text-text-muted text-sm mt-1 hidden"></p>
+    </div>
+
+    <!-- Choice Buttons -->
+    <div id="choices" class="flex items-center justify-center gap-4">
+      <button data-choice="rock" class="choice-btn group relative flex flex-col items-center gap-2 p-5 rounded-2xl bg-surface border-2 border-surface-border hover:border-primary transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background">
+        <span class="text-5xl transition-transform duration-200 group-hover:scale-110">🪨</span>
+        <span class="text-text-secondary text-xs font-medium uppercase tracking-wider group-hover:text-primary transition-colors">Rock</span>
+      </button>
+      <button data-choice="paper" class="choice-btn group relative flex flex-col items-center gap-2 p-5 rounded-2xl bg-surface border-2 border-surface-border hover:border-primary transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background">
+        <span class="text-5xl transition-transform duration-200 group-hover:scale-110">📄</span>
+        <span class="text-text-secondary text-xs font-medium uppercase tracking-wider group-hover:text-primary transition-colors">Paper</span>
+      </button>
+      <button data-choice="scissors" class="choice-btn group relative flex flex-col items-center gap-2 p-5 rounded-2xl bg-surface border-2 border-surface-border hover:border-primary transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background">
+        <span class="text-5xl transition-transform duration-200 group-hover:scale-110">✂️</span>
+        <span class="text-text-secondary text-xs font-medium uppercase tracking-wider group-hover:text-primary transition-colors">Scissors</span>
+      </button>
+    </div>
+
+    <!-- History -->
+    <div id="history-section" class="w-full hidden">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-display text-sm font-semibold text-text-secondary uppercase tracking-wider">Recent</h2>
+        <button id="reset-btn" class="text-xs text-text-muted hover:text-primary transition-colors font-medium uppercase tracking-wider cursor-pointer">Reset</button>
+      </div>
+      <div id="history-list" class="flex gap-2 flex-wrap"></div>
+    </div>
+
+    <!-- Streak -->
+    <div id="streak-badge" class="hidden fixed top-4 right-4 bg-surface border border-surface-border rounded-xl px-4 py-2 animate-bounce-in">
+      <span id="streak-text" class="font-display text-sm font-semibold text-primary"></span>
+    </div>
+
+  </div>
+
+  <script type="module" src="./scripts/main.ts"></script>
+</body>
+</html>

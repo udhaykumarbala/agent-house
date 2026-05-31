@@ -1,0 +1,14 @@
+{
+  "taskId": "task_1774114848275121000",
+  "projectId": "test4",
+  "task": "Create a todo list designed for UX designers",
+  "createdAt": "2026-03-21T23:10:48.277869+05:30",
+  "completedAt": "2026-03-21T23:41:27.744147+05:30",
+  "status": "failed",
+  "turns": 23,
+  "duration": "30m40s",
+  "filesCreated": [
+    "/Users/udhaykumar/susanoox/agent-house-2/projects/test4/.plans/template.md"
+  ],
+  "error": "phase 1 (Project Foundation) failed after 3 iterations - QA feedback: I'll conduct a thorough QA review of the Project Foundation phase. Let me start by reading the specifications and then reviewing the implementation.\n\u003cminimax:tool_call\u003e\n\u003cinvoke name=\"Read\"\u003e\n\u003cparameter name=\"file_path\"\u003e.plans/development-plan.json\u003c/parameter\u003e\n\u003c/invoke\u003e\n\u003cinvoke name=\"Read\"\u003e\n\u003cparameter name=\"file_path\"\u003e.plans/architecture-spec.md\u003c/parameter\u003e\n\u003c/invoke\u003e\n\u003c/minimax:tool_call\u003e"
+}

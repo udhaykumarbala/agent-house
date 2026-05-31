@@ -1,0 +1,64 @@
+[
+  {
+    "id": "dec_1773763193474428000",
+    "project_id": "converter",
+    "task_id": "task_1773739883164284000",
+    "checkpoint_type": "template_approval",
+    "action": "approved",
+    "decided_by": "user",
+    "decided_at": "2026-03-17T21:29:53.475186+05:30"
+  },
+  {
+    "id": "dec_1773763936253821000",
+    "project_id": "converter",
+    "task_id": "task_1773739883164284000",
+    "checkpoint_type": "plan_approval",
+    "action": "rejected",
+    "feedback": "The development-plan.json has completion criteria that directly contradict the approved plan's conflict resolutions — developers will implement the wrong values.\n\n**Specific conflicts found:**\n\n1. **Background color mismatch** — `development-plan.json` subtask `st_006` criterion says \"Page background uses --bg-primary (#1A1714)\" but the approved plan Key Decision #2 explicitly states: \"Use `#131110` (UI spec), not `#1A1714`.\" The UI spec confirms `#131110`.\n\n2. **Pill border radius mismatch** — `st_006` criterion says \"Pill selectors styled with proper border-radius (24px)\" but approved plan Key Decision #4 says \"6px (`radius-sm`) per UI spec — refined chip look, not full pill shape.\"\n\n3. **Typography size mismatch** — `st_006` criterion says \"Primary values render in Space Grotesk at 3rem/2.5rem\" but the UI spec and approved plan Key Decision #1 specify Result = 56px/**3.5rem**/500 weight. The `3rem` (48px) is wrong for the result value.\n\n4. **Noise texture scope conflict** — `st_013` includes \"Subtle noise texture visible on page background\" as a completion criterion in Phase 3, but the approved plan explicitly lists \"Noise texture overlay\" under **Post-MVP (Not in scope)**.\n\n**Required fixes to `development-plan.json`:**\n\n1. `st_006`: Change `#1A1714` to `#131110` in the background color criterion\n2. `st_006`: Change `24px` border-radius to `6px` for pill selectors\n3. `st_006`: Change `3rem` to `3.5rem` for primary result value typography\n4. `st_013`: Remove the noise texture criterion entirely (it's post-MVP)\n\nThe approved plan itself is excellent — clear conflict resolutions, well-scoped MVP, strong dev notes. But the dev plan JSON is the artifact developers will actually code against, and right now it will lead them to implement the wrong visual specifications on day one.\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "decided_by": "ceo_auto",
+    "decided_at": "2026-03-17T21:42:16.253821+05:30"
+  },
+  {
+    "id": "dec_1773765012118546000",
+    "project_id": "converter",
+    "task_id": "task_1773739883164284000",
+    "checkpoint_type": "phase_gate",
+    "phase_index": 1,
+    "action": "approved",
+    "feedback": "All 6 subtasks meet their completion criteria. TypeScript compiles cleanly in strict mode, production build succeeds at 6.7KB gzipped, all conversion logic is correct (verified unit factors, temperature formulas, formatting), the UI matches the architecture wireframe and ui-spec color palette, and security requirements (CSP, textContent-only rendering, input sanitization) are satisfied. Proceed to Phase 2.",
+    "decided_by": "ceo_auto",
+    "decided_at": "2026-03-17T22:00:12.11855+05:30"
+  },
+  {
+    "id": "dec_1773765979979505000",
+    "project_id": "converter",
+    "task_id": "task_1773739883164284000",
+    "checkpoint_type": "phase_gate",
+    "phase_index": 2,
+    "action": "approved",
+    "feedback": "Phase 2 — Micro-Interactions \u0026 Polish is complete and well-implemented.",
+    "decided_by": "ceo_auto",
+    "decided_at": "2026-03-17T22:16:19.979551+05:30"
+  },
+  {
+    "id": "dec_1773766586850978000",
+    "project_id": "converter",
+    "task_id": "task_1773739883164284000",
+    "checkpoint_type": "phase_gate",
+    "phase_index": 3,
+    "action": "approved",
+    "feedback": "All 3 development phases complete — core conversion engine, micro-interactions, theme toggle, accessibility, and visual polish all verified working. TypeScript compiles clean, production build succeeds, ARIA patterns are correct, reduced motion is respected, and both themes have proper contrast. The implementation meets the premium \"digital Braun\" aesthetic goal from the specs. Ready for delivery.",
+    "decided_by": "ceo_auto",
+    "decided_at": "2026-03-17T22:26:26.85099+05:30"
+  },
+  {
+    "id": "dec_1773766780038679000",
+    "project_id": "converter",
+    "task_id": "task_1773739883164284000",
+    "checkpoint_type": "final_acceptance",
+    "action": "approved",
+    "feedback": "All three development phases (Core Structure \u0026 Conversion Engine, Micro-Interactions \u0026 Polish, Theme Toggle/Accessibility/Final Polish) are fully implemented and verified.",
+    "decided_by": "ceo_auto",
+    "decided_at": "2026-03-17T22:29:40.03868+05:30"
+  }
+]

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Palette Generator — Function Tests</title>
+  <style>
+    body { font-family: 'Space Mono', 'Courier New', Courier, monospace; background: #0A0A0A; color: #FFFFFF; padding: 24px; }
+    h1 { color: #EBFF00; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .test { padding: 8px 0; border-bottom: 1px solid #333333; }
+    .pass { color: #00FF00; }
+    .fail { color: #FF0000; }
+    .summary { margin-top: 24px; font-size: 18px; font-weight: bold; text-transform: uppercase; }
+    .swatch-preview { display: inline-block; width: 24px; height: 24px; vertical-align: middle; margin-left: 8px; border-radius: 0; }
+  </style>
+</head>
+<body>
+  <h1>Color Palette Generator — Function Tests</h1>
+  <div id="results"></div>
+  <div id="summary" class="summary"></div>
+
+  <script src="js/colors.js"></script>
+  <script>
+    var results = document.getElementById('results');
+    var passed = 0;
+    var failed = 0;
+
+    function assert(name, condition) {
+      var el = document.createElement('div');
+      el.className = 'test';
+      if (condition) {
+        el.innerHTML = '<span class="pass">PASS</span> — ' + name;
+        passed++;
+      } else {
+        el.innerHTML = '<span class="fail">FAIL</span> — ' + name;
+        failed++;
+      }
+      results.appendChild(el);
+    }
+
+    // === hslToRgb tests ===
+    var red = hslToRgb(0, 100, 50);
+    assert('hslToRgb(0,100,50) = red (255,0,0)', red.r === 255 && red.g === 0 && red.b === 0);
+
+    var green = hslToRgb(120, 100, 50);
+    assert('hslToRgb(120,100,50) = green (0,255,0)', green.r === 0 && green.g === 255 && green.b === 0);
+
+    var blue = hslToRgb(240, 100, 50);
+    assert('hslToRgb(240,100,50) = blue (0,0,255)', blue.r === 0 && blue.g === 0 && blue.b === 255);
+
+    var white = hslToRgb(0, 0, 100);
+    assert('hslToRgb(0,0,100) = white (255,255,255)', white.r === 255 && white.g === 255 && white.b === 255);
+
+    var black = hslToRgb(0, 0, 0);
+    assert('hslToRgb(0,0,0) = black (0,0,0)', black.r === 0 && black.g === 0 && black.b === 0);
+
+    // === rgbToHex tests ===
+    assert('rgbToHex(255,0,0) = #FF0000', rgbToHex(255, 0, 0) === '#FF0000');
+    assert('rgbToHex(0,255,0) = #00FF00', rgbToHex(0, 255, 0) === '#00FF00');
+    assert('rgbToHex(0,0,255) = #0000FF', rgbToHex(0, 0, 255) === '#0000FF');
+    assert('rgbToHex(212,145,59) = #D4913B', rgbToHex(212, 145, 59) === '#D4913B');
+
+    // === hexToRgb tests ===
+    var rgb1 = hexToRgb('#FF0000');
+    assert('hexToRgb(#FF0000) = (255,0,0)', rgb1.r === 255 && rgb1.g === 0 && rgb1.b === 0);
+
+    var rgb2 = hexToRgb('D4913B');
+    assert('hexToRgb(D4913B) = (212,145,59)', rgb2.r === 212 && rgb2.g === 145 && rgb2.b === 59);
+
+    var rgb3 = hexToRgb('#FFF');
+    assert('hexToRgb(#FFF) short form = (255,255,255)', rgb3.r === 255 && rgb3.g === 255 && rgb3.b === 255);
+
+    // === getContrastColor tests ===
+    assert('getContrastColor(#FFFFFF) = #000000 (dark text on white)', getContrastColor('#FFFFFF') === '#000000');
+    assert('getContrastColor(#000000) = #FFFFFF (light text on black)', getContrastColor('#000000') === '#FFFFFF');
+    assert('getContrastColor(#D4913B) returns #000000 (amber is light)', getContrastColor('#D4913B') === '#000000');
+    assert('getContrastColor(#1A1614) returns #FFFFFF (dark bg)', getContrastColor('#1A1614') === '#FFFFFF');
+
+    // === isValidHex tests ===
+    assert('isValidHex("FF0000") = true', isValidHex('FF0000') === true);
+    assert('isValidHex("fff") = true', isValidHex('fff') === true);
+    assert('isValidHex("D4913B") = true', isValidHex('D4913B') === true);
+    assert('isValidHex("ZZZZZZ") = false', isValidHex('ZZZZZZ') === false);
+    assert('isValidHex("") = false', isValidHex('') === false);
+    assert('isValidHex("<script>") = false', isValidHex('<script>') === false);
+    assert('isValidHex("FF00001") = false (7 chars)', isValidHex('FF00001') === false);
+
+    // === generatePalette tests ===
+    var palette = generatePalette('random');
+    assert('generatePalette returns 5 colors', palette.length === 5);
+    assert('Each color has h,s,l,hex,rgb,locked', palette.every(function(c) {
+      return typeof c.h === 'number' && typeof c.s === 'number' && typeof c.l === 'number'
+        && typeof c.hex === 'string' && typeof c.rgb === 'object' && typeof c.locked === 'boolean';
+    }));
+    assert('All S values in range 45-90', palette.every(function(c) { return c.s >= 45 && c.s <= 90; }));
+    assert('All L values in range 35-65', palette.every(function(c) { return c.l >= 35 && c.l <= 65; }));
+    assert('All hex values are valid', palette.every(function(c) { return isValidHex(c.hex.replace('#', '')); }));
+
+    // === Lock preservation test ===
+    var locked = generatePalette('random');
+    locked[2].locked = true;
+    var lockedHex = locked[2].hex;
+    var regen = generatePalette('random', locked);
+    assert('Locked color preserved during regeneration', regen[2].hex === lockedHex && regen[2].locked === true);
+
+    // === Harmony modes produce output ===
+    var modes = ['random', 'analogous', 'complementary', 'triadic', 'split-complementary', 'monochromatic'];
+    modes.forEach(function(mode) {
+      var p = generatePalette(mode);
+      assert('Mode "' + mode + '" returns 5 valid colors', p.length === 5 && p.every(function(c) {
+        return isValidHex(c.hex.replace('#', ''));
+      }));
+    });
+
+    // === formatColor tests ===
+    var testColor = createColorObject(220, 100, 61, false);
+    assert('formatColor hex returns hex string', formatColor(testColor, 'hex') === testColor.hex);
+    assert('formatColor rgb returns rgb(...) string',
+      formatColor(testColor, 'rgb') === 'rgb(' + testColor.rgb.r + ', ' + testColor.rgb.g + ', ' + testColor.rgb.b + ')');
+    assert('formatColor hsl returns hsl(...) string',
+      formatColor(testColor, 'hsl') === 'hsl(220, 100%, 61%)');
+    assert('formatColor defaults to hex for unknown format', formatColor(testColor, 'unknown') === testColor.hex);
+
+    var amberColor = createColorObject(30, 70, 53, false);
+    assert('formatColor rgb for amber', formatColor(amberColor, 'rgb').indexOf('rgb(') === 0);
+    assert('formatColor hsl for amber', formatColor(amberColor, 'hsl') === 'hsl(30, 70%, 53%)');
+
+    // === Lock: multiple locked colors preserved ===
+    var multiLock = generatePalette('random');
+    multiLock[0].locked = true;
+    multiLock[3].locked = true;
+    var lockHex0 = multiLock[0].hex;
+    var lockHex3 = multiLock[3].hex;
+    var multiRegen = generatePalette('analogous', multiLock);
+    assert('Multiple locked colors preserved (index 0)', multiRegen[0].hex === lockHex0 && multiRegen[0].locked === true);
+    assert('Multiple locked colors preserved (index 3)', multiRegen[3].hex === lockHex3 && multiRegen[3].locked === true);
+    assert('Unlocked colors regenerated', multiRegen[1].locked === false && multiRegen[2].locked === false && multiRegen[4].locked === false);
+
+    // === All colors locked — palette unchanged ===
+    var allLockedPalette = generatePalette('random');
+    allLockedPalette.forEach(function(c) { c.locked = true; });
+    var allLockedHexes = allLockedPalette.map(function(c) { return c.hex; });
+    var allLockedRegen = generatePalette('random', allLockedPalette);
+    var allPreserved = allLockedRegen.every(function(c, i) { return c.hex === allLockedHexes[i]; });
+    assert('All 5 locked colors preserved on regeneration', allPreserved);
+
+    // === Harmony modes produce different hue patterns ===
+    var analogousPalette = generatePalette('analogous');
+    var baseHue = analogousPalette[0].h;
+    var analogousHueSpread = Math.abs(analogousPalette[0].h - analogousPalette[4].h);
+    assert('Analogous mode produces close hues (spread <= 60)', analogousHueSpread <= 60 || analogousHueSpread >= 300);
+
+    var monoP = generatePalette('monochromatic');
+    var monoSameHue = monoP.every(function(c) { return c.h === monoP[0].h; });
+    assert('Monochromatic mode produces same hue for all 5', monoSameHue);
+
+    // === Phase 3: Luminance-based dark/light swatch classification ===
+    // Verifies the luminance formula used for contrast-aware elements
+    var darkRgb = hexToRgb('#1A1614');
+    var darkLum = 0.299 * darkRgb.r + 0.587 * darkRgb.g + 0.114 * darkRgb.b;
+    assert('Dark swatch (#1A1614) luminance < 150 → dark-swatch class', darkLum < 150);
+
+    var lightRgb = hexToRgb('#FFBE0B');
+    var lightLum = 0.299 * lightRgb.r + 0.587 * lightRgb.g + 0.114 * lightRgb.b;
+    assert('Light swatch (#FFBE0B) luminance > 150 → light-swatch class', lightLum > 150);
+
+    var midRgb = hexToRgb('#808080');
+    var midLum = 0.299 * midRgb.r + 0.587 * midRgb.g + 0.114 * midRgb.b;
+    assert('Gray (#808080) luminance = ~128 → dark-swatch class', midLum < 150);
+
+    // Contrast color and luminance classification should agree
+    assert('Dark swatch contrast = #FFFFFF and lum < 150 agree', getContrastColor('#1A1614') === '#FFFFFF' && darkLum < 150);
+    assert('Light swatch contrast = #000000 and lum > 150 agree', getContrastColor('#FFBE0B') === '#000000' && lightLum > 150);
+
+    // === Roundtrip HSL→RGB→Hex→RGB ===
+    var trip = hslToRgb(180, 50, 50);
+    var tripHex = rgbToHex(trip.r, trip.g, trip.b);
+    var tripBack = hexToRgb(tripHex);
+    assert('HSL→RGB→Hex→RGB roundtrip preserves values', tripBack.r === trip.r && tripBack.g === trip.g && tripBack.b === trip.b);
+
+    // === Phase 3: Brutalist animation removal verification ===
+    // Verify no animation functions exist that could cause runtime errors
+    assert('addCopyPulse is not defined (removed)', typeof addCopyPulse === 'undefined');
+    assert('addLockBounce is not defined (removed)', typeof addLockBounce === 'undefined');
+    assert('triggerStagger is not defined (removed)', typeof triggerStagger === 'undefined');
+
+    // Verify color generation still works after animation removal
+    var postAnimPalette = generatePalette('random');
+    assert('Palette generation works after animation removal', postAnimPalette.length === 5);
+    postAnimPalette[1].locked = true;
+    var postAnimRegen = generatePalette('complementary', postAnimPalette);
+    assert('Lock preservation works after animation removal', postAnimRegen[1].locked === true && postAnimRegen[1].hex === postAnimPalette[1].hex);
+
+    // Summary
+    var summaryEl = document.getElementById('summary');
+    var total = passed + failed;
+    summaryEl.textContent = passed + '/' + total + ' tests passed';
+    summaryEl.className = 'summary ' + (failed === 0 ? 'pass' : 'fail');
+  </script>
+</body>
+</html>

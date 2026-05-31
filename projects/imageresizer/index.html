@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Resize images instantly in your browser — no uploads, no ads, no nonsense. 100% private, client-side image resizer.">
+  <title>Image Resizer — Fast, Private, Brutalist</title>
+
+  <!-- Fonts: Space Grotesk (headings), Inter (body), JetBrains Mono (numbers) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Favicon (inline SVG data URI) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='2' width='28' height='28' rx='4' fill='%23FEF3E2' stroke='%231A1A1A' stroke-width='3'/><rect x='8' y='8' width='16' height='16' rx='2' fill='%23E8625C' stroke='%231A1A1A' stroke-width='2'/></svg>">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles/variables.css">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/responsive.css">
+</head>
+<body>
+  <div class="app">
+
+    <!-- Header -->
+    <header class="header">
+      <h1 class="header__title">Image Resizer</h1>
+      <div class="header__actions">
+        <button id="newImageBtn" class="btn-ghost hidden" type="button" aria-label="Upload a new image">
+          <!-- ArrowCounterClockwise icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39L67.14,75.7,88.49,97a8,8,0,0,1-5.66,13.66H32a8,8,0,0,1-8-8V51.83A8,8,0,0,1,37.66,46.2L59,67.5l4.28-4.3A96.11,96.11,0,0,1,224,128Z"/></svg>
+          <span>New Image</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Upload View -->
+    <main id="uploadView" class="upload-view active" role="main">
+      <p class="upload-view__tagline">Resize instantly. 100% private.</p>
+
+      <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Image upload area. Drop an image or press Enter to browse files.">
+        <!-- Upload icon (ArrowUp) -->
+        <svg class="dropzone__icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 256 256" fill="currentColor"><path d="M232,136v64a16,16,0,0,1-16,16H40a16,16,0,0,1-16-16V136a16,16,0,0,1,16-16H80a8,8,0,0,1,0,16H40v64H216V136H176a8,8,0,0,1,0-16h40A16,16,0,0,1,232,136ZM88.49,80.49,120,49v95a8,8,0,0,0,16,0V49l31.51,31.52a8,8,0,0,0,11.32-11.32l-44.69-44.68a8,8,0,0,0-11.32,0L78.34,69.17A8,8,0,0,0,88.49,80.49Z"/></svg>
+
+        <h2 class="dropzone__heading" id="dropzoneHeading">Drop your image here</h2>
+        <p class="dropzone__subtext" id="dropzoneSubtext">or click to browse</p>
+        <div class="dropzone__formats-badges">
+          <span class="format-badge">JPG</span>
+          <span class="format-badge">PNG</span>
+          <span class="format-badge">WebP</span>
+        </div>
+        <p class="dropzone__size-hint">up to 50MB</p>
+        <p class="dropzone__error-msg" id="dropzoneError" role="alert" aria-live="polite"></p>
+      </div>
+
+      <input type="file" id="fileInput" class="upload-view__file-input" accept="image/jpeg,image/png,image/webp" aria-hidden="true">
+
+      <p class="upload-view__privacy">
+        <!-- Lock icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256" fill="currentColor"><path d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80Zm-80,84a12,12,0,1,1,12-12A12,12,0,0,1,128,164Zm32-84H96V56a32,32,0,0,1,64,0Z"/></svg>
+        Your images never leave your browser.
+      </p>
+    </main>
+
+    <!-- Editor View -->
+    <main id="editorView" class="editor-view" role="main">
+      <div class="editor__workspace">
+
+        <!-- Preview Panel (left, 60%) -->
+        <section class="preview-panel">
+          <div class="preview-card">
+            <div class="preview-card__checkerboard"></div>
+            <img id="previewImage" class="preview-card__image" alt="Image preview" src="">
+            <div id="previewLoading" class="preview-card__loading">
+              <div class="progress-bar">
+                <div id="progressFill" class="progress-bar__fill"></div>
+              </div>
+              <span>Crunching pixels...</span>
+            </div>
+          </div>
+          <div class="preview-info">
+            <span id="previewFilename" class="preview-info__filename"></span>
+            <span class="text-muted">·</span>
+            <span id="previewDimensions" class="preview-info__dimensions"></span>
+            <span class="text-muted">·</span>
+            <span id="previewSize" class="preview-info__size"></span>
+          </div>
+        </section>
+
+        <!-- Controls Panel (right, 40%) -->
+        <aside class="controls-panel">
+
+          <!-- Dimensions -->
+          <div class="control-group">
+            <label class="control-group__label">Dimensions</label>
+            <div class="dimension-row">
+              <div class="dimension-field">
+                <label class="dimension-field__label" for="widthInput">Width</label>
+                <input type="number" id="widthInput" class="input-dimension" min="1" max="99999" placeholder="W" aria-label="Width in pixels">
+              </div>
+              <span class="dimension-separator">&times;</span>
+              <div class="dimension-field">
+                <label class="dimension-field__label" for="heightInput">Height</label>
+                <input type="number" id="heightInput" class="input-dimension" min="1" max="99999" placeholder="H" aria-label="Height in pixels">
+              </div>
+            </div>
+            <div class="aspect-lock">
+              <button id="aspectLockBtn" class="aspect-lock__btn aspect-lock__btn--locked" type="button" aria-pressed="true" aria-label="Aspect ratio lock" title="Lock aspect ratio">
+                <!-- Link icon (locked) -->
+                <svg id="lockIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M137.54,186.36a8,8,0,0,1,0,11.31l-34.01,34.01a56,56,0,0,1-79.2-79.2L58.34,118.46a56,56,0,0,1,73.79-4.68,8,8,0,1,1-9.76,12.68,40,40,0,0,0-52.71,3.35L35.64,163.83a40,40,0,0,0,56.57,56.57l34.01-34.01A8,8,0,0,1,137.54,186.36Zm94.12-162a56.06,56.06,0,0,0-79.2,0l-34.01,34.01a8,8,0,0,0,11.31,11.31l34.01-34.01a40,40,0,0,1,56.57,56.57L186.32,126.2a40,40,0,0,1-52.71,3.35,8,8,0,1,0-9.76,12.68,56,56,0,0,0,73.79-4.68l34.02-34a56.06,56.06,0,0,0,0-79.2Z"/></svg>
+                <!-- Unlink icon (unlocked), hidden initially -->
+                <svg id="unlockIcon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M184,80a8,8,0,0,1,8-8h40a8,8,0,0,1,0,16H192A8,8,0,0,1,184,80ZM24,176H64a8,8,0,0,0,0-16H24a8,8,0,0,0,0,16Zm193.66-46.46-34.01,34.01a56,56,0,0,1-79.2-79.2l34.01-34.01a8,8,0,1,0-11.32-11.32L93.13,73.03a72,72,0,1,0,101.84,101.84l34.01-34.01a8,8,0,0,0-11.32-11.32Z"/></svg>
+              </button>
+              <span id="aspectLockLabel" class="aspect-lock__label">Ratio locked</span>
+            </div>
+          </div>
+
+          <!-- Presets -->
+          <div class="control-group">
+            <label class="control-group__label">Presets</label>
+            <div class="preset-grid" id="presetGrid">
+              <button type="button" class="preset-btn" data-w="1080" data-h="1080" aria-label="Set dimensions to 1080 by 1080 for Instagram Post">Instagram Post</button>
+              <button type="button" class="preset-btn" data-w="1080" data-h="1920" aria-label="Set dimensions to 1080 by 1920 for Instagram Story">Instagram Story</button>
+              <button type="button" class="preset-btn" data-w="1920" data-h="1080" aria-label="Set dimensions to 1920 by 1080 for HD">HD 1080p</button>
+              <button type="button" class="preset-btn" data-w="1500" data-h="500" aria-label="Set dimensions to 1500 by 500 for Twitter/X Header">Twitter/X Header</button>
+              <button type="button" class="preset-btn" data-w="1200" data-h="630" aria-label="Set dimensions to 1200 by 630 for OG Image">OG Image</button>
+            </div>
+          </div>
+
+          <!-- Scale -->
+          <div class="control-group">
+            <label class="control-group__label">Scale</label>
+            <div class="preset-grid" id="scaleGrid">
+              <button type="button" class="preset-btn preset-btn--scale" data-scale="25" aria-label="Scale image to 25 percent">25%</button>
+              <button type="button" class="preset-btn preset-btn--scale" data-scale="50" aria-label="Scale image to 50 percent">50%</button>
+              <button type="button" class="preset-btn preset-btn--scale" data-scale="75" aria-label="Scale image to 75 percent">75%</button>
+            </div>
+          </div>
+
+          <!-- Format -->
+          <div class="control-group">
+            <label class="control-group__label" for="formatSelect">Format</label>
+            <select id="formatSelect" class="select-format">
+              <option value="jpeg">JPG</option>
+              <option value="png">PNG</option>
+              <option value="webp">WebP</option>
+            </select>
+          </div>
+
+          <!-- Quality -->
+          <div id="qualityGroup" class="control-group">
+            <label class="control-group__label">Quality</label>
+            <div class="quality-row">
+              <input type="range" id="qualitySlider" class="input-range" min="1" max="100" value="85" aria-label="Image quality">
+              <span id="qualityValue" class="quality-value">85%</span>
+            </div>
+          </div>
+
+        </aside>
+      </div>
+    </main>
+
+    <!-- Download Bar (fixed bottom) -->
+    <div id="downloadBar" class="download-bar" role="region" aria-label="Download controls">
+      <div class="download-bar__info">
+        <span id="originalSize" class="text-mono"></span>
+        <span class="download-bar__arrow">→</span>
+        <span id="resizedSize" class="text-mono"></span>
+        <span id="sizePercent" class="download-bar__percent"></span>
+      </div>
+      <button id="downloadBtn" class="btn-primary download-bar__btn" type="button">
+        <!-- Download icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M232,136v64a16,16,0,0,1-16,16H40a16,16,0,0,1-16-16V136a16,16,0,0,1,16-16H80a8,8,0,0,1,0,16H40v64H216V136H176a8,8,0,0,1,0-16h40A16,16,0,0,1,232,136Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,124.69V40a8,8,0,0,0-16,0v84.69L85.66,90.34a8,8,0,0,0-11.32,11.32Z"/></svg>
+        Download
+      </button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer" id="appFooter">
+      <p class="footer__privacy">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80Zm-80,84a12,12,0,1,1,12-12A12,12,0,0,1,128,164Zm32-84H96V56a32,32,0,0,1,64,0Z"/></svg>
+        100% client-side · Your images never leave your browser · EXIF data stripped automatically
+      </p>
+    </footer>
+
+    <!-- Screen reader status -->
+    <div id="statusRegion" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  </div>
+
+  <!-- Scripts (external, no inline for CSP) -->
+  <script src="scripts/utils.js"></script>
+  <script src="scripts/resizer.js"></script>
+  <script src="scripts/app.js"></script>
+</body>
+</html>

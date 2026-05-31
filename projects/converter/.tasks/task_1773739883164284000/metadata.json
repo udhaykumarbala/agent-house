@@ -1,0 +1,11 @@
+{
+  "taskId": "task_1773739883164284000",
+  "projectId": "converter",
+  "task": "Build a unit converter (length, weight, temperature), in a new gen look \u0026 minimal",
+  "createdAt": "2026-03-17T15:01:23.173682+05:30",
+  "completedAt": "2026-03-17T22:29:40.041139+05:30",
+  "status": "completed",
+  "turns": 30,
+  "duration": "7h28m17s",
+  "filesCreated": []
+}

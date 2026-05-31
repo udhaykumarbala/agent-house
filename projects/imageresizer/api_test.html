@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Resizer — API & Component Tests</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='2' width='28' height='28' rx='4' fill='%23FEF3E2' stroke='%231A1A1A' stroke-width='3'/><rect x='8' y='8' width='16' height='16' rx='2' fill='%23E8625C' stroke='%231A1A1A' stroke-width='2'/></svg>">
+  <link rel="stylesheet" href="styles/variables.css">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/responsive.css">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #FEF3E2; color: #1A1A1A; }
+    h1 { font-size: 24px; margin-bottom: 20px; }
+    h2 { font-size: 18px; margin: 24px 0 12px; }
+    .test { padding: 12px; margin: 8px 0; border: 2px solid #1A1A1A; border-radius: 4px; background: #FFFDF7; }
+    .test.pass { border-left: 6px solid #5A9E6F; }
+    .test.fail { border-left: 6px solid #C74B4B; }
+    .test-name { font-weight: 600; }
+    .test-result { font-size: 14px; color: #6B6B6B; margin-top: 4px; }
+    .run-btn { background: #E8625C; color: #fff; border: 3px solid #1A1A1A; border-radius: 6px; padding: 10px 20px; font-weight: 600; cursor: pointer; box-shadow: 4px 4px 0 #1A1A1A; font-size: 16px; }
+    .run-btn:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 #1A1A1A; }
+    .run-btn:active { transform: translate(2px,2px); box-shadow: 0 0 0 #1A1A1A; }
+    #summary { margin-top: 20px; font-weight: 700; font-size: 18px; }
+    .test-fixtures { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Image Resizer — Tests</h1>
+  <button id="runTests" class="run-btn">Run All Tests</button>
+  <div id="summary"></div>
+  <div id="results"></div>
+
+  <!-- Test fixtures (hidden) — mirrors elements from index.html for DOM tests -->
+  <div class="test-fixtures">
+    <div class="upload-view__privacy">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256" fill="currentColor"><path d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80Zm-80,84a12,12,0,1,1,12-12A12,12,0,0,1,128,164Zm32-84H96V56a32,32,0,0,1,64,0Z"/></svg>
+      Your images never leave your browser.
+    </div>
+
+    <div class="dropzone__formats-badges">
+      <span class="format-badge">JPG</span>
+      <span class="format-badge">PNG</span>
+      <span class="format-badge">WebP</span>
+    </div>
+
+    <div class="preset-grid" id="presetGrid">
+      <button type="button" class="preset-btn" data-w="1080" data-h="1080">Instagram Post</button>
+      <button type="button" class="preset-btn" data-w="1080" data-h="1920">Instagram Story</button>
+      <button type="button" class="preset-btn" data-w="1920" data-h="1080">HD 1080p</button>
+      <button type="button" class="preset-btn" data-w="1500" data-h="500">Twitter/X Header</button>
+      <button type="button" class="preset-btn" data-w="1200" data-h="630">OG Image</button>
+    </div>
+
+    <div class="preset-grid" id="scaleGrid">
+      <button type="button" class="preset-btn preset-btn--scale" data-scale="25">25%</button>
+      <button type="button" class="preset-btn preset-btn--scale" data-scale="50">50%</button>
+      <button type="button" class="preset-btn preset-btn--scale" data-scale="75">75%</button>
+    </div>
+
+    <footer class="footer" id="appFooter">
+      <p class="footer__privacy">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80Zm-80,84a12,12,0,1,1,12-12A12,12,0,0,1,128,164Zm32-84H96V56a32,32,0,0,1,64,0Z"/></svg>
+        100% client-side · Your images never leave your browser · EXIF data stripped automatically
+      </p>
+    </footer>
+  </div>
+
+  <script src="scripts/utils.js"></script>
+  <script src="scripts/resizer.js"></script>
+  <script>
+    const results = document.getElementById('results');
+    const summaryEl = document.getElementById('summary');
+    let passed = 0, failed = 0;
+
+    function addResult(name, pass, detail) {
+      const div = document.createElement('div');
+      div.className = 'test ' + (pass ? 'pass' : 'fail');
+      const nameEl = document.createElement('div');
+      nameEl.className = 'test-name';
+      nameEl.textContent = (pass ? '\u2713' : '\u2717') + ' ' + name;
+      div.appendChild(nameEl);
+      if (detail) {
+        const detailEl = document.createElement('div');
+        detailEl.className = 'test-result';
+        detailEl.textContent = detail;
+        div.appendChild(detailEl);
+      }
+      results.appendChild(div);
+      if (pass) passed++; else failed++;
+    }
+
+    function assert(condition, name, detail) {
+      addResult(name, condition, detail);
+    }
+
+    document.getElementById('runTests').addEventListener('click', async function() {
+      results.innerHTML = '';
+      passed = 0;
+      failed = 0;
+
+      // ==== Utils Tests ====
+      var heading1 = document.createElement('h2');
+      heading1.textContent = 'Utils';
+      results.appendChild(heading1);
+
+      assert(Utils.formatFileSize(0) === '0 B', 'formatFileSize: 0 bytes', 'Got: ' + Utils.formatFileSize(0));
+      assert(Utils.formatFileSize(1024) === '1.0 KB', 'formatFileSize: 1 KB', 'Got: ' + Utils.formatFileSize(1024));
+      assert(Utils.formatFileSize(4404019).includes('4.2'), 'formatFileSize: ~4.2 MB', 'Got: ' + Utils.formatFileSize(4404019));
+
+      assert(Utils.sanitizeFilename('photo.jpg') === 'photo.jpg', 'sanitizeFilename: normal name');
+      assert(Utils.sanitizeFilename('../../../etc/passwd') === 'etcpasswd', 'sanitizeFilename: path traversal stripped');
+      assert(Utils.sanitizeFilename('file\x00name.jpg') === 'filename.jpg', 'sanitizeFilename: null byte stripped');
+      assert(Utils.sanitizeFilename('') === 'image', 'sanitizeFilename: empty string fallback');
+
+      assert(Utils.formatToExtension('jpeg') === 'jpg', 'formatToExtension: jpeg -> jpg');
+      assert(Utils.formatToExtension('png') === 'png', 'formatToExtension: png -> png');
+      assert(Utils.formatToExtension('webp') === 'webp', 'formatToExtension: webp -> webp');
+
+      assert(Utils.formatToMime('jpeg') === 'image/jpeg', 'formatToMime: jpeg');
+      assert(Utils.formatToMime('png') === 'image/png', 'formatToMime: png');
+
+      assert(Utils.mimeToFormat('image/png') === 'png', 'mimeToFormat: png');
+      assert(Utils.mimeToFormat('image/webp') === 'webp', 'mimeToFormat: webp');
+      assert(Utils.mimeToFormat('image/jpeg') === 'jpeg', 'mimeToFormat: jpeg');
+
+      assert(Utils.getBaseName('photo.jpg') === 'photo', 'getBaseName: photo.jpg');
+      assert(Utils.getBaseName('my.image.name.png') === 'my.image.name', 'getBaseName: multi-dot');
+
+      assert(Utils.buildDownloadFilename('photo.jpg', 'png') === 'photo-resized.png', 'buildDownloadFilename: format change');
+      assert(Utils.buildDownloadFilename('image.png', 'jpeg') === 'image-resized.jpg', 'buildDownloadFilename: png to jpg');
+
+      var change1 = Utils.calcSizeChange(4200000, 380000);
+      assert(change1.smaller === true, 'calcSizeChange: smaller detected');
+      assert(change1.label.includes('smaller'), 'calcSizeChange: label says smaller', 'Got: ' + change1.label);
+
+      var change2 = Utils.calcSizeChange(100, 200);
+      assert(change2.smaller === false, 'calcSizeChange: larger detected');
+
+      var fakeImageFile = new File(['x'], 'test.jpg', { type: 'image/jpeg' });
+      assert(Utils.validateFile(fakeImageFile).valid === true, 'validateFile: valid JPEG');
+
+      var fakePdfFile = new File(['x'], 'test.pdf', { type: 'application/pdf' });
+      assert(Utils.validateFile(fakePdfFile).valid === false, 'validateFile: rejects PDF');
+
+      var bigValidation = Utils.validateFile(new File([new ArrayBuffer(1)], 'big.jpg', { type: 'image/jpeg' }));
+      assert(bigValidation.valid === true, 'validateFile: small file passes', 'Size: 1 byte');
+
+      // ==== Preset/Scale Logic Tests ====
+      var headingPresets = document.createElement('h2');
+      headingPresets.textContent = 'Presets & Scale';
+      results.appendChild(headingPresets);
+
+      // Preset buttons exist
+      assert(document.querySelectorAll('#presetGrid .preset-btn').length >= 5,
+        'Preset grid: at least 5 preset buttons',
+        'Found: ' + document.querySelectorAll('#presetGrid .preset-btn').length);
+
+      // Scale buttons exist
+      assert(document.querySelectorAll('#scaleGrid .preset-btn').length >= 3,
+        'Scale grid: at least 3 scale buttons (25%, 50%, 75%)',
+        'Found: ' + document.querySelectorAll('#scaleGrid .preset-btn').length);
+
+      // Preset data attributes valid
+      var presetBtns = document.querySelectorAll('#presetGrid .preset-btn');
+      var allPresetsValid = true;
+      presetBtns.forEach(function(btn) {
+        var w = parseInt(btn.getAttribute('data-w'), 10);
+        var h = parseInt(btn.getAttribute('data-h'), 10);
+        if (isNaN(w) || isNaN(h) || w < 1 || h < 1) allPresetsValid = false;
+      });
+      assert(allPresetsValid, 'Preset buttons: all have valid data-w and data-h attributes');
+
+      // Scale data attributes valid
+      var scaleBtns = document.querySelectorAll('#scaleGrid .preset-btn');
+      var allScalesValid = true;
+      scaleBtns.forEach(function(btn) {
+        var s = parseInt(btn.getAttribute('data-scale'), 10);
+        if (isNaN(s) || s < 1 || s > 100) allScalesValid = false;
+      });
+      assert(allScalesValid, 'Scale buttons: all have valid data-scale attributes');
+
+      // Preset active state toggle
+      var firstPreset = presetBtns[0];
+      firstPreset.classList.add('preset-btn--active');
+      assert(firstPreset.classList.contains('preset-btn--active'), 'Preset active: CSS class applies');
+      firstPreset.classList.remove('preset-btn--active');
+      assert(!firstPreset.classList.contains('preset-btn--active'), 'Preset deactive: CSS class removed');
+
+      // Test percentage calculation
+      var testOrigW = 4000, testOrigH = 3000;
+      var scale50W = Math.round(testOrigW * 50 / 100);
+      var scale50H = Math.round(testOrigH * 50 / 100);
+      assert(scale50W === 2000 && scale50H === 1500, 'Scale 50%: 4000x3000 -> 2000x1500',
+        'Got: ' + scale50W + 'x' + scale50H);
+
+      var scale25W = Math.round(testOrigW * 25 / 100);
+      var scale25H = Math.round(testOrigH * 25 / 100);
+      assert(scale25W === 1000 && scale25H === 750, 'Scale 25%: 4000x3000 -> 1000x750',
+        'Got: ' + scale25W + 'x' + scale25H);
+
+      var scale75W = Math.round(testOrigW * 75 / 100);
+      var scale75H = Math.round(testOrigH * 75 / 100);
+      assert(scale75W === 3000 && scale75H === 2250, 'Scale 75%: 4000x3000 -> 3000x2250',
+        'Got: ' + scale75W + 'x' + scale75H);
+
+      // Edge case: odd dimensions
+      var oddW = 1001, oddH = 777;
+      var scaled25W = Math.max(1, Math.round(oddW * 25 / 100));
+      var scaled25H = Math.max(1, Math.round(oddH * 25 / 100));
+      assert(scaled25W === 250 && scaled25H === 194, 'Scale 25% odd dims: 1001x777 -> 250x194',
+        'Got: ' + scaled25W + 'x' + scaled25H);
+
+      // ==== UI Element Tests ====
+      var headingUI = document.createElement('h2');
+      headingUI.textContent = 'UI Elements';
+      results.appendChild(headingUI);
+
+      // Format badges exist
+      var badges = document.querySelectorAll('.format-badge');
+      assert(badges.length === 3, 'Format badges: 3 badges (JPG, PNG, WebP)',
+        'Found: ' + badges.length);
+
+      // Footer exists with privacy message
+      var footer = document.querySelector('.footer__privacy');
+      assert(footer !== null, 'Footer: privacy message element exists');
+      assert(footer && footer.textContent.includes('never leave'), 'Footer: contains privacy text',
+        'Got: ' + (footer ? footer.textContent.substring(0, 80) : 'null'));
+
+      // Favicon exists
+      var favicon = document.querySelector('link[rel="icon"]');
+      assert(favicon !== null, 'Favicon: link element present');
+
+      // Privacy message on upload screen
+      var privacy = document.querySelector('.upload-view__privacy');
+      assert(privacy !== null, 'Upload privacy: message element exists');
+      assert(privacy && privacy.textContent.includes('never leave'), 'Upload privacy: contains text');
+
+      // WCAG contrast: check CSS variables are the right colors
+      var rootStyle = getComputedStyle(document.documentElement);
+      var textColor = rootStyle.getPropertyValue('--color-text').trim();
+      var bgColor = rootStyle.getPropertyValue('--color-bg').trim();
+      assert(textColor === '#1A1A1A', 'Design tokens: text color is charcoal #1A1A1A', 'Got: ' + textColor);
+      assert(bgColor === '#FEF3E2', 'Design tokens: bg color is butter cream #FEF3E2', 'Got: ' + bgColor);
+
+      // Verify all spec colors are present
+      var primaryColor = rootStyle.getPropertyValue('--color-primary').trim();
+      var secondaryColor = rootStyle.getPropertyValue('--color-secondary').trim();
+      var accentColor = rootStyle.getPropertyValue('--color-accent').trim();
+      assert(primaryColor === '#E8625C', 'Design tokens: primary is coral #E8625C', 'Got: ' + primaryColor);
+      assert(secondaryColor === '#F5D547', 'Design tokens: secondary is butter yellow #F5D547', 'Got: ' + secondaryColor);
+      assert(accentColor === '#7A9E7E', 'Design tokens: accent is sage green #7A9E7E', 'Got: ' + accentColor);
+
+      // Animation keyframes existence
+      var sheets = document.styleSheets;
+      var hasShake = false;
+      var hasFadeIn = false;
+      var hasDownloadPulse = false;
+      try {
+        for (var s = 0; s < sheets.length; s++) {
+          try {
+            var rules = sheets[s].cssRules;
+            for (var r = 0; r < rules.length; r++) {
+              if (rules[r].name === 'shake') hasShake = true;
+              if (rules[r].name === 'fadeIn') hasFadeIn = true;
+              if (rules[r].name === 'downloadPulse') hasDownloadPulse = true;
+            }
+          } catch(e) { /* cross-origin sheet */ }
+        }
+      } catch(e) {}
+      assert(hasShake, 'Animations: shake keyframe defined');
+      assert(hasFadeIn, 'Animations: fadeIn keyframe defined');
+      assert(hasDownloadPulse, 'Animations: downloadPulse keyframe defined');
+
+      // Reduced motion media query
+      var hasReducedMotion = false;
+      try {
+        for (var s = 0; s < sheets.length; s++) {
+          try {
+            var rules = sheets[s].cssRules;
+            for (var r = 0; r < rules.length; r++) {
+              if (rules[r].conditionText && rules[r].conditionText.includes('prefers-reduced-motion')) {
+                hasReducedMotion = true;
+              }
+            }
+          } catch(e) {}
+        }
+      } catch(e) {}
+      assert(hasReducedMotion, 'Accessibility: prefers-reduced-motion media query present');
+
+      // ==== Resizer Tests ====
+      var heading2 = document.createElement('h2');
+      heading2.textContent = 'Resizer';
+      results.appendChild(heading2);
+
+      // Create a test image (red square)
+      var canvas = document.createElement('canvas');
+      canvas.width = 200;
+      canvas.height = 200;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#E8625C';
+      ctx.fillRect(0, 0, 200, 200);
+
+      var testImg = new Image();
+      testImg.src = canvas.toDataURL('image/png');
+      await new Promise(function(r) { testImg.onload = r; });
+
+      // Basic JPEG resize
+      try {
+        var blob1 = await Resizer.resize(testImg, { width: 100, height: 100, format: 'jpeg', quality: 0.85 });
+        assert(blob1 instanceof Blob, 'Resizer: returns Blob');
+        assert(blob1.type === 'image/jpeg', 'Resizer: correct MIME for JPEG', 'Got: ' + blob1.type);
+        assert(blob1.size > 0, 'Resizer: blob has content', 'Size: ' + blob1.size);
+      } catch (e) {
+        addResult('Resizer: JPEG resize', false, e.message);
+      }
+
+      // PNG resize
+      try {
+        var blob2 = await Resizer.resize(testImg, { width: 50, height: 50, format: 'png', quality: 1 });
+        assert(blob2.type === 'image/png', 'Resizer: correct MIME for PNG', 'Got: ' + blob2.type);
+      } catch (e) {
+        addResult('Resizer: PNG resize', false, e.message);
+      }
+
+      // WebP resize
+      try {
+        var blob3 = await Resizer.resize(testImg, { width: 80, height: 80, format: 'webp', quality: 0.8 });
+        assert(blob3 instanceof Blob, 'Resizer: WebP output', 'Type: ' + blob3.type + ', Size: ' + blob3.size);
+      } catch (e) {
+        addResult('Resizer: WebP resize', false, e.message);
+      }
+
+      // Multi-step downscale (200 -> 40, >50% reduction)
+      try {
+        var blob4 = await Resizer.resize(testImg, { width: 40, height: 40, format: 'jpeg', quality: 0.85 });
+        assert(blob4 instanceof Blob && blob4.size > 0, 'Resizer: multi-step downscale works', 'Size: ' + blob4.size);
+      } catch (e) {
+        addResult('Resizer: multi-step downscale', false, e.message);
+      }
+
+      // Edge case: 1x1 pixel
+      try {
+        var blob5 = await Resizer.resize(testImg, { width: 1, height: 1, format: 'jpeg', quality: 0.5 });
+        assert(blob5 instanceof Blob, 'Resizer: 1x1 pixel output', 'Size: ' + blob5.size);
+      } catch (e) {
+        addResult('Resizer: 1x1 pixel', false, e.message);
+      }
+
+      // Edge case: null image
+      try {
+        await Resizer.resize(null, { width: 100, height: 100, format: 'jpeg', quality: 0.85 });
+        addResult('Resizer: rejects null image', false, 'Should have thrown');
+      } catch (e) {
+        assert(true, 'Resizer: rejects null image', 'Error: ' + e.message);
+      }
+
+      // Quality clamping
+      try {
+        var blob6 = await Resizer.resize(testImg, { width: 100, height: 100, format: 'jpeg', quality: -0.5 });
+        assert(blob6 instanceof Blob, 'Resizer: clamps negative quality', 'Size: ' + blob6.size);
+      } catch (e) {
+        addResult('Resizer: quality clamping', false, e.message);
+      }
+
+      // Upscaling
+      try {
+        var blob7 = await Resizer.resize(testImg, { width: 400, height: 400, format: 'jpeg', quality: 0.85 });
+        assert(blob7 instanceof Blob && blob7.size > 0, 'Resizer: upscaling works', 'Size: ' + blob7.size);
+      } catch (e) {
+        addResult('Resizer: upscaling', false, e.message);
+      }
+
+      // ==== Summary ====
+      summaryEl.textContent = passed + ' passed, ' + failed + ' failed out of ' + (passed + failed) + ' tests';
+      summaryEl.style.color = failed === 0 ? '#5A9E6F' : '#C74B4B';
+    });
+  </script>
+</body>
+</html>

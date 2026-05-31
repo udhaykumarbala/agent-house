@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"pty-claude-test/internal/agent"
+	"pty-claude-test/internal/message"
 	"pty-claude-test/internal/orchestrator"
 )
 
@@ -27,10 +28,12 @@ type CronJob struct {
 
 // CronScheduler manages recurring agent tasks.
 type CronScheduler struct {
-	mu      sync.Mutex
-	jobs    map[string]*cronEntry
-	orch    *orchestrator.Orchestrator
-	stopCh  chan struct{}
+	mu     sync.Mutex
+	jobs   map[string]*cronEntry
+	orch   *orchestrator.Orchestrator
+	store  *message.Store // for the proactive trigger_fired marker
+	hub    *Hub           // for live broadcast to /ws subscribers
+	stopCh chan struct{}
 }
 
 type cronEntry struct {
@@ -40,11 +43,15 @@ type cronEntry struct {
 	lastRun  time.Time
 }
 
-// NewCronScheduler creates a new cron scheduler.
-func NewCronScheduler(orch *orchestrator.Orchestrator) *CronScheduler {
+// NewCronScheduler creates a new cron scheduler. store + hub are optional
+// (nil-safe in tick) so existing callers without them still work; the
+// trigger_fired marker is the only thing that needs them.
+func NewCronScheduler(orch *orchestrator.Orchestrator, store *message.Store, hub *Hub) *CronScheduler {
 	cs := &CronScheduler{
 		jobs:   make(map[string]*cronEntry),
 		orch:   orch,
+		store:  store,
+		hub:    hub,
 		stopCh: make(chan struct{}),
 	}
 	go cs.runLoop()
@@ -86,6 +93,25 @@ func (cs *CronScheduler) tick() {
 				CreatedAt: now,
 			}
 			cs.orch.InjectTask(injected)
+
+			// Proactive marker — record that the system fired this on its own.
+			// The Conductor briefing scans messages for trigger_fired to surface
+			// "N fires today" — without this, the cron does the work silently.
+			if cs.store != nil {
+				m := message.NewMessage(
+					message.TypeTriggerFired,
+					"cron",
+					string(injected.AgentRole),
+					fmt.Sprintf("⚡ cron fired → %s", truncateForLog(entry.job.Task, 120)),
+				)
+				m.Metadata.ProjectID = entry.job.ProjectID
+				m.Metadata.TaskID = injected.ID
+				m.Metadata.Tags = []string{"trigger", "cron", entry.job.ID}
+				cs.store.Add(m)
+				if cs.hub != nil {
+					cs.hub.Broadcast(m)
+				}
+			}
 
 			entry.lastRun = now
 			entry.nextRun = now.Add(entry.interval)

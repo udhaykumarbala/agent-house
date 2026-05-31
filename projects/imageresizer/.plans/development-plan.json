@@ -1,0 +1,211 @@
+{
+  "task_id": "imageresizer-v2",
+  "created_by": "architect",
+  "approved_by": "",
+  "created_at": "2026-03-16T14:30:00Z",
+  "phases": [
+    {
+      "index": 3,
+      "name": "Image Manipulation",
+      "description": "Add crop, rotate, and flip functionality — the most expected features in any image tool",
+      "subtasks": [
+        {
+          "id": "st_010",
+          "title": "Implement image rotation and flip controls",
+          "description": "Add rotation (90° CW, 90° CCW) and flip (horizontal, vertical) buttons to the editor controls panel. Apply transforms via Canvas API before resize. Update preview dimensions when rotating (swap width/height for 90° rotations).",
+          "assigned_agents": ["senior_dev"],
+          "dependencies": [],
+          "completion_criteria": [
+            "Rotate 90° clockwise button works and updates preview",
+            "Rotate 90° counter-clockwise button works",
+            "Flip horizontal mirrors the image correctly",
+            "Flip vertical mirrors the image correctly",
+            "Dimensions swap correctly on 90° rotation (width↔height)",
+            "Aspect ratio recalculates after rotation",
+            "Transforms compose correctly (rotate + flip + resize)",
+            "Buttons styled in brutalist design matching existing controls"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_011",
+          "title": "Build interactive crop overlay",
+          "description": "Add a crop mode with a draggable/resizable crop rectangle overlay on the preview image. User can drag corners and edges to define the crop region. Include crop aspect ratio presets (free, 1:1, 4:3, 16:9). Add 'Apply Crop' and 'Cancel' buttons.",
+          "assigned_agents": ["senior_dev"],
+          "dependencies": [],
+          "completion_criteria": [
+            "Crop mode toggle button in controls panel",
+            "Draggable crop rectangle overlay appears on preview image",
+            "Corner handles resize the crop area",
+            "Edge handles resize in one axis",
+            "Crop area can be repositioned by dragging the center",
+            "Crop aspect ratio presets: Free, 1:1, 4:3, 16:9",
+            "Dimmed area outside crop region for visual clarity",
+            "Apply Crop extracts the selected region via Canvas",
+            "Cancel returns to normal editing without changes",
+            "Crop dimensions displayed in pixels as user drags",
+            "Touch-friendly: works on mobile with touch events"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_012",
+          "title": "Integrate crop and rotation into the resize pipeline",
+          "description": "Wire crop and rotation transforms into the existing resize flow. Ensure the processing order is: crop → rotate/flip → resize → format conversion. Update the preview pipeline to show all transforms. Update download to include all applied transforms.",
+          "assigned_agents": ["senior_dev"],
+          "dependencies": ["st_010", "st_011"],
+          "completion_criteria": [
+            "Processing order: crop → rotate/flip → resize → export",
+            "Preview reflects all active transforms in real-time",
+            "Download produces correct output with all transforms applied",
+            "State tracks crop region, rotation angle, and flip state",
+            "New Image button resets all transforms",
+            "File size comparison accounts for all transforms"
+          ],
+          "status": "pending",
+          "iteration": 1
+        }
+      ],
+      "status": "pending",
+      "qa_status": "pending",
+      "iteration": 1
+    },
+    {
+      "index": 4,
+      "name": "Productivity Features",
+      "description": "Batch processing, clipboard paste, and before/after comparison for power users",
+      "subtasks": [
+        {
+          "id": "st_013",
+          "title": "Implement clipboard paste support",
+          "description": "Listen for paste events (Ctrl+V / Cmd+V) globally. Extract image data from clipboard and load it as if it were a file upload. Show a brief toast notification confirming paste. Works on both upload view and editor view (replaces current image).",
+          "assigned_agents": ["junior_dev"],
+          "dependencies": [],
+          "completion_criteria": [
+            "Ctrl+V / Cmd+V pastes image from clipboard",
+            "Works from screenshot tools and copied images",
+            "Brief toast notification: 'Image pasted from clipboard'",
+            "Works on upload view (loads image)",
+            "Works on editor view (replaces current image)",
+            "Non-image clipboard content is silently ignored",
+            "Paste hint text shown on upload screen: 'or paste from clipboard (Ctrl+V)'"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_014",
+          "title": "Build before/after comparison slider",
+          "description": "Add a comparison mode that shows original vs resized side by side with a draggable slider divider. User can drag the slider left/right to reveal more of either image. Toggle button to enter/exit comparison mode.",
+          "assigned_agents": ["senior_dev"],
+          "dependencies": [],
+          "completion_criteria": [
+            "Compare button in editor toggles comparison mode",
+            "Original and resized images shown overlaid",
+            "Draggable vertical slider divides the two images",
+            "Labels: 'Original' on left, 'Resized' on right",
+            "Slider works with mouse drag and touch",
+            "Smooth performance without jank",
+            "Exit comparison returns to normal preview",
+            "Styled consistently with brutalist design"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_015",
+          "title": "Implement batch processing mode",
+          "description": "Add a batch mode where users can upload multiple images (via multi-select file picker or drag-and-drop). Apply the same resize settings to all images. Show a list of queued images with individual progress. Download all as individual files (triggered sequentially) or as a ZIP using JSZip from CDN.",
+          "assigned_agents": ["senior_dev"],
+          "dependencies": [],
+          "completion_criteria": [
+            "Multi-file upload via file picker (multiple attribute)",
+            "Multi-file drag-and-drop supported",
+            "Batch queue shows list of images with filename, original size, status",
+            "Same resize settings applied to all images in batch",
+            "Individual progress indicators per image",
+            "Download All button triggers sequential downloads",
+            "Option to download as ZIP (using JSZip CDN)",
+            "Individual remove button per queued image",
+            "Error handling: failed images shown with error state, don't block others",
+            "Batch mode has its own view/panel, separate from single-image editor"
+          ],
+          "status": "pending",
+          "iteration": 1
+        }
+      ],
+      "status": "pending",
+      "qa_status": "pending",
+      "iteration": 1
+    },
+    {
+      "index": 5,
+      "name": "Visual Enhancements",
+      "description": "Filters, dark mode, and custom presets for a complete image tool experience",
+      "subtasks": [
+        {
+          "id": "st_016",
+          "title": "Add basic image filters",
+          "description": "Add a filters section with common adjustments: brightness, contrast, saturation, and preset filters (grayscale, sepia, vintage, high-contrast). Use Canvas API getImageData/putImageData for pixel manipulation. Filters apply before resize in the pipeline.",
+          "assigned_agents": ["senior_dev"],
+          "dependencies": [],
+          "completion_criteria": [
+            "Brightness slider (-100 to +100, default 0)",
+            "Contrast slider (-100 to +100, default 0)",
+            "Saturation slider (-100 to +100, default 0)",
+            "Preset filter buttons: Grayscale, Sepia, Vintage, High Contrast",
+            "Reset Filters button clears all adjustments",
+            "Filters preview in real-time (debounced)",
+            "Filters applied before resize in the export pipeline",
+            "Performance acceptable for images up to 4000x4000px"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_017",
+          "title": "Implement dark mode with theme toggle",
+          "description": "Add a dark mode theme with a toggle button in the header. Respect prefers-color-scheme as default. Store preference in localStorage. Create dark variants of all CSS custom properties. Toggle transitions smoothly.",
+          "assigned_agents": ["junior_dev"],
+          "dependencies": [],
+          "completion_criteria": [
+            "Dark mode toggle button in header (sun/moon icon)",
+            "Defaults to system preference via prefers-color-scheme",
+            "User preference saved to localStorage and restored on reload",
+            "All colors have dark mode variants via CSS custom properties",
+            "Backgrounds, text, borders, shadows all adapt correctly",
+            "Checkerboard pattern adapts for dark mode",
+            "Transition between themes is smooth (200ms)",
+            "WCAG contrast ratios maintained in dark mode"
+          ],
+          "status": "pending",
+          "iteration": 1
+        },
+        {
+          "id": "st_018",
+          "title": "Add custom user presets with localStorage",
+          "description": "Allow users to save their own dimension presets. Add a 'Save as Preset' button that captures current width/height with a user-provided name. Saved presets appear alongside built-in presets. Presets stored in localStorage. Add delete button for custom presets.",
+          "assigned_agents": ["junior_dev"],
+          "dependencies": [],
+          "completion_criteria": [
+            "Save as Preset button opens a name input",
+            "Custom preset saved with name, width, height to localStorage",
+            "Custom presets displayed in preset grid alongside built-in presets",
+            "Custom presets visually distinguished (e.g., different border style)",
+            "Delete button (X) on custom presets to remove them",
+            "Maximum 10 custom presets with friendly message when limit reached",
+            "Presets persist across page reloads",
+            "Graceful handling of localStorage being full or unavailable"
+          ],
+          "status": "pending",
+          "iteration": 1
+        }
+      ],
+      "status": "pending",
+      "qa_status": "pending",
+      "iteration": 1
+    }
+  ]
+}

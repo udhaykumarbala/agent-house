@@ -1,0 +1,16 @@
+{
+  "taskId": "task_1774079577545329000",
+  "projectId": "quick-test",
+  "task": "Build a rock-paper-scissors game in a single HTML file. Dark theme, emoji   buttons for choices, score tracker, animated result display. Inline CSS and JS    only.",
+  "createdAt": "2026-03-21T13:22:57.546748+05:30",
+  "completedAt": "2026-03-21T13:46:37.023628+05:30",
+  "status": "failed",
+  "turns": 17,
+  "duration": "23m39s",
+  "filesCreated": [
+    "/Users/udhaykumar/susanoox/agent-house-2/projects/quick-test/.plans/template.md",
+    "/Users/udhaykumar/.claude/plans/ticklish-hopping-brooks.md",
+    "/Users/udhaykumar/.claude/plans/floofy-sleeping-treehouse.md"
+  ],
+  "error": "QA phase 0 failed: failed to update QA status: invalid phase index: 0"
+}

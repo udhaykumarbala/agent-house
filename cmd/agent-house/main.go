@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"os"
@@ -13,7 +14,35 @@ import (
 	"pty-claude-test/internal/web"
 )
 
+// loadEnv reads a .env file and sets any keys not already in the environment.
+func loadEnv(path string) {
+	f, err := os.Open(path)
+	if err != nil {
+		return // no .env file, that's fine
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		k, v, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		k = strings.TrimSpace(k)
+		v = strings.TrimSpace(v)
+		// Don't override existing env vars
+		if os.Getenv(k) == "" {
+			os.Setenv(k, v)
+		}
+	}
+}
+
 func main() {
+	loadEnv(".env")
 	// CLI flags
 	agentRole := flag.String("agent", "ceo", "Agent role to use (single agent mode)")
 	task := flag.String("task", "", "Task to give the agent")

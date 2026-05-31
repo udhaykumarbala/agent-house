@@ -1,0 +1,22 @@
+[
+  {
+    "id": "dec_1774076445938756000",
+    "project_id": "mini-site",
+    "task_id": "task_1774076148011613000",
+    "checkpoint_type": "template_approval",
+    "action": "approved",
+    "feedback": "Looks good, proceed",
+    "decided_by": "user",
+    "decided_at": "2026-03-21T12:30:45.938948+05:30"
+  },
+  {
+    "id": "dec_1774076983261741000",
+    "project_id": "mini-site",
+    "task_id": "task_1774076148011613000",
+    "checkpoint_type": "plan_approval",
+    "action": "approved",
+    "feedback": "Plan looks great, build it",
+    "decided_by": "user",
+    "decided_at": "2026-03-21T12:39:43.261744+05:30"
+  }
+]

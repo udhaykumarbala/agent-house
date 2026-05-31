@@ -1,0 +1,14 @@
+{
+  "projectId": "auto-test",
+  "tasks": [
+    {
+      "taskId": "task_1774117988389513000",
+      "summary": "Create a simple pomodoro timer in a single HTML...",
+      "createdAt": "2026-03-22T00:03:08.391138+05:30",
+      "completedAt": "2026-03-22T00:08:43.630291+05:30",
+      "status": "completed",
+      "turns": 3,
+      "filesCreated": 0
+    }
+  ]
+}

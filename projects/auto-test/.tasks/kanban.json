@@ -1,0 +1,58 @@
+[
+  {
+    "id": "kt_1774118115990190000",
+    "project_id": "auto-test",
+    "subtask_ref": "p1_stst_1774118115989_1",
+    "phase_index": 1,
+    "phase_name": "Implementation",
+    "title": "Project Setup \u0026 Structure",
+    "description": "Set up project structure, dependencies, and configuration files",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Project directory structure created",
+        "checked": false
+      },
+      {
+        "text": "Configuration files in place",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 0,
+    "created_at": "2026-03-22T00:05:15.99019+05:30",
+    "updated_at": "2026-03-22T00:05:15.99019+05:30"
+  },
+  {
+    "id": "kt_1774118115990191000",
+    "project_id": "auto-test",
+    "subtask_ref": "p1_stst_1774118115989_2",
+    "phase_index": 1,
+    "phase_name": "Implementation",
+    "title": "Core Implementation",
+    "description": "CEO Direction: This is a well-defined, small single-file project with explicit requirements. The task description itself serves as the complete specification (dark theme, 25/5 timing, buttons, mode display, inline CSS/JS). Senior developer should implement directly following the stated requirements. CEO will perform QA review on the completed HTML file.\n\nOriginal Task: Create a simple pomodoro timer in a single HTML file. Dark theme, 25min work / 5min break, start/pause/reset buttons, shows current mode (Work/Break). Inline CSS and JS only, no frameworks.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "All features implemented per spec",
+        "checked": false
+      },
+      {
+        "text": "Code compiles and runs without errors",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 1,
+    "created_at": "2026-03-22T00:05:15.990191+05:30",
+    "updated_at": "2026-03-22T00:05:15.990191+05:30"
+  }
+]

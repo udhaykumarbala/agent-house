@@ -1,0 +1,14 @@
+{
+  "projectId": "test-calc",
+  "tasks": [
+    {
+      "taskId": "task_1773105154866279000",
+      "summary": "Build a simple calculator with add, subtract, m...",
+      "createdAt": "2026-03-10T06:42:34.867697+05:30",
+      "completedAt": "2026-03-10T06:42:35.901285+05:30",
+      "status": "failed",
+      "turns": 14,
+      "filesCreated": 0
+    }
+  ]
+}

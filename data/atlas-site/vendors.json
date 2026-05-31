@@ -1,0 +1,33 @@
+[
+  {
+    "id": "vendor_xyz",
+    "name": "XYZ Steel",
+    "domain": "vendorxyz.com",
+    "trusted_emails": [
+      "ar@vendorxyz.com",
+      "ahmed.rahman@vendorxyz.com"
+    ],
+    "contact_person": "Ahmed Rahman",
+    "contract_active": true
+  },
+  {
+    "id": "vendor_alpha",
+    "name": "AlphaConcrete",
+    "domain": "alphaconcrete.io",
+    "trusted_emails": [
+      "accounts@alphaconcrete.io"
+    ],
+    "contact_person": "Priya Shah",
+    "contract_active": true
+  },
+  {
+    "id": "vendor_beta",
+    "name": "BetaElectrics",
+    "domain": "betaelectrics.com",
+    "trusted_emails": [
+      "finance@betaelectrics.com"
+    ],
+    "contact_person": "Liu Chen",
+    "contract_active": false
+  }
+]

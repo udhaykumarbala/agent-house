@@ -1,0 +1,62 @@
+[
+  {
+    "id": "20260310064234-2yyqqq",
+    "type": "task",
+    "from": "user",
+    "to": "ceo",
+    "content": "Build a simple calculator with add, subtract, multiply, divide operations. Use plain HTML, CSS and JavaScript. Keep it minimal.",
+    "metadata": {
+      "project_id": "test-calc",
+      "task_id": "task_1773105154866279000"
+    },
+    "timestamp": "2026-03-10T06:42:34.867781+05:30"
+  },
+  {
+    "id": "20260310064234-u2uuuu",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Entering Template Selection phase",
+    "metadata": {
+      "project_id": "test-calc",
+      "task_id": "task_1773105154866279000"
+    },
+    "timestamp": "2026-03-10T06:42:34.869837+05:30"
+  },
+  {
+    "id": "20260310064235-aeee66",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Entering Research phase",
+    "metadata": {
+      "project_id": "test-calc",
+      "task_id": "task_1773105154866279000"
+    },
+    "timestamp": "2026-03-10T06:42:35.499533+05:30"
+  },
+  {
+    "id": "20260310064235-quummm",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Entering Planning phase",
+    "metadata": {
+      "project_id": "test-calc",
+      "task_id": "task_1773105154866279000"
+    },
+    "timestamp": "2026-03-10T06:42:35.609467+05:30"
+  },
+  {
+    "id": "20260310064235-auuuum",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Entering Discussion phase",
+    "metadata": {
+      "project_id": "test-calc",
+      "task_id": "task_1773105154866279000"
+    },
+    "timestamp": "2026-03-10T06:42:35.781136+05:30"
+  }
+]

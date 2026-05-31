@@ -1,0 +1,55 @@
+{
+  "task_id": "quick-test",
+  "phases": [
+    {
+      "index": 0,
+      "name": "Implementation",
+      "description": "CEO Direction: Build a polished, single-file rock-paper-scissors game with dark theme, emoji-based UI, score tracking, and smooth animations. Focus on delightful micro-interactions and clean visual design — this is small in scope but should feel premium.\n\nOriginal Task: Build a rock-paper-scissors game in a single HTML file. Dark theme, emoji   buttons for choices, score tracker, animated result display. Inline CSS and JS    only.",
+      "subtasks": [
+        {
+          "id": "st_1774080646730_1",
+          "task_id": "quick-test",
+          "phase_index": 0,
+          "title": "Project Setup \u0026 Structure",
+          "description": "Set up project structure, dependencies, and configuration files",
+          "assigned_agents": [
+            "senior_dev",
+            "junior_dev"
+          ],
+          "completion_criteria": [
+            "Project directory structure created",
+            "Configuration files in place"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 0
+        },
+        {
+          "id": "st_1774080646730_2",
+          "task_id": "quick-test",
+          "phase_index": 0,
+          "title": "Core Implementation",
+          "description": "CEO Direction: Build a polished, single-file rock-paper-scissors game with dark theme, emoji-based UI, score tracking, and smooth animations. Focus on delightful micro-interactions and clean visual design — this is small in scope but should feel premium.\n\nOriginal Task: Build a rock-paper-scissors game in a single HTML file. Dark theme, emoji   buttons for choices, score tracker, animated result display. Inline CSS and JS    only.",
+          "assigned_agents": [
+            "senior_dev",
+            "junior_dev"
+          ],
+          "completion_criteria": [
+            "All features implemented per spec",
+            "Code compiles and runs without errors"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 0
+        }
+      ],
+      "status": "pending",
+      "qa_status": "pending",
+      "iteration": 1
+    }
+  ],
+  "created_by": "ceo",
+  "approved_by": "ceo",
+  "created_at": "2026-03-21T13:40:46.730776+05:30",
+  "approved_at": "2026-03-21T13:40:46.730776+05:30"
+}

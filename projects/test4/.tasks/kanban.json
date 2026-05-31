@@ -1,0 +1,950 @@
+[
+  {
+    "id": "kt_1774115836637935000",
+    "project_id": "test4",
+    "subtask_ref": "p1_stst_001",
+    "phase_index": 1,
+    "phase_name": "Project Foundation",
+    "title": "Scaffold Vite project with dependencies",
+    "description": "Initialize Vite project with React + TypeScript template. Install: tailwindcss, postcss, autoprefixer, zustand, @dnd-kit/core, @dnd-kit/sortable, lucide-react, date-fns, nanoid. Configure Tailwind with design tokens from architecture spec.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Vite dev server runs without errors",
+        "checked": false
+      },
+      {
+        "text": "Tailwind configured with all color tokens from architecture-spec.md (bg-primary, accent-primary, category colors, etc.)",
+        "checked": false
+      },
+      {
+        "text": "TypeScript compiles with no errors",
+        "checked": false
+      },
+      {
+        "text": "All listed dependencies installed",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 0,
+    "created_at": "2026-03-21T23:27:16.637936+05:30",
+    "updated_at": "2026-03-21T23:27:16.637937+05:30"
+  },
+  {
+    "id": "kt_1774115836637938000",
+    "project_id": "test4",
+    "subtask_ref": "p1_stst_002",
+    "phase_index": 1,
+    "phase_name": "Project Foundation",
+    "title": "Create TypeScript type definitions",
+    "description": "Create src/types/index.ts with all types from architecture-spec.md: Task, Category, Tag, Settings, Attachment, Subtask, IterationState, Priority, CategoryType. Include default category and tag data.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "All types match architecture-spec.md data model exactly",
+        "checked": false
+      },
+      {
+        "text": "Default categories (Research, Design, Testing, Review, Discovery, Handoff, Admin) with correct colors",
+        "checked": false
+      },
+      {
+        "text": "Default tags list matches spec",
+        "checked": false
+      },
+      {
+        "text": "TypeScript strict mode passes",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 1,
+    "created_at": "2026-03-21T23:27:16.637938+05:30",
+    "updated_at": "2026-03-21T23:27:16.637938+05:30"
+  },
+  {
+    "id": "kt_1774115836637941000",
+    "project_id": "test4",
+    "subtask_ref": "p1_stst_003",
+    "phase_index": 1,
+    "phase_name": "Project Foundation",
+    "title": "Set up Zustand stores with localStorage persistence",
+    "description": "Create three Zustand stores: taskStore (tasks with CRUD, move, reorder), uiStore (view, filters, panels, search — NOT persisted), settingsStore (theme, columns, categories, tags — persisted). Wire up localStorage sync for taskStore and settingsStore.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "taskStore has: tasks array, addTask, updateTask, deleteTask, moveTask, reorderTasks actions",
+        "checked": false
+      },
+      {
+        "text": "uiStore has: view, activeFilters, selectedTaskId, detailPanelOpen, settingsOpen, searchQuery",
+        "checked": false
+      },
+      {
+        "text": "settingsStore has: theme, columnOrder, customCategories, customTags with update actions",
+        "checked": false
+      },
+      {
+        "text": "Data persists across page reloads",
+        "checked": false
+      },
+      {
+        "text": "Auto-save with 300ms debounce",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 2,
+    "created_at": "2026-03-21T23:27:16.637941+05:30",
+    "updated_at": "2026-03-21T23:27:16.637941+05:30"
+  },
+  {
+    "id": "kt_1774115836637943000",
+    "project_id": "test4",
+    "subtask_ref": "p1_stst_004",
+    "phase_index": 1,
+    "phase_name": "Project Foundation",
+    "title": "Implement global styles and CSS variables",
+    "description": "Set up src/index.css with Tailwind directives, CSS custom properties for the full color palette (light + dark), typography scale, and spacing tokens. Configure Tailwind dark mode with 'class' strategy. Add custom font imports (Cabinet Grotesk, Inter, JetBrains Mono) via Google Fonts.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "All color tokens from architecture-spec.md accessible as CSS variables",
+        "checked": false
+      },
+      {
+        "text": "Dark mode toggles by adding 'dark' class to html element",
+        "checked": false
+      },
+      {
+        "text": "Font stack: Cabinet Grotesk headings, Inter body, JetBrains Mono for estimates",
+        "checked": false
+      },
+      {
+        "text": "Global reset and base styles applied",
+        "checked": false
+      },
+      {
+        "text": "Custom scrollbar styling matching design language",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 3,
+    "created_at": "2026-03-21T23:27:16.637943+05:30",
+    "updated_at": "2026-03-21T23:27:16.637943+05:30"
+  },
+  {
+    "id": "kt_1774115836637944000",
+    "project_id": "test4",
+    "subtask_ref": "p2_stst_005",
+    "phase_index": 2,
+    "phase_name": "Core UI Shell",
+    "title": "Build AppShell and Header components",
+    "description": "Create layout/AppShell.tsx as the main container. Create layout/Header.tsx with: logo + 'DesignFlow' text, view toggle (Board/List/Focus), search icon button, settings icon button, theme toggle (sun/moon icon button). Header is fixed, 56px height with bottom border.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Header matches architecture-spec layout exactly",
+        "checked": false
+      },
+      {
+        "text": "View toggle shows active state correctly",
+        "checked": false
+      },
+      {
+        "text": "Theme toggle switches between light/dark and updates CSS variables",
+        "checked": false
+      },
+      {
+        "text": "AppShell provides correct page layout structure",
+        "checked": false
+      },
+      {
+        "text": "Responsive: collapses gracefully on tablet",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 4,
+    "created_at": "2026-03-21T23:27:16.637944+05:30",
+    "updated_at": "2026-03-21T23:27:16.637945+05:30"
+  },
+  {
+    "id": "kt_1774115836637952000",
+    "project_id": "test4",
+    "subtask_ref": "p2_stst_006",
+    "phase_index": 2,
+    "phase_name": "Core UI Shell",
+    "title": "Implement dark/light theme toggle system",
+    "description": "Wire up settingsStore theme to document.documentElement.classList. Support 'light', 'dark', and 'system' modes. When system is selected, use media query match. Apply Tailwind dark: variants globally. Theme state persists to localStorage.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Theme toggle cycles through light → dark → system → light",
+        "checked": false
+      },
+      {
+        "text": "System mode respects OS preference",
+        "checked": false
+      },
+      {
+        "text": "All colors switch correctly between light and dark modes",
+        "checked": false
+      },
+      {
+        "text": "Theme preference persists across page reloads",
+        "checked": false
+      },
+      {
+        "text": "No flash of wrong theme on page load (inline script or CSS)",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 5,
+    "created_at": "2026-03-21T23:27:16.637952+05:30",
+    "updated_at": "2026-03-21T23:27:16.637952+05:30"
+  },
+  {
+    "id": "kt_1774115836637953000",
+    "project_id": "test4",
+    "subtask_ref": "p2_stst_007",
+    "phase_index": 2,
+    "phase_name": "Core UI Shell",
+    "title": "Build StatusBar component",
+    "description": "Create layout/StatusBar.tsx: fixed bottom 32px bar showing task count summary ('25 tasks · 3 in progress') and 'Last saved just now' indicator. Auto-updates with task counts from taskStore. Shows save status: idle / saving / saved.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Shows accurate total task count and in-progress count",
+        "checked": false
+      },
+      {
+        "text": "Save indicator shows correct state",
+        "checked": false
+      },
+      {
+        "text": "Matches design spec (32px, bottom-fixed)",
+        "checked": false
+      },
+      {
+        "text": "Does not interfere with content scroll",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 6,
+    "created_at": "2026-03-21T23:27:16.637953+05:30",
+    "updated_at": "2026-03-21T23:27:16.637954+05:30"
+  },
+  {
+    "id": "kt_1774115836637954000",
+    "project_id": "test4",
+    "subtask_ref": "p3_stst_008",
+    "phase_index": 3,
+    "phase_name": "Kanban Board \u0026 Task Cards",
+    "title": "Build KanbanBoard and KanbanColumn components",
+    "description": "Create board/KanbanBoard.tsx and board/KanbanColumn.tsx. KanbanBoard wraps DndContext. KanbanColumn renders a vertical list of TaskCards within a SortableContext. Column header shows name + task count badge. Each column is droppable zone with visual highlight on drag-over. Scrollable task list within column.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "4 columns render: Backlog, In Progress, In Review, Approved",
+        "checked": false
+      },
+      {
+        "text": "Tasks render in correct columns from store",
+        "checked": false
+      },
+      {
+        "text": "Drop zones highlight on drag-over (2px indigo border + light indigo bg)",
+        "checked": false
+      },
+      {
+        "text": "Column header shows task count",
+        "checked": false
+      },
+      {
+        "text": "Empty columns show dot-grid placeholder",
+        "checked": false
+      },
+      {
+        "text": "Horizontal scroll on overflow",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 7,
+    "created_at": "2026-03-21T23:27:16.637955+05:30",
+    "updated_at": "2026-03-21T23:27:16.637955+05:30"
+  },
+  {
+    "id": "kt_1774115836637956000",
+    "project_id": "test4",
+    "subtask_ref": "p3_stst_009",
+    "phase_index": 3,
+    "phase_name": "Kanban Board \u0026 Task Cards",
+    "title": "Build TaskCard component with all states",
+    "description": "Create board/TaskCard.tsx. Render: category chip, task title (truncated 3 lines), priority dots (1-5), time estimate (from timeEstimate field), due date, attachment icon (if attachments exist), subtask progress bar. Support all card states: default, hover (lift -2px), dragging (elevated + 3deg rotation + 50% origin opacity), selected (indigo border).",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Card renders all metadata fields correctly",
+        "checked": false
+      },
+      {
+        "text": "Category chip shows correct color from category definition",
+        "checked": false
+      },
+      {
+        "text": "Hover state: translateY -2px + stronger shadow",
+        "checked": false
+      },
+      {
+        "text": "Dragging state: elevated shadow + rotation + origin opacity",
+        "checked": false
+      },
+      {
+        "text": "Selected state: 2px indigo border",
+        "checked": false
+      },
+      {
+        "text": "Priority dots: filled dots for active priority, empty for rest",
+        "checked": false
+      },
+      {
+        "text": "Subtask progress bar: thin colored bar showing X/Y completed",
+        "checked": false
+      },
+      {
+        "text": "Attachments icon shown only when attachments exist",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 8,
+    "created_at": "2026-03-21T23:27:16.637956+05:30",
+    "updated_at": "2026-03-21T23:27:16.637956+05:30"
+  },
+  {
+    "id": "kt_1774115836638471000",
+    "project_id": "test4",
+    "subtask_ref": "p3_stst_010",
+    "phase_index": 3,
+    "phase_name": "Kanban Board \u0026 Task Cards",
+    "title": "Implement drag-and-drop with @dnd-kit",
+    "description": "Implement full drag-and-drop using @dnd-kit/core and @dnd-kit/sortable. Cards are useSortable items. Columns are droppable zones with custom collision detection. Cross-column drag moves task between iteration states. Within-column drag reorders by position. Keyboard alternative: Space to pick up selected, arrows to move, Space to drop, Esc to cancel.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Drag card from one column to another — task iterationState updates",
+        "checked": false
+      },
+      {
+        "text": "Reorder within column — position updates correctly",
+        "checked": false
+      },
+      {
+        "text": "Visual feedback during drag matches spec (shadow, rotation, opacity)",
+        "checked": false
+      },
+      {
+        "text": "Drop zone highlights correctly",
+        "checked": false
+      },
+      {
+        "text": "Touch: long-press activates drag mode",
+        "checked": false
+      },
+      {
+        "text": "Keyboard: full alternative to mouse drag works",
+        "checked": false
+      },
+      {
+        "text": "State persists after drag-drop (localStorage)",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 9,
+    "created_at": "2026-03-21T23:27:16.638471+05:30",
+    "updated_at": "2026-03-21T23:27:16.638472+05:30"
+  },
+  {
+    "id": "kt_1774115836638473000",
+    "project_id": "test4",
+    "subtask_ref": "p3_stst_011",
+    "phase_index": 3,
+    "phase_name": "Kanban Board \u0026 Task Cards",
+    "title": "Build QuickAddBar with natural language parsing",
+    "description": "Create shared/QuickAddBar.tsx: sticky input bar with placeholder 'Add a task... (Cmd+K)'. Implement natural language parser in utils/naturalLanguage.ts that extracts #category, @dueDate, Xh/Xm time estimate. On submit: create task with parsed fields, assign to Backlog (or current column context), clear input. Cmd+K shortcut focuses the bar from anywhere.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "QuickAddBar is sticky below header",
+        "checked": false
+      },
+      {
+        "text": "Cmd+K focuses the input from anywhere in the app",
+        "checked": false
+      },
+      {
+        "text": "Parses #research → category=Research (and all other categories)",
+        "checked": false
+      },
+      {
+        "text": "Parses tomorrow, next monday, mar 25, +3d → dueDate",
+        "checked": false
+      },
+      {
+        "text": "Parses 2h, 30m, 2.5h → timeEstimate (in minutes)",
+        "checked": false
+      },
+      {
+        "text": "Creates task in taskStore on Enter",
+        "checked": false
+      },
+      {
+        "text": "Empty submit is silently ignored",
+        "checked": false
+      },
+      {
+        "text": "Esc clears input and blurs",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 10,
+    "created_at": "2026-03-21T23:27:16.638473+05:30",
+    "updated_at": "2026-03-21T23:27:16.638473+05:30"
+  },
+  {
+    "id": "kt_1774115836638474000",
+    "project_id": "test4",
+    "subtask_ref": "p3_stst_012",
+    "phase_index": 3,
+    "phase_name": "Kanban Board \u0026 Task Cards",
+    "title": "Build inline Add Task in columns",
+    "description": "Add '+ Add task' button at bottom of each KanbanColumn. Clicking opens an inline input within the column (not the global QuickAddBar). Enter submits (creates task in that column), Esc cancels. Uses same natural language parser as QuickAddBar.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "+ Add task button visible at bottom of each column",
+        "checked": false
+      },
+      {
+        "text": "Click opens inline input within the column",
+        "checked": false
+      },
+      {
+        "text": "Enter creates task in that specific column",
+        "checked": false
+      },
+      {
+        "text": "Esc cancels and hides the input",
+        "checked": false
+      },
+      {
+        "text": "Created task immediately appears in column",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 11,
+    "created_at": "2026-03-21T23:27:16.638475+05:30",
+    "updated_at": "2026-03-21T23:27:16.638475+05:30"
+  },
+  {
+    "id": "kt_1774115836638476000",
+    "project_id": "test4",
+    "subtask_ref": "p4_stst_013",
+    "phase_index": 4,
+    "phase_name": "Task Detail Panel",
+    "title": "Build TaskDetailPanel shell",
+    "description": "Create task/TaskDetailPanel.tsx: slide-in panel from right (250ms ease-out). 400px wide on desktop, full-width bottom sheet on mobile. Semi-transparent backdrop overlay (click to close). X button top-right. Focus trap. Closes on Esc. No save button — auto-save on every change.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Panel slides in from right with 250ms ease-out animation",
+        "checked": false
+      },
+      {
+        "text": "Backdrop overlay closes panel on click",
+        "checked": false
+      },
+      {
+        "text": "Esc closes panel",
+        "checked": false
+      },
+      {
+        "text": "Focus is trapped within panel when open",
+        "checked": false
+      },
+      {
+        "text": "Panel width: 400px desktop, full-width mobile",
+        "checked": false
+      },
+      {
+        "text": "X button closes panel",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 12,
+    "created_at": "2026-03-21T23:27:16.638477+05:30",
+    "updated_at": "2026-03-21T23:27:16.638477+05:30"
+  },
+  {
+    "id": "kt_1774115836638478000",
+    "project_id": "test4",
+    "subtask_ref": "p4_stst_014",
+    "phase_index": 4,
+    "phase_name": "Task Detail Panel",
+    "title": "Implement all task detail fields",
+    "description": "Add all editable fields to TaskDetailPanel: title (large inline-editable), category dropdown (colored chips), iteration state dropdown, priority (1-5 stars), due date (date picker + natural language input), time estimate (hours input), tags (multi-select with create custom). Each field auto-saves on change via updateTask in taskStore.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Title: click to edit, blur saves, large text",
+        "checked": false
+      },
+      {
+        "text": "Category: dropdown with colored chip options",
+        "checked": false
+      },
+      {
+        "text": "Iteration state: dropdown matching column names",
+        "checked": false
+      },
+      {
+        "text": "Priority: 1-5 star selector with visual feedback",
+        "checked": false
+      },
+      {
+        "text": "Due date: date picker input, accepts ISO dates",
+        "checked": false
+      },
+      {
+        "text": "Time estimate: hours input (accepts decimal)",
+        "checked": false
+      },
+      {
+        "text": "Tags: multi-select dropdown from default tags list + create new",
+        "checked": false
+      },
+      {
+        "text": "All changes auto-save to taskStore",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 13,
+    "created_at": "2026-03-21T23:27:16.638478+05:30",
+    "updated_at": "2026-03-21T23:27:16.638478+05:30"
+  },
+  {
+    "id": "kt_1774115836638479000",
+    "project_id": "test4",
+    "subtask_ref": "p4_stst_015",
+    "phase_index": 4,
+    "phase_name": "Task Detail Panel",
+    "title": "Implement attachments and subtasks",
+    "description": "Add attachment and subtask sections to TaskDetailPanel. Attachments: URL input field, add button, each shows as clickable chip with label. URL auto-prepends https:// if missing. Subtasks: list of checklist items with checkbox, add subtask input at bottom. Each subtask has delete button. Completed subtasks get strikethrough.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Attachments: can add URL, displays as clickable chip",
+        "checked": false
+      },
+      {
+        "text": "URLs without protocol auto-prepend https://",
+        "checked": false
+      },
+      {
+        "text": "Subtasks: can add new subtask items",
+        "checked": false
+      },
+      {
+        "text": "Subtasks: can toggle complete (checkbox)",
+        "checked": false
+      },
+      {
+        "text": "Subtasks: can delete individual items",
+        "checked": false
+      },
+      {
+        "text": "Subtask completion triggers progress bar update on TaskCard",
+        "checked": false
+      },
+      {
+        "text": "All changes persist to taskStore",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 14,
+    "created_at": "2026-03-21T23:27:16.638479+05:30",
+    "updated_at": "2026-03-21T23:27:16.638479+05:30"
+  },
+  {
+    "id": "kt_1774115836638480000",
+    "project_id": "test4",
+    "subtask_ref": "p4_stst_016",
+    "phase_index": 4,
+    "phase_name": "Task Detail Panel",
+    "title": "Implement task card click to open panel",
+    "description": "Wire up TaskCard click → uiStore.selectedTaskId + detailPanelOpen. Clicking a card in the board opens the TaskDetailPanel populated with that task's data. Clicking outside the panel or pressing Esc closes it and clears selectedTaskId.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Clicking any TaskCard opens the detail panel",
+        "checked": false
+      },
+      {
+        "text": "Panel populates with correct task data",
+        "checked": false
+      },
+      {
+        "text": "Editing any field updates the card in the board view (reactive)",
+        "checked": false
+      },
+      {
+        "text": "Closing panel clears selectedTaskId",
+        "checked": false
+      },
+      {
+        "text": "Can open a different task's panel by clicking another card",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 15,
+    "created_at": "2026-03-21T23:27:16.63848+05:30",
+    "updated_at": "2026-03-21T23:27:16.63848+05:30"
+  },
+  {
+    "id": "kt_1774115836638481000",
+    "project_id": "test4",
+    "subtask_ref": "p5_stst_017",
+    "phase_index": 5,
+    "phase_name": "Filter, Search \u0026 Polish",
+    "title": "Build FilterBar component",
+    "description": "Create layout/FilterBar.tsx: horizontal row of category toggle chips below QuickAddBar. Each chip shows category name + count of tasks in that category. Click toggles filter. Active filter: filled background + checkmark. 'All' button clears filters. Multiple categories use OR logic. Active filter chips are removable (X button).",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Category chips for all 7 default categories render",
+        "checked": false
+      },
+      {
+        "text": "Each chip shows task count for that category",
+        "checked": false
+      },
+      {
+        "text": "Click toggles filter active/inactive",
+        "checked": false
+      },
+      {
+        "text": "Active filters have filled bg + checkmark",
+        "checked": false
+      },
+      {
+        "text": "Multiple filters combine with OR logic",
+        "checked": false
+      },
+      {
+        "text": "X button on active chips removes filter",
+        "checked": false
+      },
+      {
+        "text": "'All' button resets all filters",
+        "checked": false
+      },
+      {
+        "text": "Filter state updates board display reactively",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 16,
+    "created_at": "2026-03-21T23:27:16.638482+05:30",
+    "updated_at": "2026-03-21T23:27:16.638482+05:30"
+  },
+  {
+    "id": "kt_1774115836638550000",
+    "project_id": "test4",
+    "subtask_ref": "p5_stst_018",
+    "phase_index": 5,
+    "phase_name": "Filter, Search \u0026 Polish",
+    "title": "Implement search functionality",
+    "description": "Implement Cmd+F search: focuses search input in header. Search queries taskStore.tasks by title (substring match, case-insensitive). Results highlight matching text. Clear button resets search. Esc clears and closes.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Cmd+F focuses search input",
+        "checked": false
+      },
+      {
+        "text": "Search filters visible tasks in real-time",
+        "checked": false
+      },
+      {
+        "text": "Matching text highlighted in task cards",
+        "checked": false
+      },
+      {
+        "text": "Clear (X) button resets search",
+        "checked": false
+      },
+      {
+        "text": "Esc closes search and clears query",
+        "checked": false
+      },
+      {
+        "text": "Empty search shows all tasks",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 17,
+    "created_at": "2026-03-21T23:27:16.63855+05:30",
+    "updated_at": "2026-03-21T23:27:16.63855+05:30"
+  },
+  {
+    "id": "kt_1774115836638551000",
+    "project_id": "test4",
+    "subtask_ref": "p5_stst_019",
+    "phase_index": 5,
+    "phase_name": "Filter, Search \u0026 Polish",
+    "title": "Build EmptyState components",
+    "description": "Create shared/EmptyState.tsx component with line-art SVG illustration, heading, subtext, and CTA button. Show in: empty column (contextual: 'Nothing in Backlog yet'), empty board (full-page: 'Your design workflow starts here'), empty search results. Context-aware copy for each scenario.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Empty column: subtle dot-grid placeholder + inline + Add button",
+        "checked": false
+      },
+      {
+        "text": "Empty board: centered empty state with friendly copy + prominent Add button",
+        "checked": false
+      },
+      {
+        "text": "Empty search: 'No tasks match \"query\"' with clear search button",
+        "checked": false
+      },
+      {
+        "text": "All empty states use warm, encouraging copy (not generic)",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 18,
+    "created_at": "2026-03-21T23:27:16.638552+05:30",
+    "updated_at": "2026-03-21T23:27:16.638552+05:30"
+  },
+  {
+    "id": "kt_1774115836638552000",
+    "project_id": "test4",
+    "subtask_ref": "p5_stst_020",
+    "phase_index": 5,
+    "phase_name": "Filter, Search \u0026 Polish",
+    "title": "Implement task completion flow",
+    "description": "Implement task completion: checkbox on TaskCard click → mark task as completed (completedAt timestamp). Card animates to completed state (strikethrough + muted colors). After 2 seconds, card moves to Completed section (collapsible at bottom of Approved column). Completed section can be collapsed/expanded.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Checkbox click marks task complete with animation",
+        "checked": false
+      },
+      {
+        "text": "Completed card shows strikethrough + muted colors",
+        "checked": false
+      },
+      {
+        "text": "Card moves to Completed section after 2 seconds",
+        "checked": false
+      },
+      {
+        "text": "Completed section is collapsible",
+        "checked": false
+      },
+      {
+        "text": "Completed section shows within Approved column",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 19,
+    "created_at": "2026-03-21T23:27:16.638553+05:30",
+    "updated_at": "2026-03-21T23:27:16.638553+05:30"
+  },
+  {
+    "id": "kt_1774115836638553000",
+    "project_id": "test4",
+    "subtask_ref": "p5_stst_021",
+    "phase_index": 5,
+    "phase_name": "Filter, Search \u0026 Polish",
+    "title": "Implement JSON export",
+    "description": "Add data export to JSON. Button in settings panel (or status bar). Exports taskStore.tasks as formatted JSON file: designflow-backup-YYYY-MM-DD.json. Includes version field for future migration support.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Export downloads valid JSON file",
+        "checked": false
+      },
+      {
+        "text": "Filename includes current date",
+        "checked": false
+      },
+      {
+        "text": "JSON includes all tasks with all fields",
+        "checked": false
+      },
+      {
+        "text": "JSON is valid and can be re-imported",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 20,
+    "created_at": "2026-03-21T23:27:16.638554+05:30",
+    "updated_at": "2026-03-21T23:27:16.638554+05:30"
+  },
+  {
+    "id": "kt_1774115836638555000",
+    "project_id": "test4",
+    "subtask_ref": "p5_stst_022",
+    "phase_index": 5,
+    "phase_name": "Filter, Search \u0026 Polish",
+    "title": "Polish, animations, and accessibility pass",
+    "description": "Final polish: verify all hover states, focus indicators, transitions, and micro-animations match architecture-spec.md. Verify dark mode on all components. Test keyboard navigation. Check accessibility: ARIA labels, focus management, color contrast. Test at 200% browser zoom.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "All hover states match spec (lifts, shadows, color shifts)",
+        "checked": false
+      },
+      {
+        "text": "All animations respect prefers-reduced-motion",
+        "checked": false
+      },
+      {
+        "text": "Dark mode complete — every component styled for both themes",
+        "checked": false
+      },
+      {
+        "text": "Full keyboard navigation works (Tab, Shift+Tab, Enter, Esc)",
+        "checked": false
+      },
+      {
+        "text": "ARIA labels on all interactive elements",
+        "checked": false
+      },
+      {
+        "text": "Focus indicators styled (not browser default)",
+        "checked": false
+      },
+      {
+        "text": "No layout breaks at 200% zoom",
+        "checked": false
+      },
+      {
+        "text": "All touch targets minimum 44x44px",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 21,
+    "created_at": "2026-03-21T23:27:16.638555+05:30",
+    "updated_at": "2026-03-21T23:27:16.638555+05:30"
+  }
+]

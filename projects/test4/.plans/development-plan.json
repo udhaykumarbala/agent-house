@@ -1,0 +1,606 @@
+{
+  "task_id": "designflow-ux-todo",
+  "phases": [
+    {
+      "index": 1,
+      "name": "Project Foundation",
+      "description": "Scaffold the Vite + React + Tailwind + TypeScript project with design tokens, type definitions, and state management setup",
+      "subtasks": [
+        {
+          "id": "st_001",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Scaffold Vite project with dependencies",
+          "description": "Initialize Vite project with React + TypeScript template. Install: tailwindcss, postcss, autoprefixer, zustand, @dnd-kit/core, @dnd-kit/sortable, lucide-react, date-fns, nanoid. Configure Tailwind with design tokens from architecture spec.",
+          "assigned_agents": [
+            "senior_dev"
+          ],
+          "completion_criteria": [
+            "Vite dev server runs without errors",
+            "Tailwind configured with all color tokens from architecture-spec.md (bg-primary, accent-primary, category colors, etc.)",
+            "TypeScript compiles with no errors",
+            "All listed dependencies installed"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_002",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Create TypeScript type definitions",
+          "description": "Create src/types/index.ts with all types from architecture-spec.md: Task, Category, Tag, Settings, Attachment, Subtask, IterationState, Priority, CategoryType. Include default category and tag data.",
+          "assigned_agents": [
+            "senior_dev"
+          ],
+          "dependencies": [
+            "st_001"
+          ],
+          "completion_criteria": [
+            "All types match architecture-spec.md data model exactly",
+            "Default categories (Research, Design, Testing, Review, Discovery, Handoff, Admin) with correct colors",
+            "Default tags list matches spec",
+            "TypeScript strict mode passes"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_003",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Set up Zustand stores with localStorage persistence",
+          "description": "Create three Zustand stores: taskStore (tasks with CRUD, move, reorder), uiStore (view, filters, panels, search — NOT persisted), settingsStore (theme, columns, categories, tags — persisted). Wire up localStorage sync for taskStore and settingsStore.",
+          "assigned_agents": [
+            "senior_dev"
+          ],
+          "dependencies": [
+            "st_002"
+          ],
+          "completion_criteria": [
+            "taskStore has: tasks array, addTask, updateTask, deleteTask, moveTask, reorderTasks actions",
+            "uiStore has: view, activeFilters, selectedTaskId, detailPanelOpen, settingsOpen, searchQuery",
+            "settingsStore has: theme, columnOrder, customCategories, customTags with update actions",
+            "Data persists across page reloads",
+            "Auto-save with 300ms debounce"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_004",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Implement global styles and CSS variables",
+          "description": "Set up src/index.css with Tailwind directives, CSS custom properties for the full color palette (light + dark), typography scale, and spacing tokens. Configure Tailwind dark mode with 'class' strategy. Add custom font imports (Cabinet Grotesk, Inter, JetBrains Mono) via Google Fonts.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_001"
+          ],
+          "completion_criteria": [
+            "All color tokens from architecture-spec.md accessible as CSS variables",
+            "Dark mode toggles by adding 'dark' class to html element",
+            "Font stack: Cabinet Grotesk headings, Inter body, JetBrains Mono for estimates",
+            "Global reset and base styles applied",
+            "Custom scrollbar styling matching design language"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        }
+      ],
+      "status": "in_progress",
+      "qa_status": "pending",
+      "qa_feedback": "I'll conduct a thorough QA review of the Project Foundation phase. Let me start by reading the specifications and then reviewing the implementation.\n\u003cminimax:tool_call\u003e\n\u003cinvoke name=\"Read\"\u003e\n\u003cparameter name=\"file_path\"\u003e.plans/development-plan.json\u003c/parameter\u003e\n\u003c/invoke\u003e\n\u003cinvoke name=\"Read\"\u003e\n\u003cparameter name=\"file_path\"\u003e.plans/architecture-spec.md\u003c/parameter\u003e\n\u003c/invoke\u003e\n\u003c/minimax:tool_call\u003e",
+      "iteration": 3,
+      "started_at": "2026-03-21T23:27:16.642535+05:30"
+    },
+    {
+      "index": 2,
+      "name": "Core UI Shell",
+      "description": "Build the application shell: header, layout, theme toggle, and responsive container structure",
+      "subtasks": [
+        {
+          "id": "st_005",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Build AppShell and Header components",
+          "description": "Create layout/AppShell.tsx as the main container. Create layout/Header.tsx with: logo + 'DesignFlow' text, view toggle (Board/List/Focus), search icon button, settings icon button, theme toggle (sun/moon icon button). Header is fixed, 56px height with bottom border.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_001",
+            "st_003"
+          ],
+          "completion_criteria": [
+            "Header matches architecture-spec layout exactly",
+            "View toggle shows active state correctly",
+            "Theme toggle switches between light/dark and updates CSS variables",
+            "AppShell provides correct page layout structure",
+            "Responsive: collapses gracefully on tablet"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_006",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Implement dark/light theme toggle system",
+          "description": "Wire up settingsStore theme to document.documentElement.classList. Support 'light', 'dark', and 'system' modes. When system is selected, use media query match. Apply Tailwind dark: variants globally. Theme state persists to localStorage.",
+          "assigned_agents": [
+            "senior_dev"
+          ],
+          "dependencies": [
+            "st_003",
+            "st_005"
+          ],
+          "completion_criteria": [
+            "Theme toggle cycles through light → dark → system → light",
+            "System mode respects OS preference",
+            "All colors switch correctly between light and dark modes",
+            "Theme preference persists across page reloads",
+            "No flash of wrong theme on page load (inline script or CSS)"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_007",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Build StatusBar component",
+          "description": "Create layout/StatusBar.tsx: fixed bottom 32px bar showing task count summary ('25 tasks · 3 in progress') and 'Last saved just now' indicator. Auto-updates with task counts from taskStore. Shows save status: idle / saving / saved.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_003",
+            "st_005"
+          ],
+          "completion_criteria": [
+            "Shows accurate total task count and in-progress count",
+            "Save indicator shows correct state",
+            "Matches design spec (32px, bottom-fixed)",
+            "Does not interfere with content scroll"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        }
+      ],
+      "status": "pending",
+      "qa_status": "pending",
+      "iteration": 1
+    },
+    {
+      "index": 3,
+      "name": "Kanban Board \u0026 Task Cards",
+      "description": "Build the core kanban board with columns, task cards, drag-and-drop, and the quick add bar",
+      "subtasks": [
+        {
+          "id": "st_008",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Build KanbanBoard and KanbanColumn components",
+          "description": "Create board/KanbanBoard.tsx and board/KanbanColumn.tsx. KanbanBoard wraps DndContext. KanbanColumn renders a vertical list of TaskCards within a SortableContext. Column header shows name + task count badge. Each column is droppable zone with visual highlight on drag-over. Scrollable task list within column.",
+          "assigned_agents": [
+            "senior_dev"
+          ],
+          "dependencies": [
+            "st_001",
+            "st_002",
+            "st_003"
+          ],
+          "completion_criteria": [
+            "4 columns render: Backlog, In Progress, In Review, Approved",
+            "Tasks render in correct columns from store",
+            "Drop zones highlight on drag-over (2px indigo border + light indigo bg)",
+            "Column header shows task count",
+            "Empty columns show dot-grid placeholder",
+            "Horizontal scroll on overflow"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_009",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Build TaskCard component with all states",
+          "description": "Create board/TaskCard.tsx. Render: category chip, task title (truncated 3 lines), priority dots (1-5), time estimate (from timeEstimate field), due date, attachment icon (if attachments exist), subtask progress bar. Support all card states: default, hover (lift -2px), dragging (elevated + 3deg rotation + 50% origin opacity), selected (indigo border).",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_002",
+            "st_003",
+            "st_008"
+          ],
+          "completion_criteria": [
+            "Card renders all metadata fields correctly",
+            "Category chip shows correct color from category definition",
+            "Hover state: translateY -2px + stronger shadow",
+            "Dragging state: elevated shadow + rotation + origin opacity",
+            "Selected state: 2px indigo border",
+            "Priority dots: filled dots for active priority, empty for rest",
+            "Subtask progress bar: thin colored bar showing X/Y completed",
+            "Attachments icon shown only when attachments exist"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_010",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Implement drag-and-drop with @dnd-kit",
+          "description": "Implement full drag-and-drop using @dnd-kit/core and @dnd-kit/sortable. Cards are useSortable items. Columns are droppable zones with custom collision detection. Cross-column drag moves task between iteration states. Within-column drag reorders by position. Keyboard alternative: Space to pick up selected, arrows to move, Space to drop, Esc to cancel.",
+          "assigned_agents": [
+            "senior_dev"
+          ],
+          "dependencies": [
+            "st_008",
+            "st_009"
+          ],
+          "completion_criteria": [
+            "Drag card from one column to another — task iterationState updates",
+            "Reorder within column — position updates correctly",
+            "Visual feedback during drag matches spec (shadow, rotation, opacity)",
+            "Drop zone highlights correctly",
+            "Touch: long-press activates drag mode",
+            "Keyboard: full alternative to mouse drag works",
+            "State persists after drag-drop (localStorage)"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_011",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Build QuickAddBar with natural language parsing",
+          "description": "Create shared/QuickAddBar.tsx: sticky input bar with placeholder 'Add a task... (Cmd+K)'. Implement natural language parser in utils/naturalLanguage.ts that extracts #category, @dueDate, Xh/Xm time estimate. On submit: create task with parsed fields, assign to Backlog (or current column context), clear input. Cmd+K shortcut focuses the bar from anywhere.",
+          "assigned_agents": [
+            "senior_dev"
+          ],
+          "dependencies": [
+            "st_002",
+            "st_003",
+            "st_005"
+          ],
+          "completion_criteria": [
+            "QuickAddBar is sticky below header",
+            "Cmd+K focuses the input from anywhere in the app",
+            "Parses #research → category=Research (and all other categories)",
+            "Parses tomorrow, next monday, mar 25, +3d → dueDate",
+            "Parses 2h, 30m, 2.5h → timeEstimate (in minutes)",
+            "Creates task in taskStore on Enter",
+            "Empty submit is silently ignored",
+            "Esc clears input and blurs"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_012",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Build inline Add Task in columns",
+          "description": "Add '+ Add task' button at bottom of each KanbanColumn. Clicking opens an inline input within the column (not the global QuickAddBar). Enter submits (creates task in that column), Esc cancels. Uses same natural language parser as QuickAddBar.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_008",
+            "st_011"
+          ],
+          "completion_criteria": [
+            "+ Add task button visible at bottom of each column",
+            "Click opens inline input within the column",
+            "Enter creates task in that specific column",
+            "Esc cancels and hides the input",
+            "Created task immediately appears in column"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        }
+      ],
+      "status": "pending",
+      "qa_status": "pending",
+      "iteration": 1
+    },
+    {
+      "index": 4,
+      "name": "Task Detail Panel",
+      "description": "Build the slide-in task detail panel with all editable fields, attachments, and subtasks",
+      "subtasks": [
+        {
+          "id": "st_013",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Build TaskDetailPanel shell",
+          "description": "Create task/TaskDetailPanel.tsx: slide-in panel from right (250ms ease-out). 400px wide on desktop, full-width bottom sheet on mobile. Semi-transparent backdrop overlay (click to close). X button top-right. Focus trap. Closes on Esc. No save button — auto-save on every change.",
+          "assigned_agents": [
+            "senior_dev"
+          ],
+          "dependencies": [
+            "st_002",
+            "st_003",
+            "st_009"
+          ],
+          "completion_criteria": [
+            "Panel slides in from right with 250ms ease-out animation",
+            "Backdrop overlay closes panel on click",
+            "Esc closes panel",
+            "Focus is trapped within panel when open",
+            "Panel width: 400px desktop, full-width mobile",
+            "X button closes panel"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_014",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Implement all task detail fields",
+          "description": "Add all editable fields to TaskDetailPanel: title (large inline-editable), category dropdown (colored chips), iteration state dropdown, priority (1-5 stars), due date (date picker + natural language input), time estimate (hours input), tags (multi-select with create custom). Each field auto-saves on change via updateTask in taskStore.",
+          "assigned_agents": [
+            "senior_dev"
+          ],
+          "dependencies": [
+            "st_013"
+          ],
+          "completion_criteria": [
+            "Title: click to edit, blur saves, large text",
+            "Category: dropdown with colored chip options",
+            "Iteration state: dropdown matching column names",
+            "Priority: 1-5 star selector with visual feedback",
+            "Due date: date picker input, accepts ISO dates",
+            "Time estimate: hours input (accepts decimal)",
+            "Tags: multi-select dropdown from default tags list + create new",
+            "All changes auto-save to taskStore"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_015",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Implement attachments and subtasks",
+          "description": "Add attachment and subtask sections to TaskDetailPanel. Attachments: URL input field, add button, each shows as clickable chip with label. URL auto-prepends https:// if missing. Subtasks: list of checklist items with checkbox, add subtask input at bottom. Each subtask has delete button. Completed subtasks get strikethrough.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_013",
+            "st_014"
+          ],
+          "completion_criteria": [
+            "Attachments: can add URL, displays as clickable chip",
+            "URLs without protocol auto-prepend https://",
+            "Subtasks: can add new subtask items",
+            "Subtasks: can toggle complete (checkbox)",
+            "Subtasks: can delete individual items",
+            "Subtask completion triggers progress bar update on TaskCard",
+            "All changes persist to taskStore"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_016",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Implement task card click to open panel",
+          "description": "Wire up TaskCard click → uiStore.selectedTaskId + detailPanelOpen. Clicking a card in the board opens the TaskDetailPanel populated with that task's data. Clicking outside the panel or pressing Esc closes it and clears selectedTaskId.",
+          "assigned_agents": [
+            "senior_dev"
+          ],
+          "dependencies": [
+            "st_009",
+            "st_013",
+            "st_014",
+            "st_015"
+          ],
+          "completion_criteria": [
+            "Clicking any TaskCard opens the detail panel",
+            "Panel populates with correct task data",
+            "Editing any field updates the card in the board view (reactive)",
+            "Closing panel clears selectedTaskId",
+            "Can open a different task's panel by clicking another card"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        }
+      ],
+      "status": "pending",
+      "qa_status": "pending",
+      "iteration": 1
+    },
+    {
+      "index": 5,
+      "name": "Filter, Search \u0026 Polish",
+      "description": "Add category filtering, search, empty states, and polish pass",
+      "subtasks": [
+        {
+          "id": "st_017",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Build FilterBar component",
+          "description": "Create layout/FilterBar.tsx: horizontal row of category toggle chips below QuickAddBar. Each chip shows category name + count of tasks in that category. Click toggles filter. Active filter: filled background + checkmark. 'All' button clears filters. Multiple categories use OR logic. Active filter chips are removable (X button).",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_003",
+            "st_005",
+            "st_011"
+          ],
+          "completion_criteria": [
+            "Category chips for all 7 default categories render",
+            "Each chip shows task count for that category",
+            "Click toggles filter active/inactive",
+            "Active filters have filled bg + checkmark",
+            "Multiple filters combine with OR logic",
+            "X button on active chips removes filter",
+            "'All' button resets all filters",
+            "Filter state updates board display reactively"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_018",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Implement search functionality",
+          "description": "Implement Cmd+F search: focuses search input in header. Search queries taskStore.tasks by title (substring match, case-insensitive). Results highlight matching text. Clear button resets search. Esc clears and closes.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_003",
+            "st_005"
+          ],
+          "completion_criteria": [
+            "Cmd+F focuses search input",
+            "Search filters visible tasks in real-time",
+            "Matching text highlighted in task cards",
+            "Clear (X) button resets search",
+            "Esc closes search and clears query",
+            "Empty search shows all tasks"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_019",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Build EmptyState components",
+          "description": "Create shared/EmptyState.tsx component with line-art SVG illustration, heading, subtext, and CTA button. Show in: empty column (contextual: 'Nothing in Backlog yet'), empty board (full-page: 'Your design workflow starts here'), empty search results. Context-aware copy for each scenario.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_008",
+            "st_018"
+          ],
+          "completion_criteria": [
+            "Empty column: subtle dot-grid placeholder + inline + Add button",
+            "Empty board: centered empty state with friendly copy + prominent Add button",
+            "Empty search: 'No tasks match \"query\"' with clear search button",
+            "All empty states use warm, encouraging copy (not generic)"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_020",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Implement task completion flow",
+          "description": "Implement task completion: checkbox on TaskCard click → mark task as completed (completedAt timestamp). Card animates to completed state (strikethrough + muted colors). After 2 seconds, card moves to Completed section (collapsible at bottom of Approved column). Completed section can be collapsed/expanded.",
+          "assigned_agents": [
+            "senior_dev"
+          ],
+          "dependencies": [
+            "st_009",
+            "st_016"
+          ],
+          "completion_criteria": [
+            "Checkbox click marks task complete with animation",
+            "Completed card shows strikethrough + muted colors",
+            "Card moves to Completed section after 2 seconds",
+            "Completed section is collapsible",
+            "Completed section shows within Approved column"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_021",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Implement JSON export",
+          "description": "Add data export to JSON. Button in settings panel (or status bar). Exports taskStore.tasks as formatted JSON file: designflow-backup-YYYY-MM-DD.json. Includes version field for future migration support.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_003"
+          ],
+          "completion_criteria": [
+            "Export downloads valid JSON file",
+            "Filename includes current date",
+            "JSON includes all tasks with all fields",
+            "JSON is valid and can be re-imported"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_022",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Polish, animations, and accessibility pass",
+          "description": "Final polish: verify all hover states, focus indicators, transitions, and micro-animations match architecture-spec.md. Verify dark mode on all components. Test keyboard navigation. Check accessibility: ARIA labels, focus management, color contrast. Test at 200% browser zoom.",
+          "assigned_agents": [
+            "senior_dev"
+          ],
+          "dependencies": [
+            "st_017",
+            "st_018",
+            "st_019",
+            "st_020",
+            "st_021"
+          ],
+          "completion_criteria": [
+            "All hover states match spec (lifts, shadows, color shifts)",
+            "All animations respect prefers-reduced-motion",
+            "Dark mode complete — every component styled for both themes",
+            "Full keyboard navigation works (Tab, Shift+Tab, Enter, Esc)",
+            "ARIA labels on all interactive elements",
+            "Focus indicators styled (not browser default)",
+            "No layout breaks at 200% zoom",
+            "All touch targets minimum 44x44px"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        }
+      ],
+      "status": "pending",
+      "qa_status": "pending",
+      "iteration": 1
+    }
+  ],
+  "created_by": "architect",
+  "approved_by": "",
+  "created_at": "2026-03-21T23:30:00Z"
+}

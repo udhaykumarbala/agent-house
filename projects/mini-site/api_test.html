@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Countdown Timer - Manual Test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; background: #1a1a2e; color: #e4e4e7; }
+    h1 { color: #E8C547; }
+    h2 { color: #8A8A8F; margin-top: 2rem; }
+    .test-case { background: #141419; border-radius: 8px; padding: 1rem 1.5rem; margin: 0.75rem 0; border-left: 3px solid #E8C547; }
+    .test-case h3 { margin: 0 0 0.5rem; color: #F5F5F5; font-size: 0.95rem; }
+    .test-case p { margin: 0; color: #8A8A8F; font-size: 0.85rem; }
+    .steps { list-style: decimal; padding-left: 1.5rem; }
+    .steps li { margin: 0.3rem 0; color: #8A8A8F; font-size: 0.85rem; }
+    .expected { color: #E8C547; font-style: italic; }
+    code { background: #242429; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <h1>Countdown Timer - Test Cases</h1>
+  <p>Manual test plan for the countdown timer application. No APIs — this is a client-side only app.</p>
+
+  <h2>1. Initial State</h2>
+
+  <div class="test-case">
+    <h3>TC-01: Page loads with correct initial state</h3>
+    <ol class="steps">
+      <li>Open the application in a browser</li>
+    </ol>
+    <p class="expected">Expected: Timer shows "01:00", status says "Ready", only "Start" button visible, progress ring is full (no offset).</p>
+  </div>
+
+  <h2>2. Timer Controls</h2>
+
+  <div class="test-case">
+    <h3>TC-02: Start countdown</h3>
+    <ol class="steps">
+      <li>Click the "Start" button</li>
+    </ol>
+    <p class="expected">Expected: Timer begins counting down from 01:00. Button label changes to "Pause". "Reset" button appears. Status reads "Counting down". Progress ring begins depleting.</p>
+  </div>
+
+  <div class="test-case">
+    <h3>TC-03: Pause countdown</h3>
+    <ol class="steps">
+      <li>Start the timer</li>
+      <li>Click "Pause" while timer is running</li>
+    </ol>
+    <p class="expected">Expected: Timer stops. Button label changes to "Resume". Status reads "Paused". Progress ring freezes at current position.</p>
+  </div>
+
+  <div class="test-case">
+    <h3>TC-04: Resume countdown</h3>
+    <ol class="steps">
+      <li>Start, then pause the timer</li>
+      <li>Click "Resume"</li>
+    </ol>
+    <p class="expected">Expected: Timer resumes from paused time. Button reverts to "Pause". Status reads "Counting down".</p>
+  </div>
+
+  <div class="test-case">
+    <h3>TC-05: Reset countdown</h3>
+    <ol class="steps">
+      <li>Start the timer, let it run a few seconds</li>
+      <li>Click "Reset"</li>
+    </ol>
+    <p class="expected">Expected: Timer resets to 01:00. Status reads "Ready". Only "Start" button visible. Progress ring returns to full.</p>
+  </div>
+
+  <div class="test-case">
+    <h3>TC-06: Timer reaches zero</h3>
+    <ol class="steps">
+      <li>Start the timer and wait until it reaches 00:00</li>
+    </ol>
+    <p class="expected">Expected: Timer shows "00:00". Status reads "Time's up". "Start" button hidden, only "Reset" visible. Timer digits pulse slowly for ~4 seconds.</p>
+  </div>
+
+  <h2>3. Visual Feedback</h2>
+
+  <div class="test-case">
+    <h3>TC-07: Danger state under 10 seconds</h3>
+    <ol class="steps">
+      <li>Start the timer</li>
+      <li>Observe when timer reaches 00:10</li>
+    </ol>
+    <p class="expected">Expected: Timer digits change to red (#E85454). Progress ring turns red. Glow effect shifts to red.</p>
+  </div>
+
+  <div class="test-case">
+    <h3>TC-08: Progress ring animation</h3>
+    <ol class="steps">
+      <li>Start the timer</li>
+      <li>Observe the SVG progress ring</li>
+    </ol>
+    <p class="expected">Expected: Ring smoothly depletes counterclockwise over 60 seconds. Transition is smooth (0.35s ease).</p>
+  </div>
+
+  <h2>4. Keyboard Shortcuts</h2>
+
+  <div class="test-case">
+    <h3>TC-09: Space to start/pause</h3>
+    <ol class="steps">
+      <li>Press <code>Space</code> when idle</li>
+      <li>Press <code>Space</code> while running</li>
+      <li>Press <code>Space</code> while paused</li>
+    </ol>
+    <p class="expected">Expected: Space toggles between start/pause/resume, same as clicking the primary button.</p>
+  </div>
+
+  <div class="test-case">
+    <h3>TC-10: R to reset</h3>
+    <ol class="steps">
+      <li>Start the timer</li>
+      <li>Press <code>R</code></li>
+    </ol>
+    <p class="expected">Expected: Timer resets to 01:00, same as clicking Reset.</p>
+  </div>
+
+  <h2>5. Edge Cases</h2>
+
+  <div class="test-case">
+    <h3>TC-11: Multiple rapid clicks on Start</h3>
+    <ol class="steps">
+      <li>Click "Start" rapidly 5 times</li>
+    </ol>
+    <p class="expected">Expected: Timer starts once and functions normally. No duplicate intervals or racing conditions.</p>
+  </div>
+
+  <div class="test-case">
+    <h3>TC-12: Reset while paused</h3>
+    <ol class="steps">
+      <li>Start, then pause the timer</li>
+      <li>Click "Reset"</li>
+    </ol>
+    <p class="expected">Expected: Timer resets cleanly to 01:00. No lingering intervals.</p>
+  </div>
+</body>
+</html>

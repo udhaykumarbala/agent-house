@@ -1,0 +1,16 @@
+{
+  "id": "email_1776326911437",
+  "from": "ahmed.rahman@vendorxyz.com",
+  "from_name": "Ahmed Rahman",
+  "to": "projects@epc-demo.com",
+  "subject": "Steel Delivery Update — Project Alpha",
+  "body": "Dear Sir,\n\nWe regret to inform you that the structural steel delivery (Order #ST-2026-0847) for Project Alpha will be delayed by approximately 2 weeks.\n\nOriginal delivery date: April 5, 2026\nRevised delivery date: April 19, 2026\n\nThe delay is due to supply chain disruptions at our manufacturing facility in Jamshedpur. We are working to expedite the order and will provide weekly updates.\n\nWe apologize for the inconvenience.\n\nBest regards,\nAhmed Rahman\nSales Manager, XYZ Steel Corp",
+  "date": "2026-04-16T13:38:31.437748+05:30",
+  "read": false,
+  "replied": false,
+  "category": "vendor",
+  "vendor_id": "vendor_xyz",
+  "trust_status": "trusted",
+  "trust_reason": "Sender matches XYZ Steel Corp's trusted email list",
+  "direction": "inbound"
+}

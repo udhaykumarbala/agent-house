@@ -1,0 +1,22 @@
+{
+  "id": "hse",
+  "name": "HSE Manager",
+  "color": "#EF4444",
+  "icon": "🦺",
+  "execution": {
+    "default_mode": "oneshot",
+    "phase_modes": {
+      "research": "oneshot",
+      "planning": "oneshot"
+    },
+    "model": "",
+    "max_turns": 50,
+    "timeout": "10m",
+    "claude_permission": "bypassPermissions"
+  },
+  "phases": ["research", "planning"],
+  "tools": {
+    "builtin": ["Read", "Write", "Glob", "Grep"],
+    "mcp_servers": []
+  }
+}

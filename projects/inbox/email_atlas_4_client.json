@@ -1,0 +1,16 @@
+{
+  "id": "email_atlas_4_client",
+  "from": "sarah.jones@clientabc.com",
+  "from_name": "Sarah Jones — Client ABC",
+  "to": "ops@atlas-construction.com",
+  "subject": "Request for Phase 2 Progress Update — Project Alpha",
+  "body": "Hi team,\n\nCould you send the Phase 2 progress update for **Project Alpha (Solar Farm)** by end of week? Our board reviews on April 1.\n\nWe need: % completion, current-phase status, budget utilisation, updated timeline, and risk register.\n\nThanks,\nSarah Jones\nDirector · Client ABC",
+  "date": "2026-05-21T19:07:11Z",
+  "read": false,
+  "replied": false,
+  "category": "client",
+  "vendor_id": null,
+  "trust_status": "trusted",
+  "trust_reason": "Long-standing client; board update cadence",
+  "direction": "inbound"
+}

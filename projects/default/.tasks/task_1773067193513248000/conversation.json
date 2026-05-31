@@ -1,0 +1,62 @@
+[
+  {
+    "id": "20260309200953-6ummme",
+    "type": "task",
+    "from": "user",
+    "to": "ceo",
+    "content": "Create a static webpage about a agenthouse application where multiple ai agents combine to run a company in different roles",
+    "metadata": {
+      "project_id": "default",
+      "task_id": "task_1773067193513248000"
+    },
+    "timestamp": "2026-03-09T20:09:53.516588+05:30"
+  },
+  {
+    "id": "20260309200953-ayyyqq",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Entering Template Selection phase",
+    "metadata": {
+      "project_id": "default",
+      "task_id": "task_1773067193513248000"
+    },
+    "timestamp": "2026-03-09T20:09:53.518732+05:30"
+  },
+  {
+    "id": "20260309200954-aaaa22",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Entering Research phase",
+    "metadata": {
+      "project_id": "default",
+      "task_id": "task_1773067193513248000"
+    },
+    "timestamp": "2026-03-09T20:09:54.102889+05:30"
+  },
+  {
+    "id": "20260309200954-ua222u",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Entering Planning phase",
+    "metadata": {
+      "project_id": "default",
+      "task_id": "task_1773067193513248000"
+    },
+    "timestamp": "2026-03-09T20:09:54.248717+05:30"
+  },
+  {
+    "id": "20260309200954-2iiaaa",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Entering Discussion phase",
+    "metadata": {
+      "project_id": "default",
+      "task_id": "task_1773067193513248000"
+    },
+    "timestamp": "2026-03-09T20:09:54.341554+05:30"
+  }
+]

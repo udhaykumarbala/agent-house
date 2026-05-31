@@ -1,0 +1,614 @@
+[
+  {
+    "id": "kt_1773763998620167000",
+    "project_id": "converter",
+    "subtask_ref": "p1_stst_001",
+    "phase_index": 1,
+    "phase_name": "Core Structure \u0026 Conversion Engine",
+    "title": "Initialize project and configure build tooling",
+    "description": "Set up Vite + TypeScript + Tailwind CSS project. Configure tailwind.config.ts with custom theme (colors, fonts, spacing, border-radius from architecture-spec.md). Configure vite.config.ts (no source maps in prod). Add Google Fonts (Space Grotesk + Inter) to index.html. Add CSP meta tag and base HTML structure.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Vite dev server runs without errors",
+        "checked": false
+      },
+      {
+        "text": "Tailwind CSS processes custom theme tokens from architecture-spec.md color palette",
+        "checked": false
+      },
+      {
+        "text": "TypeScript compiles with strict mode",
+        "checked": false
+      },
+      {
+        "text": "Space Grotesk and Inter fonts load correctly",
+        "checked": false
+      },
+      {
+        "text": "CSP meta tag present in index.html head",
+        "checked": false
+      },
+      {
+        "text": "index.html has semantic HTML5 structure",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 0,
+    "created_at": "2026-03-17T21:43:18.620168+05:30",
+    "updated_at": "2026-03-17T21:43:18.620168+05:30"
+  },
+  {
+    "id": "kt_1773763998620171000",
+    "project_id": "converter",
+    "subtask_ref": "p1_stst_002",
+    "phase_index": 1,
+    "phase_name": "Core Structure \u0026 Conversion Engine",
+    "title": "Implement conversion engine and unit definitions",
+    "description": "Create types.ts with all TypeScript interfaces. Create units.ts with all unit categories, units, factors, and default pairs per architecture-spec.md. Create engine.ts with pure conversion functions (base-unit normalization for length/weight, formula-based for temperature). Create format.ts for number formatting with significant digits.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "All 8 length units defined with correct factors",
+        "checked": false
+      },
+      {
+        "text": "All 6 weight units defined with correct factors",
+        "checked": false
+      },
+      {
+        "text": "All 3 temperature units defined with correct formulas",
+        "checked": false
+      },
+      {
+        "text": "convert() function handles all unit pairs correctly",
+        "checked": false
+      },
+      {
+        "text": "Temperature conversions are accurate for all 6 paths (C↔F, C↔K, F↔K)",
+        "checked": false
+      },
+      {
+        "text": "formatResult() outputs up to 6 significant digits with trimmed trailing zeros",
+        "checked": false
+      },
+      {
+        "text": "sanitizeNumericInput() rejects non-numeric input and returns null",
+        "checked": false
+      },
+      {
+        "text": "Edge cases handled: 0, negative numbers, very large numbers, empty input",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 1,
+    "created_at": "2026-03-17T21:43:18.620171+05:30",
+    "updated_at": "2026-03-17T21:43:18.620171+05:30"
+  },
+  {
+    "id": "kt_1773763998620185000",
+    "project_id": "converter",
+    "subtask_ref": "p1_stst_003",
+    "phase_index": 1,
+    "phase_name": "Core Structure \u0026 Conversion Engine",
+    "title": "Build main layout and category tabs",
+    "description": "Create the single-screen layout structure: app title, category tabs (Length/Weight/Temperature), FROM card, swap button, TO card, and quick reference line. Implement category tab switching logic in tabs.ts. Wire up app.ts as the central controller with ConversionState.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Single-screen layout matches wireframe from architecture-spec.md",
+        "checked": false
+      },
+      {
+        "text": "Three category tabs render and are clickable",
+        "checked": false
+      },
+      {
+        "text": "Active tab is visually distinguished with accent color",
+        "checked": false
+      },
+      {
+        "text": "Switching tabs updates state.category and reloads default units",
+        "checked": false
+      },
+      {
+        "text": "FROM and TO card sections are present with proper structure",
+        "checked": false
+      },
+      {
+        "text": "Swap button is positioned between cards",
+        "checked": false
+      },
+      {
+        "text": "Quick reference line renders at bottom",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 2,
+    "created_at": "2026-03-17T21:43:18.620185+05:30",
+    "updated_at": "2026-03-17T21:43:18.620185+05:30"
+  },
+  {
+    "id": "kt_1773763998620188000",
+    "project_id": "converter",
+    "subtask_ref": "p1_stst_004",
+    "phase_index": 1,
+    "phase_name": "Core Structure \u0026 Conversion Engine",
+    "title": "Implement unit pill selectors",
+    "description": "Build the horizontal scrollable pill/chip unit selector component in selector.ts. Each unit in the active category renders as a tappable pill. Active pill gets accent fill. Clicking a pill updates the fromUnit or toUnit in state and triggers recalculation.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Unit pills render horizontally for the active category",
+        "checked": false
+      },
+      {
+        "text": "Active unit pill has copper accent background with white text",
+        "checked": false
+      },
+      {
+        "text": "Inactive pills have subtle border/background per design spec",
+        "checked": false
+      },
+      {
+        "text": "Clicking a pill updates state and triggers conversion",
+        "checked": false
+      },
+      {
+        "text": "FROM and TO selectors work independently",
+        "checked": false
+      },
+      {
+        "text": "Pills scroll horizontally on mobile when they overflow",
+        "checked": false
+      },
+      {
+        "text": "Default units are pre-selected per category (km↔mi, kg↔lb, °C↔°F)",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 3,
+    "created_at": "2026-03-17T21:43:18.620188+05:30",
+    "updated_at": "2026-03-17T21:43:18.620188+05:30"
+  },
+  {
+    "id": "kt_1773763998620189000",
+    "project_id": "converter",
+    "subtask_ref": "p1_stst_005",
+    "phase_index": 1,
+    "phase_name": "Core Structure \u0026 Conversion Engine",
+    "title": "Implement input fields and live conversion",
+    "description": "Build editable input fields for FROM and TO values in input.ts. Wire up real-time conversion: as user types in either field, the other field updates live via engine.ts. Implement numeric input validation (digits, decimal, negative sign only). Format results via format.ts.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "FROM input field accepts numeric input",
+        "checked": false
+      },
+      {
+        "text": "TO field updates in real-time as user types in FROM",
+        "checked": false
+      },
+      {
+        "text": "Bidirectional: typing in TO updates FROM",
+        "checked": false
+      },
+      {
+        "text": "Non-numeric characters are rejected/stripped",
+        "checked": false
+      },
+      {
+        "text": "Results display with proper precision (up to 6 significant digits)",
+        "checked": false
+      },
+      {
+        "text": "Quick reference line updates with current unit pair (e.g., '1 km = 0.6214 mi')",
+        "checked": false
+      },
+      {
+        "text": "Empty input shows empty result (not '0' or 'NaN')",
+        "checked": false
+      },
+      {
+        "text": "All DOM rendering uses textContent, never innerHTML",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 4,
+    "created_at": "2026-03-17T21:43:18.62019+05:30",
+    "updated_at": "2026-03-17T21:43:18.62019+05:30"
+  },
+  {
+    "id": "kt_1773763998620195000",
+    "project_id": "converter",
+    "subtask_ref": "p1_stst_006",
+    "phase_index": 1,
+    "phase_name": "Core Structure \u0026 Conversion Engine",
+    "title": "Apply base styling with dark theme",
+    "description": "Apply the Warm Obsidian + Copper color palette from architecture-spec.md. Style all elements: page background, cards with surface color and subtle borders, typography scale (Space Grotesk for numbers, Inter for UI), pill selectors, swap button, and quick reference. Implement CSS custom properties for theme tokens.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Page background uses --bg (#131110)",
+        "checked": false
+      },
+      {
+        "text": "Cards use --bg-surface (#242019) with --border-subtle borders",
+        "checked": false
+      },
+      {
+        "text": "Result value renders in Space Grotesk at 3.5rem/500 weight, input value at 2.5rem/400 weight",
+        "checked": false
+      },
+      {
+        "text": "Labels render in Inter at specified sizes from typography scale",
+        "checked": false
+      },
+      {
+        "text": "Copper accent (#C17F59) used for active states",
+        "checked": false
+      },
+      {
+        "text": "Text hierarchy uses --text-primary, --text-secondary, --text-tertiary",
+        "checked": false
+      },
+      {
+        "text": "Pill selectors styled with border-radius 6px (--radius-sm) — refined chip, not full pill",
+        "checked": false
+      },
+      {
+        "text": "Swap button is circular with accent color",
+        "checked": false
+      },
+      {
+        "text": "Responsive: centered card on desktop (max-width 480px), full-width on mobile",
+        "checked": false
+      },
+      {
+        "text": "Overall look matches the premium 'digital Braun' aesthetic",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 5,
+    "created_at": "2026-03-17T21:43:18.620196+05:30",
+    "updated_at": "2026-03-17T21:43:18.620196+05:30"
+  },
+  {
+    "id": "kt_1773763998620197000",
+    "project_id": "converter",
+    "subtask_ref": "p2_stst_007",
+    "phase_index": 2,
+    "phase_name": "Micro-Interactions \u0026 Polish",
+    "title": "Implement tab sliding pill animation",
+    "description": "Add a sliding background pill that animates between category tabs when switching. The pill smoothly translates from the current tab position to the new tab. Content area cross-fades with slight vertical shift during category change.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Background pill slides smoothly between tabs (300ms, cubic-bezier)",
+        "checked": false
+      },
+      {
+        "text": "Content cross-fades during category switch (opacity + translateY)",
+        "checked": false
+      },
+      {
+        "text": "Animation respects prefers-reduced-motion",
+        "checked": false
+      },
+      {
+        "text": "No layout shift or jank during transition",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 6,
+    "created_at": "2026-03-17T21:43:18.620197+05:30",
+    "updated_at": "2026-03-17T21:43:18.620197+05:30"
+  },
+  {
+    "id": "kt_1773763998620198000",
+    "project_id": "converter",
+    "subtask_ref": "p2_stst_008",
+    "phase_index": 2,
+    "phase_name": "Micro-Interactions \u0026 Polish",
+    "title": "Implement swap button animation",
+    "description": "Add 180° rotation animation to the swap button icon on click. Simultaneously cross-fade the FROM/TO values and swap unit selections. Use spring-like easing for overshoot feel.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Swap icon rotates 180° on each click (accumulates rotation)",
+        "checked": false
+      },
+      {
+        "text": "Animation uses spring easing (cubic-bezier(0.34, 1.56, 0.64, 1))",
+        "checked": false
+      },
+      {
+        "text": "FROM and TO values cross-fade to new positions",
+        "checked": false
+      },
+      {
+        "text": "Unit pill selections swap simultaneously",
+        "checked": false
+      },
+      {
+        "text": "Conversion recalculates correctly after swap",
+        "checked": false
+      },
+      {
+        "text": "Respects prefers-reduced-motion",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 7,
+    "created_at": "2026-03-17T21:43:18.620198+05:30",
+    "updated_at": "2026-03-17T21:43:18.620198+05:30"
+  },
+  {
+    "id": "kt_1773763998620199000",
+    "project_id": "converter",
+    "subtask_ref": "p2_stst_009",
+    "phase_index": 2,
+    "phase_name": "Micro-Interactions \u0026 Polish",
+    "title": "Add input focus effects and pill press animations",
+    "description": "Implement focus glow on active input card (copper-tinted box-shadow). Add subtle scale press effect on unit pill clicks (0.95→1.0). Add hover states for desktop on all interactive elements.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Active input card shows copper glow (box-shadow with accent color at low opacity)",
+        "checked": false
+      },
+      {
+        "text": "Card border becomes more visible on focus",
+        "checked": false
+      },
+      {
+        "text": "Unit pills have scale press effect on click (150ms spring)",
+        "checked": false
+      },
+      {
+        "text": "Desktop hover states on pills, swap button, and tabs",
+        "checked": false
+      },
+      {
+        "text": "Swap button has hover scale/glow effect",
+        "checked": false
+      },
+      {
+        "text": "All transitions are smooth (200ms ease-in-out)",
+        "checked": false
+      },
+      {
+        "text": "Respects prefers-reduced-motion",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 8,
+    "created_at": "2026-03-17T21:43:18.620199+05:30",
+    "updated_at": "2026-03-17T21:43:18.6202+05:30"
+  },
+  {
+    "id": "kt_1773763998621337000",
+    "project_id": "converter",
+    "subtask_ref": "p2_stst_010",
+    "phase_index": 2,
+    "phase_name": "Micro-Interactions \u0026 Polish",
+    "title": "Implement number transition animations",
+    "description": "Add subtle fade+scale micro-animation when result value changes. Digits should transition smoothly rather than snapping to new values. Implement in animations.ts.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Result value animates when it changes (fade or scale transition)",
+        "checked": false
+      },
+      {
+        "text": "Animation is subtle and fast (200ms) — not distracting",
+        "checked": false
+      },
+      {
+        "text": "Works correctly with rapid input (debounce or cancel previous animation)",
+        "checked": false
+      },
+      {
+        "text": "No layout shift during animation",
+        "checked": false
+      },
+      {
+        "text": "Respects prefers-reduced-motion",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 9,
+    "created_at": "2026-03-17T21:43:18.621338+05:30",
+    "updated_at": "2026-03-17T21:43:18.621338+05:30"
+  },
+  {
+    "id": "kt_1773763998621339000",
+    "project_id": "converter",
+    "subtask_ref": "p3_stst_011",
+    "phase_index": 3,
+    "phase_name": "Theme Toggle, Accessibility \u0026 Final Polish",
+    "title": "Implement light/dark mode toggle",
+    "description": "Add a theme toggle button (sun/moon icon) in the header. Implement light mode color palette from architecture-spec.md. Default to user's system preference via prefers-color-scheme. Store preference in localStorage. Toggle transitions all colors smoothly.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Toggle button renders with appropriate sun/moon icon",
+        "checked": false
+      },
+      {
+        "text": "Clicking toggle switches between dark and light themes",
+        "checked": false
+      },
+      {
+        "text": "Light mode uses correct palette (warm off-white bg, white cards, deeper copper accent)",
+        "checked": false
+      },
+      {
+        "text": "Default respects prefers-color-scheme system setting",
+        "checked": false
+      },
+      {
+        "text": "Preference persisted in localStorage and restored on reload",
+        "checked": false
+      },
+      {
+        "text": "Color transitions are smooth (200ms) during toggle",
+        "checked": false
+      },
+      {
+        "text": "All text maintains WCAG AA contrast ratios in both themes",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 10,
+    "created_at": "2026-03-17T21:43:18.621339+05:30",
+    "updated_at": "2026-03-17T21:43:18.621339+05:30"
+  },
+  {
+    "id": "kt_1773763998621341000",
+    "project_id": "converter",
+    "subtask_ref": "p3_stst_012",
+    "phase_index": 3,
+    "phase_name": "Theme Toggle, Accessibility \u0026 Final Polish",
+    "title": "Accessibility audit and fixes",
+    "description": "Ensure full keyboard navigation (Tab order through tabs, pills, inputs, swap, theme toggle). Add all ARIA attributes. Wrap result in aria-live region. Verify contrast ratios. Test with screen reader.",
+    "assigned_agent": "senior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "All interactive elements reachable via Tab key in logical order",
+        "checked": false
+      },
+      {
+        "text": "Focus indicators visible on all focusable elements (copper focus ring)",
+        "checked": false
+      },
+      {
+        "text": "All buttons and inputs have descriptive aria-label attributes",
+        "checked": false
+      },
+      {
+        "text": "Result value wrapped in aria-live='polite' for screen reader announcements",
+        "checked": false
+      },
+      {
+        "text": "Category tabs use proper ARIA role='tablist' / role='tab' pattern",
+        "checked": false
+      },
+      {
+        "text": "All text passes WCAG AA contrast ratio (4.5:1) in both themes",
+        "checked": false
+      },
+      {
+        "text": "prefers-reduced-motion fully disables all animations",
+        "checked": false
+      },
+      {
+        "text": "App is usable with keyboard only — no mouse required",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 11,
+    "created_at": "2026-03-17T21:43:18.621341+05:30",
+    "updated_at": "2026-03-17T21:43:18.621341+05:30"
+  },
+  {
+    "id": "kt_1773763998621343000",
+    "project_id": "converter",
+    "subtask_ref": "p3_stst_013",
+    "phase_index": 3,
+    "phase_name": "Theme Toggle, Accessibility \u0026 Final Polish",
+    "title": "Final visual polish",
+    "description": "Fine-tune spacing, alignment, and visual details. Ensure responsive layout is pixel-perfect at all breakpoints. Add favicon.",
+    "assigned_agent": "junior_dev",
+    "status": "backlog",
+    "priority": "medium",
+    "source": "auto",
+    "review_status": "pending",
+    "criteria": [
+      {
+        "text": "Spacing consistent with 8px grid system",
+        "checked": false
+      },
+      {
+        "text": "Layout centered and properly constrained at all breakpoints",
+        "checked": false
+      },
+      {
+        "text": "Favicon present and displays correctly",
+        "checked": false
+      },
+      {
+        "text": "No visual glitches at any viewport size (320px to 1920px)",
+        "checked": false
+      },
+      {
+        "text": "Overall visual quality matches premium 'digital Braun' aesthetic goal",
+        "checked": false
+      }
+    ],
+    "progress": 0,
+    "position": 12,
+    "created_at": "2026-03-17T21:43:18.621344+05:30",
+    "updated_at": "2026-03-17T21:43:18.621344+05:30"
+  }
+]

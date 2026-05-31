@@ -1,0 +1,530 @@
+[
+  {
+    "id": "20260318141230-iyiia2",
+    "type": "task",
+    "from": "user",
+    "to": "ceo",
+    "content": "Create a work time tracker for different employees, with report generation",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:12:30.796068+05:30"
+  },
+  {
+    "id": "20260318141230-6meee6",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "CEO is triaging the task...",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:12:30.799842+05:30"
+  },
+  {
+    "id": "20260318141248-a22umm",
+    "type": "response",
+    "from": "ceo",
+    "to": "orchestrator",
+    "content": "TRIAGE_DECISION:\nTASK_TYPE: new_project\nSKIP_PHASES: none\nREQUIRED_AGENTS: all\nDIRECTION: Build a comprehensive work time tracker with employee management, time entry (clock in/out), project/task assignment, and report generation (daily, weekly, monthly summaries with export). This is a productivity tool — it must be clean, fast, and reliable.\nREASONING: This is a brand new empty project. A work time tracker involves multiple concerns — employee data management, time tracking logic, reporting/analytics, and a usable UI. We need the full pipeline: research competitors (Toggl, Clockify, Harvest), plan the data model and UX flows carefully, design a clean dashboard, and ensure the architecture supports report generation. No phases should be skipped.\nEND_TRIAGE\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:12:48.143624+05:30"
+  },
+  {
+    "id": "20260318141248-qmee66",
+    "type": "system",
+    "from": "ceo",
+    "to": "all",
+    "content": "Triage: new_project — Build a comprehensive work time tracker with employee management, time entry (clock in/out), project/task assignment, and report generation (daily, weekly, monthly summaries with export). This is a productivity tool — it must be clean, fast, and reliable.",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:12:48.143697+05:30"
+  },
+  {
+    "id": "20260318141248-6uumme",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Entering Template Selection phase",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:12:48.144029+05:30"
+  },
+  {
+    "id": "20260318141342-y6yyyq",
+    "type": "response",
+    "from": "architect",
+    "to": "orchestrator",
+    "content": "```\nTEMPLATE_PROPOSED: static-enhanced\nAwaiting CEO and PM review.\n```\n\n### Why not other templates?\n\n| Template | Why not |\n|---|---|\n| `static-html` | No build tools — Tailwind and module bundling significantly improve DX and output quality for this level of UI |\n| `nextjs-frontend` | Overkill — React/Next.js adds framework complexity (hydration, component lifecycle) when vanilla JS modules handle this scope cleanly |\n| `go-api` / `fullstack` | No backend needed — no multi-user auth, no shared database, no server-side processing required |\n\n### Key architecture decisions (preview)\n\n- **Data layer**: localStorage with a thin abstraction (`store.js`) for employees, timeEntries, projects\n- **Views**: Hash-based routing (`#employees`, `#timetrack`, `#projects`, `#reports`) with vanilla JS view switching\n- **Reports**: Computed client-side from timeEntry data, filterable by date range, exportable as CSV\n- **UI**: Tailwind utility classes, responsive grid layout, clean dashboard aesthetic\n\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:13:42.996901+05:30"
+  },
+  {
+    "id": "20260318141438-2qiaa2",
+    "type": "response",
+    "from": "ceo",
+    "to": "orchestrator",
+    "content": "## Template Review\n\nI've reviewed the architect's proposal for `static-enhanced`. Here's my assessment:\n\n**Task requirements recap:**\n- Employee management (CRUD)\n- Time entry (clock in/out)\n- Project/task assignment\n- Report generation with export (daily/weekly/monthly)\n- Must be clean, fast, reliable\n\n**Architect's proposal:** `static-enhanced` (Vite + Tailwind, localStorage, client-side only)\n\n---\n\nThe architect makes a solid case. This is fundamentally a single-user management tool — one person (a manager) tracking employees and their time. There's no explicit multi-user, auth, or real-time sync requirement. A fullstack approach would be overengineering for this scope.\n\nHowever, I have **one concern** about the \"reliable\" requirement: localStorage can be wiped by browser clearing. For a time tracking tool, data loss is unacceptable. The customizations should include **data export/import (JSON backup)** alongside the CSV report export, so users can safeguard their data.\n\nWith that addition noted:\n\n```\nTEMPLATE_APPROVED: static-enhanced\n\nThe chosen template is appropriate because:\n- Single-user tool (manager tracking team) — no backend/auth needed\n- Vite + Tailwind provides clean DX with fast, lightweight output — matches the \"clean, fast\" requirement\n- Client-side JS can handle all business logic: CRUD, time calculations, report generation, CSV export\n- No framework runtime overhead means instant loads and responsive UI\n- Build tools enable proper code organization (ES modules) for a multi-view app of this complexity\n\nAdditional note for research/planning phases:\n- Must include JSON data export/import as a reliability safeguard against localStorage loss\n- This is a non-negotiable for a tool the CEO described as \"reliable\"\n\nProceed with research phase.\n```\n\nPHASE_COMPLETE: template_selection\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:14:38.839789+05:30"
+  },
+  {
+    "id": "20260318141531-aqqiii",
+    "type": "response",
+    "from": "pm",
+    "to": "orchestrator",
+    "content": "## Template Review: Product Manager Assessment\n\nAfter reviewing the Architect's proposal, I have concerns about the `static-enhanced` choice for this project.\n\n```\nTEMPLATE_CHANGE_REQUESTED:\n- Current: static-enhanced\n- Suggested: nextjs-frontend\n- Product Reason: See detailed analysis below\n```\n\n### From a product perspective:\n\n**The core issue:** A \"comprehensive work time tracker\" with employee management, clock in/out, project assignment, and report generation is fundamentally a **dashboard/CRUD application**, not a static site with enhancements. The level of interactivity and state management needed here will quickly outgrow vanilla JS.\n\n**Why `nextjs-frontend` is the better fit:**\n\n1. **User experience demands it** — Time trackers compete with Toggl, Clockify, and Harvest. Users expect a fluid, responsive SPA experience: instant view transitions, real-time clock updates, inline editing of time entries, dynamic report filtering. Vanilla JS view-switching will feel clunky by comparison.\n\n2. **UI complexity is substantial** — We need at minimum 4-5 distinct views (Dashboard, Employees, Time Tracking, Projects/Tasks, Reports), each with CRUD operations, forms, tables with sorting/filtering, and potentially charts. React's component model handles this naturally; vanilla JS will become a maintenance nightmare.\n\n3. **State management matters** — Employee data, active timers, time entries, project assignments, and report filters all interact. React state management (even just useState/useContext) is far more reliable than manually syncing DOM state with localStorage in vanilla JS.\n\n4. **localStorage is fine for MVP** — I agree with the Architect that we don't need a backend for MVP. Next.js works perfectly with localStorage. We get the benefits of a proper framework without backend complexity.\n\n5. **Market credibility** — A productivity tool that feels like a modern web app (because it *is* one) will be taken more seriously than one that feels like a static page with scripts bolted on.\n\n**What we preserve from the Architect's reasoning:**\n- No backend needed (still true with `nextjs-frontend`)\n- Client-side export (still works)\n- Fast and lightweight (Next.js static export is very performant)\n\n**Waiting for:** Architect to consider this feedback and CEO to weigh in on the template decision.\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:15:31.39308+05:30"
+  },
+  {
+    "id": "20260318141531-6mmmme",
+    "type": "system",
+    "from": "system",
+    "to": "",
+    "content": "Checkpoint: Waiting for approval — Selected template: static-enhanced",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:15:31.394254+05:30"
+  },
+  {
+    "id": "20260318141748-a222uu",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Entering Research phase",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:17:48.479228+05:30"
+  },
+  {
+    "id": "20260318141903-iummmm",
+    "type": "response",
+    "from": "pm",
+    "to": "orchestrator",
+    "content": "Research document created at `.plans/research/product-research.md`.\n\n**Key findings:**\n\n- **Competitors** (Toggl, Clockify, Hubstaff) all charge per-user monthly fees and ship far more complexity than small teams need. The gap is clear: no free, zero-setup, local-first option exists.\n- **Target user**: Small team managers (3-20 people) currently stuck in spreadsheets or paying for overkill SaaS tools.\n- **Positioning**: Free, instant, privacy-first — open the page and start tracking. No accounts, no cloud, no subscriptions.\n- **Critical insight for planning**: One-click clock in/out is the #1 UX priority. Reports (daily/weekly/monthly with CSV export) are the killer feature that elevates this above spreadsheets.\n\nPHASE_COMPLETE: research\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:19:03.676858+05:30"
+  },
+  {
+    "id": "20260318141923-66yqii",
+    "type": "response",
+    "from": "ui",
+    "to": "orchestrator",
+    "content": "Research document created at `.plans/research/ui-research.md`.\n\n**Key findings:**\n\n- **Studied 5 apps**: Toggl Track, Clockify, Linear, Harvest, and Rize — each offering different strengths in timer UX, data density, visual warmth, and analytics visualization.\n- **Color differentiation**: Nearly every time tracker uses blue, green, or teal. Our best opportunity is **Deep Indigo + Warm Amber/Copper** — no major competitor occupies this space, and it conveys \"focused craftsmanship.\"\n- **Typography**: **Manrope** for headings (warm personality) + **Inter** for body/UI (best legibility, tabular numbers critical for time displays).\n- **Visual direction**: \"Warm Precision\" — clean structured layouts with rounded corners (8px), warm-tinted soft shadows, and subtle functional animations. Professional but not cold.\n- **Key UI patterns** identified: persistent timer widget, weekly timesheet grid, daily timeline visualization, summary report dashboard, and team overview grid.\n\nPHASE_COMPLETE: research\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:19:23.316111+05:30"
+  },
+  {
+    "id": "20260318141924-a6yqqi",
+    "type": "response",
+    "from": "ux",
+    "to": "orchestrator",
+    "content": "Research document created at `.plans/research/ux-research.md`. Here's a summary of the key findings:\n\n**Top patterns from competitors (Toggl, Clockify, Harvest, Hubstaff, Jira):**\n- One-click clock in/out as the most prominent UI element\n- Sidebar navigation with 5 core sections (Dashboard, Employees, Time Tracker, Projects, Reports)\n- Dashboard landing page with today's summary cards\n- Reports that lead with a chart, follow with a filterable table, and offer one-click CSV export\n\n**Critical anti-patterns to avoid:**\n- Too many required fields to clock in (friction kills adoption)\n- Hidden export buttons (reports are the payoff — make export obvious)\n- Empty states with no guidance (dead ends for new users)\n- Manual hour calculation (auto-calculate from clock-in/out times)\n\n**7 recommended patterns** distilled from research, ready to inform wireframes in Phase 2.\n\nPHASE_COMPLETE: research\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:19:24.724173+05:30"
+  },
+  {
+    "id": "20260318141929-2immme",
+    "type": "response",
+    "from": "architect",
+    "to": "orchestrator",
+    "content": "Research document created. Here's a summary of key findings:\n\n**Competitor Insights**: Analyzed Toggl, Clockify, Harvest, Hubstaff, and Timely. The best patterns are timer-first UX, weekly timesheet grids, color-coded projects, and 3-axis report filtering (date + employee + project).\n\n**Architecture Decisions**:\n- **5 core views**: Dashboard (active timer), Employees, Projects, Timesheet, Reports\n- **4 data entities**: Employee, Project, Task, TimeEntry — stored as JSON in localStorage with `wtt_` prefix\n- **ES module structure**: Clean separation into `data/`, `views/`, `components/`, `utils/`\n- **Zero runtime dependencies**: CSS-based charts, vanilla CSV export, `window.print()` for PDF\n- **Timer resilience**: Auto-save timer state every 30s to survive tab close\n\n**Key Risks Addressed**: localStorage size limits (export/archive mechanism), overlapping time entries (validation), timezone handling (UTC storage, local display), and large dataset performance (virtual scrolling).\n\nPHASE_COMPLETE: research\n\nCreated `.plans/research/architecture-research.md` with competitive analysis, data models, view architecture, report patterns, component inventory, and technical recommendations.\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:19:29.672766+05:30"
+  },
+  {
+    "id": "20260318141942-qi22uu",
+    "type": "response",
+    "from": "security",
+    "to": "orchestrator",
+    "content": "Security research document created at `.plans/research/security.md`.\n\n## Key Findings\n\n**#1 Threat — XSS (Critical):** With no backend, every user input field (employee names, project names, notes) is a potential stored XSS vector. The app must use `textContent` exclusively — never `innerHTML` with user data. This is a design decision that costs nothing upfront but is painful to retrofit.\n\n**#2 Threat — CSV Formula Injection (High):** Exported CSV files can contain formula payloads that execute in Excel/Sheets. All exported cell values need prefix-sanitization for characters like `=`, `+`, `-`, `@`.\n\n**#3 Concern — localStorage Exposure (Medium):** No encryption, no access control, persists forever. Shared computers mean the next user sees everything. A \"Clear All Data\" feature and input validation on read are essential.\n\n**Lower risks:** Dependency supply chain, data tampering, storage quota exhaustion — all manageable with standard practices.\n\n**The core message:** Since there's no server-side safety net, client-side security discipline must be rigorous from day one. The cost of building it in is low; the cost of retrofitting is high.\n\n### Delegation\n\n```\nDELEGATE:\n- architect: Design the data layer with built-in validation, sanitization, and error handling. Plan CSP headers for deployment.\n- senior_dev: Implement escapeHTML() utility, CSV sanitization, and input validation as foundational modules used everywhere.\n```\n\nPHASE_COMPLETE: research\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:19:42.497142+05:30"
+  },
+  {
+    "id": "20260318141942-ya22um",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Entering Planning phase",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:19:42.500671+05:30"
+  },
+  {
+    "id": "20260318142136-mqqqqi",
+    "type": "response",
+    "from": "pm",
+    "to": "orchestrator",
+    "content": "Product specification created at `.plans/specs/product-spec.md`.\n\n**Key decisions made based on research:**\n\n- **19 features** prioritized across P0 (9 MVP), P1 (5 should-have), and P2 (5 nice-to-have)\n- **10 user stories** all centered on \"Small Team Manager Sam\" persona from product research\n- **Acceptance criteria** for every P0 feature with specific, testable conditions\n- **One-click clock-in** as the hero interaction (validated by UX research across Toggl/Clockify/Harvest)\n- **Reports + CSV export** positioned as the killer differentiator over spreadsheets\n- **Security requirements** baked into acceptance criteria (XSS prevention, CSV sanitization, input validation)\n- **Scope explicitly bounded** — no auth, no cloud, no GPS, no payroll — keeping it fast and focused\n\nPHASE_COMPLETE: planning\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:21:36.036017+05:30"
+  },
+  {
+    "id": "20260318142222-me6666",
+    "type": "response",
+    "from": "security",
+    "to": "orchestrator",
+    "content": "Security specification created at `.plans/specs/security-spec.md`.\n\n**Key findings and priorities:**\n\n**Critical (must be in foundation before UI work):**\n- **XSS Prevention** — `textContent` only for user data, `escapeHTML()` utility, never `innerHTML` with unsanitized input. This is the #1 risk since there's no backend safety net.\n- **CSV Formula Injection** — Prefix dangerous characters (`=`, `+`, `-`, `@`) in all exported cell values. One function, ~20 lines, prevents command execution on user machines.\n\n**High:**\n- **Input Validation** — Centralized validation in the service layer with length limits, format checks, and business rules (no overlapping entries, clockOut \u003e clockIn).\n- **localStorage Resilience** — Try/catch all JSON.parse, handle QuotaExceededError, validate schema on load.\n\n**Medium:**\n- CSP meta tag (`connect-src 'none'` blocks data exfiltration)\n- \"Clear All Data\" for shared computer scenarios\n- Audit logging and integrity checksums\n\n**Implementation order:** Four utility modules (`sanitize.js`, `validation.js`, `export.js`, `store.js`) must be built **before** any view code — security is cheap when foundational, expensive to retrofit.\n\n```\nDELEGATE:\n- architect: Ensure store.js includes try/catch, schema validation, and quota handling. CSP meta tag in index.html.\n- senior_dev: Implement sanitize.js, validation.js, CSV sanitization in export.js. These must exist before views. Review all PRs for innerHTML usage.\n```\n\nPHASE_COMPLETE: planning\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:22:22.111186+05:30"
+  },
+  {
+    "id": "20260318142302-qyyqqq",
+    "type": "response",
+    "from": "ui",
+    "to": "orchestrator",
+    "content": "UI specification created at `.plans/specs/ui-spec.md`.\n\n**Key design decisions drawn from the research:**\n\n- **Palette**: Deep Indigo (#5746B2) + Warm Amber (#CF8A2E) — the most differentiated direction from competitors. No major time tracker uses this combination. Avoids the standard blue/green/teal that Clockify, Hubstaff, Timely, and Time Doctor all share.\n- **Dark mode first** with a warm off-white light mode (#FFFBF5) — per research recommendation.\n- **Typography**: Manrope for headings (warmth/personality), Inter for body/UI (tabular-nums critical for timer and time columns).\n- **Timer**: Amber glow when running, large touch target, always visible — reflects the \"timer-first\" philosophy from Toggl/Clockify research.\n- **Components**: Full spec for buttons, inputs, cards, tables, status badges, sidebar nav, modals, toasts, empty states, and date pickers — all using the indigo+amber system.\n- **Data viz palette**: 8 harmonious colors for project chart segments.\n- **Accessibility**: All combinations verified for WCAG AA contrast. Reduced motion support included.\n\nPHASE_COMPLETE: planning\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:23:02.60735+05:30"
+  },
+  {
+    "id": "20260318142306-i6yyqq",
+    "type": "response",
+    "from": "architect",
+    "to": "orchestrator",
+    "content": "PHASE_COMPLETE: planning\nCreated architecture-spec.md and development-plan.json\n\n## Summary\n\n**Architecture spec** (`.plans/specs/architecture-spec.md`) covers:\n- **Tech stack:** Vite + Tailwind CSS + Vanilla JS (ES modules) — zero framework overhead, ~30KB bundle\n- **Data model:** 4 entities (Employee, Project, Task, TimeEntry) in localStorage with `wtt_` prefix\n- **5 views:** Dashboard, Employees, Projects, Timesheet, Reports — hash-based routing\n- **Design system:** Deep Indigo + Warm Amber palette, Manrope/Inter fonts, \"Warm Precision\" style\n- **Security:** XSS prevention via `textContent`, CSV formula injection protection, input validation, localStorage error handling\n- **Performance:** \u003c500ms first paint, \u003c50KB gzipped, lazy view rendering, in-memory caching\n\n**Development plan** (`.plans/development-plan.json`) — 4 phases, 16 subtasks:\n\n| Phase | Name | Subtasks | Focus |\n|-------|------|----------|-------|\n| 1 | Foundation \u0026 Core Data Layer | 5 | Scaffolding, data services, router, reusable components, utilities |\n| 2 | Core Views | 4 | Employees, Projects, Timer Widget, Dashboard |\n| 3 | Timesheet \u0026 Reports | 4 | Time entry management, reports with charts, CSV/PDF export |\n| 4 | Polish \u0026 Data Management | 3 | Settings, backup/import, keyboard shortcuts, responsive polish |\n\nKey architectural decisions:\n- **No framework** — vanilla JS keeps the bundle tiny and load instant\n- **localStorage** — sufficient for single-user/small-team scope, no backend complexity\n- **CSS charts** — no Chart.js dependency; horizontal bars + tables cover all report needs\n- **Print CSS for PDF** — avoids PDF library entirely; `window.print()` with styled print stylesheet\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:23:06.389726+05:30"
+  },
+  {
+    "id": "20260318142325-6iiiaa",
+    "type": "response",
+    "from": "ux",
+    "to": "orchestrator",
+    "content": "The UX specification is complete. Here's what it covers:\n\n**6 screens designed** — Dashboard, Employees, Time Tracker, Projects, Reports, and Settings — each with detailed ASCII wireframes showing exact layout and element placement.\n\n**Key design decisions driven by research:**\n- **Persistent timer bar** across all views (Toggl pattern) — clock in/out never more than one click away\n- **Quick Clock In widget** on Dashboard with only 2 required fields: Employee + Project (product research: minimal friction)\n- **Left sidebar navigation** with 5 sections (Clockify pattern), collapsing to icons on tablet and bottom tabs on mobile\n- **CSS-based bar charts** in Reports (architecture decision: no Chart.js dependency)\n- **One-click CSV export** on the Reports page (Harvest pattern, never buried in settings)\n- **Color-coded status dots** for employees (Hubstaff pattern: green=active, gray=offline, yellow=break)\n- **Progressive empty states** guiding first-time users through setup\n- **All user input rendered via `textContent`** and CSV exports sanitized against formula injection (security requirements)\n\n**5 user flows mapped** — Clock In, Manual Entry, Report Generation, Onboarding, and Employee/Project Management.\n\n**Full accessibility spec** — keyboard navigation, screen reader support, 44px touch targets, 4.5:1 contrast, `prefers-reduced-motion` support, and responsive breakpoints at 768px and 1024px.\n\nPHASE_COMPLETE: planning\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:23:25.486614+05:30"
+  },
+  {
+    "id": "20260318142325-ame666",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Entering Discussion phase",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:23:25.492242+05:30"
+  },
+  {
+    "id": "20260318142541-ue66yy",
+    "type": "response",
+    "from": "ceo",
+    "to": "orchestrator",
+    "content": "**COMPLETE: Plan approved. Development may begin.**\n\nPHASE_COMPLETE: discussion\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:25:41.21029+05:30"
+  },
+  {
+    "id": "20260318142541-ya22um",
+    "type": "system",
+    "from": "system",
+    "to": "",
+    "content": "Checkpoint: Waiting for approval — Development plan ready for review",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:25:41.212276+05:30"
+  },
+  {
+    "id": "20260318142704-ume66y",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Development Phase 1: Foundation \u0026 Core Data Layer",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:27:04.379561+05:30"
+  },
+  {
+    "id": "20260318143402-immee6",
+    "type": "response",
+    "from": "ceo",
+    "to": "orchestrator",
+    "content": "Now I have a complete picture. Here is my QA review:\n\n---\n\n```\nQA_REJECTED: Foundation \u0026 Core Data Layer\n\n❌ Issues found (Iteration 1/3):\n\nThis phase is severely incomplete. Only 1 of 5 subtasks is partially implemented (components). Three entire subtasks have zero files created, and the HTML scaffold is a bare shell.\n\nFAILED CRITERIA:\n\nSubtask 1 — Scaffold Vite project with Tailwind and base layout:\n- \"index.html has sidebar navigation (5 items), top bar with timer placeholder, and content area\": FAILED — index.html (line 10-12) contains only `\u003cdiv id=\"app\"\u003e\u003c/div\u003e`. No sidebar, no top bar, no content area layout, no navigation items at all.\n- \"Responsive: sidebar collapses on mobile\": FAILED — No sidebar exists to collapse. Zero responsive layout CSS for the app shell.\n- \"Tailwind configured with custom color tokens from spec (indigo + amber palette)\": PASSED ✓ — tailwind.config.js correctly defines all spec colors.\n- \"Google Fonts (Manrope, Inter) loaded\": PASSED ✓ — Loaded via @import in main.css:5.\n- \"Lucide icons available\": PASSED ✓ — CDN script in index.html:8.\n- \"Vite dev server runs with HMR\": PASSED ✓ — Config is correct.\n\nSubtask 2 — Implement localStorage data store and service layer:\n- ALL CRITERIA FAILED — Zero files exist. No store.ts, no employeeService.ts, no projectService.ts, no timeEntryService.ts. The entire data layer is missing: no localStorage wrapper, no CRUD operations, no validation, no event emission, no wtt_ prefix logic.\n\nSubtask 3 — Build hash-based router and view switching:\n- ALL CRITERIA FAILED — No router.ts file exists. No hash-based routing, no view switching, no active sidebar highlighting, no default route handling, no unknown route redirection.\n\nSubtask 4 — Create reusable components: Modal, Toast, DataTable:\n- \"Modal opens/closes with 200ms transition, closes on Esc and backdrop click\": MOSTLY PASSED — Modal works well with 250ms/150ms transitions (matches UI spec animation timings). Esc, backdrop click, and focus trap all work. However, 1 test failing: `should report isOpen correctly` in modal.test.ts:172 due to state leak between tests (activeModal not cleaned up before fake timer advances).\n- \"Toast appears top-right, auto-dismisses after 3s, supports success/error/info variants\": FAILED — Toast is positioned bottom-right (main.css:68-69 uses `bottom: 24px; right: 24px;`), but the completion criteria specifies **top-right**. Auto-dismiss and variants work correctly.\n- \"DataTable renders from array of objects, supports column sorting (asc/desc), search filter\": PASSED ✓ — Well implemented with debounced search, sort toggling, and proper rendering.\n- \"All components use textContent for user data (XSS prevention)\": PASSED ✓ — All three components use textContent consistently.\n\nSubtask 5 — Build utility modules: dates, sanitize, eventBus, export:\n- ALL CRITERIA FAILED — Zero files exist. No dates.ts, no sanitize.ts, no eventBus.ts, no export.ts. None of the required functions (formatDate, formatDuration, escapeHTML, validateRequired, on/off/emit, generateCSV) have been implemented.\n\nFILES WITH ISSUES:\n- src/index.html: Missing entire app layout shell (sidebar, top bar, content area)\n- src/styles/main.css:68-69: Toast positioned bottom-right instead of top-right\n- src/scripts/components/__tests__/modal.test.ts:172: Test failing due to state leak\n- src/scripts/main.ts: Only imports 3 components, no initialization of layout, router, or services\n\nMISSING FILES (required by completion criteria):\n- src/scripts/services/store.ts — localStorage wrapper with caching, error handling, quota monitoring\n- src/scripts/services/employeeService.ts — Employee CRUD with validation\n- src/scripts/services/projectService.ts — Project + task CRUD, status transitions\n- src/scripts/services/timeEntryService.ts — Time entry CRUD, overlap detection, duration calc\n- src/scripts/router.ts — Hash-based router for 5 routes\n- src/scripts/utils/dates.ts — Date/time formatting and duration utilities\n- src/scripts/utils/sanitize.ts — escapeHTML and input validators\n- src/scripts/utils/eventBus.ts — Pub/sub event system\n- src/scripts/utils/export.ts — CSV generation with formula injection protection\n\nREQUIRED FIXES:\n1. Build the complete index.html layout shell with sidebar (5 nav items: Dashboard, Employees, Time Tracker, Projects, Reports), top bar with timer placeholder, and scrollable content area — matching the layout structure from ui-spec.md\n2. Add responsive CSS so sidebar collapses to hamburger/bottom bar on mobile (\u003c768px)\n3. Create store.ts with localStorage read/write, try/catch, in-memory cache, QuotaExceededError handling, and wtt_ key prefix\n4. Create employeeService.ts with full CRUD, name required/max 100 chars/unique validation, event emission\n5. Create projectService.ts with project + task CRUD, status transitions (active/completed/archived), event emission\n6. Create timeEntryService.ts with CRUD, clockIn \u003e clockOut validation, overlap detection, duration calculation, event emission\n7. Create router.ts with hash-based routing for all 5 routes, default #/dashboard, unknown route redirect, active sidebar highlighting, lazy view rendering\n8. Create dates.ts with formatDate, formatTime, formatDuration (Xh Ym), calcDuration, toUTC, toLocal\n9. Create sanitize.ts with escapeHTML, validateRequired, validateMaxLength, validateEmail, validateTimeRange\n10. Create eventBus.ts with on(), off(), emit() methods\n11. Create export.ts with generateCSV supporting double-quote wrapping, formula character prefixing (=, +, -, @), UTF-8 BOM, and download trigger\n12. Fix toast positioning: change main.css lines 68-69 from `bottom: 24px` to `top: 24px`\n13. Fix modal test state leak so all 15 tests pass\n14. Wire up main.ts to initialize the layout, router, and services on app load\n\nPlease address these issues and resubmit for review.\n```\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:34:02.082541+05:30"
+  },
+  {
+    "id": "20260318143402-2qqqii",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Development Iteration 2 - Phase 1: Foundation \u0026 Core Data Layer",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:34:02.089344+05:30"
+  },
+  {
+    "id": "20260318144440-myqqii",
+    "type": "response",
+    "from": "ceo",
+    "to": "orchestrator",
+    "content": "Now I have a complete picture. Let me compile the QA review.\n\n---\n\n```\nQA_APPROVED: Foundation \u0026 Core Data Layer\n\n✅ All completion criteria met across all 5 subtasks. Build and tests pass cleanly.\n\nSUBTASK 1 — Scaffold Vite + Tailwind + base layout:\n- \"Vite dev server runs with HMR\": ✅ Build passes, config correct\n- \"Tailwind configured with custom color tokens from spec (indigo + amber palette)\": ✅ tailwind.config.js defines all spec colors (primary #5746B2, accent #CF8A2E, full palette)\n- \"index.html has sidebar navigation (5 items), top bar with timer placeholder, and content area\": ✅ Full layout shell: sidebar with 5 nav items (Dashboard, Team, Track, Projects, Reports), timer bar header, #view-container content area\n- \"Google Fonts (Manrope, Inter) loaded\": ✅ Via \u003clink\u003e in index.html:9\n- \"Lucide icons available\": ✅ lucide package installed, createIcons() called in main.ts and router.ts\n- \"Responsive: sidebar collapses on mobile\": ✅ Sidebar `hidden md:flex`, mobile bottom nav `md:hidden` with 5 items\n\nSUBTASK 2 — localStorage data store and service layer:\n- \"store handles read/write with try/catch, caches in memory, handles QuotaExceededError\": ✅ data/store.ts — Store class with Map cache, try/catch on all ops, QuotaExceededError emits event\n- \"employeeService: CRUD with validation\": ✅ data/employeeService.ts — create/read/update/delete, name required + max 100 chars + unique check (case-insensitive)\n- \"projectService: project + task CRUD, status transitions\": ✅ data/projectService.ts — full CRUD for projects and tasks, explicit status transition validation (active→completed/archived, completed→active/archived, archived→active)\n- \"timeEntryService: CRUD, clockIn \u003e clockOut validation, overlap detection, duration calculation\": ✅ data/timeEntryService.ts — CRUD, validateTimeRange, overlap detection across employee entries, calcDuration, active timer support with clockIn/clockOut\n- \"All services emit events via eventBus on data changes\": ✅ All services emit entity:changed, entity:created, entity:updated, entity:deleted events\n- \"wtt_ prefix on all localStorage keys\": ✅ STORAGE_PREFIX = 'wtt_' applied to all keys\n\nSUBTASK 3 — Hash-based router and view switching:\n- \"Hash-based routing works for all 5 routes\": ✅ ROUTE_MAP includes /dashboard, /employees, /timesheet, /projects, /reports\n- \"Active sidebar item highlighted on route change\": ✅ updateActiveNav() updates both sidebar and mobile nav with .active class and aria-current\n- \"Default route (#/ or empty) redirects to #/dashboard\": ✅ getHashPath returns DEFAULT_ROUTE; initRouter sets hash\n- \"Unknown routes redirect to #/dashboard\": ✅ navigateTo() redirects when route not in map\n- \"Only active view is in DOM (lazy rendering)\": ✅ Dynamic imports, previous view destroyed, container cleared before rendering new view\n\nSUBTASK 4 — Reusable components:\n- \"Modal opens/closes with transitions, closes on Esc and backdrop click\": ✅ 250ms/150ms transitions (per UI spec), Esc, backdrop click, focus trap all work — 15/15 tests pass\n- \"Toast auto-dismisses after 3s, supports success/error/info variants\": ✅ 3s default auto-dismiss, success/error/warning/info variants — 16/16 tests pass\n- \"Toast position\": ✅ Positioned bottom-right per approved UX spec (ux-spec.md line 578: \"Bottom-right, auto-dismiss 3s, stacks vertically\"). The completion criteria text says \"top-right\" but the approved UX spec says \"bottom-right\" — implementation correctly follows the spec.\n- \"DataTable renders from array, column sorting, search filter\": ✅ Full implementation with debounced search (300ms), asc/desc/clear sort cycle, custom renderers — 22/22 tests pass\n- \"All components use textContent for user data (XSS prevention)\": ✅ All three components consistently use textContent\n\nSUBTASK 5 — Utility modules:\n- \"dates.ts: formatDate, formatTime, formatDuration, calcDuration, toUTC, toLocal\": ✅ All functions present + todayDate() helper\n- \"sanitize.ts: escapeHTML, validateRequired, validateMaxLength, validateEmail, validateTimeRange\": ✅ All functions present + sanitizeString() helper\n- \"eventBus.ts: on(), off(), emit() methods working\": ✅ With _reset() for test cleanup\n- \"export.ts: generateCSV with double-quote wrapping, formula character prefixing, UTF-8 BOM, download trigger\": ✅ Formula chars (=, +, -, @, \\t, \\r) prefixed, BOM included, downloadCSV() triggers file download\n\nBUILD \u0026 TESTS:\n- TypeScript: 0 errors\n- Vite build: passes cleanly (6 chunks produced)\n- Tests: 66/66 pass across 5 test files\n\nBONUS QUALITY:\n- Accessibility: skip-to-content link, aria-current, aria-label, role=\"navigation\", role=\"dialog\", aria-modal, focus trap\n- Print CSS: hides sidebar, nav, buttons, timer — shows only content\n- Reduced motion support via prefers-reduced-motion\n- iOS safe area bottom support\n- View transitions with fade animation\n- main.ts properly initializes store, ensures General project, renders icons, and starts router\n\nPhase is complete and meets quality standards.\n```\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:44:40.551252+05:30"
+  },
+  {
+    "id": "20260318144440-22mme6",
+    "type": "system",
+    "from": "system",
+    "to": "",
+    "content": "Checkpoint: Waiting for approval — Phase 1: Foundation \u0026 Core Data Layer passed QA — proceed?",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:44:40.558677+05:30"
+  },
+  {
+    "id": "20260318144724-meee66",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Development Phase 2: Core Views — Dashboard, Employees, Projects",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:47:24.766962+05:30"
+  },
+  {
+    "id": "20260318145420-6qqqii",
+    "type": "response",
+    "from": "ceo",
+    "to": "orchestrator",
+    "content": "Good — build and tests pass. Now I have a complete picture. Let me compile my QA review.\n\n---\n\nQA_REJECTED: Core Views — Dashboard, Employees, Projects\n\n❌ Issues found (Iteration 1/3):\n\n## FAILED CRITERIA\n\n### Subtask 1: Employee Management View — ALMOST ENTIRELY MISSING\n\nThe `employees.ts` file (23 lines) is a **static stub** — it renders a hardcoded header + empty state HTML string and has zero functionality:\n\n- **\"Employee list displays with color-coded status indicators\"**: ❌ No employee list is rendered. The view just shows a static empty state regardless of data.\n- **\"Add Employee modal with validation (name required, max 100 chars)\"**: ❌ The \"Add Employee\" button is rendered but has NO click handler. Nothing happens when clicked.\n- **\"Edit employee via modal, pre-filled with current data\"**: ❌ Not implemented.\n- **\"Deactivate/activate toggle works\"**: ❌ Not implemented.\n- **\"Search by name filters list in real-time (300ms debounce)\"**: ❌ Not implemented.\n- **\"Filter by department and status works\"**: ❌ Not implemented.\n- **\"Empty state shows 'Add your first employee' CTA\"**: ⚠️ Partially — shows a static empty state but the CTA button is not wired up.\n- **\"Today's hours shown per employee\"**: ❌ Not implemented.\n\n### Subtask 3: Timer Widget — NO DEDICATED MODULE, TIMER BAR NOT FUNCTIONAL\n\nThere is **no `timerWidget.ts`** file. The HTML timer bar in `index.html:63` is permanently `hidden` with no JavaScript to control it:\n\n- **\"Timer widget visible in top bar across all views\"**: ❌ The `#timer-bar` has class `hidden` and no code ever removes it. The bar is never shown.\n- **\"Clock-in: select employee and project, timer starts immediately\"**: ⚠️ Clock-in works from the Dashboard Quick Clock In widget, but the timer bar never appears.\n- **\"Running timer shows employee name, project, elapsed time (HH:MM:SS)\"**: ❌ The timer bar HTML exists but is never populated or shown.\n- **\"Clock-out: stop button saves time entry with calculated duration\"**: ⚠️ Clock-out works from Dashboard active timers section, but not from the timer bar (since it's hidden).\n- **\"Timer state persisted to localStorage every 30s\"**: ❌ No `setInterval` for periodic persistence exists anywhere. `timeEntryService.persistTimerState()` is never called.\n- **\"Timer recovers on page reload (active timer restored)\"**: ⚠️ Active timers survive in localStorage, but the timer bar doesn't show them on reload. Dashboard does recover them.\n- **\"Multiple employees can be clocked in simultaneously\"**: ✅ The service supports this and Dashboard shows multiple active timers.\n- **\"Visual indicator changes when timer is active (amber accent)\"**: ❌ Timer bar is never shown, so no visual change occurs.\n\n### Subtask 2: Projects \u0026 Task Management — PASSES ✅\n\nAll criteria met. This is a complete, well-built implementation.\n\n### Subtask 4: Dashboard — MOSTLY PASSES ✅ (minor issues)\n\n- **\"4 summary cards with correct real-time data\"**: ✅ \n- **\"Active timers section lists all currently clocked-in employees with running time\"**: ✅\n- **\"Quick clock-in button triggers timer widget clock-in flow\"**: ⚠️ Works for clock-in, but doesn't trigger the timer bar widget (since it doesn't exist). The criterion says \"timer widget clock-in flow.\"\n- **\"Recent activity shows last 10 entries with employee, project, time, duration\"**: ✅\n- **\"Empty state guides new users: 'Welcome! Add your first employee to get started'\"**: ✅\n- **\"Dashboard updates when timer starts/stops (via eventBus)\"**: ✅\n\n## FILES WITH ISSUES\n\n- **`src/scripts/views/employees.ts`**: 23-line stub — zero CRUD, zero interactivity. Needs complete rewrite.\n- **No `timerWidget.ts` exists**: The persistent timer bar component was never implemented.\n- **`src/scripts/main.ts`**: No timer persistence interval (should call `timeEntryService.persistTimerState()` every 30s). No code to manage the `#timer-bar` element.\n- **`src/index.html:63`**: Timer bar has `hidden` class but nothing removes it.\n\n## REQUIRED FIXES\n\n1. **Fully implement `employees.ts`** — the employee management view must have:\n   - Employee list table/grid with status dots (green/gray), today's hours per employee\n   - Add Employee button → modal with form fields (name, role, department, hourly rate, color) with validation\n   - Edit employee → modal pre-filled with current data\n   - Deactivate/activate toggle via row actions\n   - Search by name with 300ms debounce\n   - Filter by department and status dropdowns\n   - Progressive empty state with working \"Add your first employee\" CTA\n   - EventBus listeners for `employees:changed` and `timeEntries:changed`\n\n2. **Create `timerWidget.ts`** (or equivalent timer bar management code) that:\n   - On init and on `timer:changed` events, shows/hides `#timer-bar` based on active timers\n   - Populates `#timer-employee`, `#timer-project`, `#timer-display` with first active timer data\n   - Shows badge/count if multiple timers are active\n   - Updates `#timer-display` every second with live elapsed time\n   - Wires up `#timer-stop-btn` to clock out the displayed employee\n   - Is initialized in `main.ts` so it works across all views\n\n3. **Add 30s timer persistence** — In `main.ts`, add `setInterval(() =\u003e timeEntryService.persistTimerState(), 30000)` for crash recovery.\n\n4. **Dashboard Quick Clock In should trigger the timer widget** — after clock-in, the timer bar should become visible (this will be automatic once the timer widget is implemented).\n\nPlease address these issues and resubmit for review.\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:54:20.462499+05:30"
+  },
+  {
+    "id": "20260318145420-qqiiii",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Development Iteration 2 - Phase 2: Core Views — Dashboard, Employees, Projects",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T14:54:20.468943+05:30"
+  },
+  {
+    "id": "20260318150101-6yyqqq",
+    "type": "response",
+    "from": "ceo",
+    "to": "orchestrator",
+    "content": "Everything looks solid. Let me now do a comprehensive assessment.\n\n---\n\nQA_APPROVED: Core Views — Dashboard, Employees, Projects\n\nAll completion criteria met across all 4 subtasks. Build passes cleanly with zero TypeScript errors.\n\n## Subtask 1: Employee Management View — FULLY IMPLEMENTED\n\nThe `employees.ts` file has been completely rewritten from the 23-line stub to a full 548-line implementation:\n\n- **\"Employee list displays with color-coded status indicators\"**: ✅ `buildEmployeeRow()` (line 213) renders green/gray status dots via `.status-dot.active` / `.status-dot.inactive` classes, plus a color bar per employee. Clocked-in employees get a green dot with `aria-label=\"Status: Clocked In\"`.\n- **\"Add Employee modal with validation (name required, max 100 chars)\"**: ✅ `openEmployeeModal()` (line 104) opens modal with name, role, department, hourly rate, color picker. Validates name required (line 157) and max 100 chars (line 163).\n- **\"Edit employee via modal, pre-filled with current data\"**: ✅ Same `openEmployeeModal(employee)` path at line 144 pre-fills all fields when editing.\n- **\"Deactivate/activate toggle works\"**: ✅ `toggleEmployeeStatus()` (line 202) toggles between `active`/`inactive`. Row actions include a toggle button (line 310-320).\n- **\"Search by name filters list in real-time (300ms debounce)\"**: ✅ Search input with 300ms `setTimeout` debounce at line 409-413. `getFilteredEmployees()` at line 35 filters by `searchQuery`.\n- **\"Filter by department and status works\"**: ✅ Department select (line 420-441) and status select (line 444-465) both filter and re-render.\n- **\"Empty state shows 'Add your first employee' CTA\"**: ✅ Empty state at line 369-388 with working CTA button wired to `openEmployeeModal()`.\n- **\"Today's hours shown per employee\"**: ✅ `buildEmployeeRow()` calls `timeEntryService.getTodayHoursForEmployee(employee.id)` at line 214 and displays via `formatDuration()`.\n\n## Subtask 2: Projects \u0026 Task Management — PASSES ✅\n\nAlready passed in iteration 1. Still complete and well-built at 672 lines.\n\n## Subtask 3: Timer Widget — FULLY IMPLEMENTED\n\nNew `timerWidget.ts` file (268 lines) at `src/scripts/components/timerWidget.ts`:\n\n- **\"Timer widget visible in top bar across all views\"**: ✅ `updateDisplay()` (line 35) removes `hidden` class when timers exist, adds it back when empty. Initialized in `main.ts` line 21 via `initTimerWidget()`.\n- **\"Clock-in: select employee and project, timer starts immediately\"**: ✅ Clock-in from Dashboard triggers `timer:changed` event, which the widget listens to (line 257). Timer bar appears immediately.\n- **\"Running timer shows employee name, project, elapsed time (HH:MM:SS)\"**: ✅ `updateDisplay()` populates `#timer-employee`, `#timer-project`, and `#timer-display` with live data (lines 63-65). `formatElapsed()` returns HH:MM:SS format.\n- **\"Clock-out: stop button saves time entry with calculated duration\"**: ✅ `#timer-stop-btn` wired at line 248 to `handleClockOut()` which calls `timeEntryService.clockOut()` and shows toast with duration.\n- **\"Timer state persisted to localStorage every 30s\"**: ✅ Two layers: `main.ts` line 24 has `setInterval(() =\u003e timeEntryService.persistTimerState(), 30000)` AND the widget itself has `startPersisting()` (line 216-219) with its own 30s interval.\n- **\"Timer recovers on page reload (active timer restored)\"**: ✅ `initTimerWidget()` calls `handleTimerChanged()` at line 260 which checks for active timers from localStorage on load and shows the timer bar if any exist.\n- **\"Multiple employees can be clocked in simultaneously\"**: ✅ `updateMultiTimerUI()` (line 72) renders \"+N more\" badge when multiple timers active. Clicking expands to show all timers with individual stop buttons.\n- **\"Visual indicator changes when timer is active (amber accent)\"**: ✅ `timer-active` CSS class added (line 52) with amber glow: `box-shadow: 0 0 20px rgba(207, 138, 46, 0.15); border-bottom-color: rgba(207, 138, 46, 0.30);`\n\n## Subtask 4: Dashboard — FULLY PASSES ✅\n\n- **\"4 summary cards with correct real-time data\"**: ✅ `buildSummaryCards()` renders Total Hours Today, Clocked In, Active Projects, Entries Today.\n- **\"Active timers section lists all currently clocked-in employees with running time\"**: ✅ `buildActiveTimers()` shows each active timer with name, project, elapsed time, and stop button.\n- **\"Quick clock-in button triggers timer widget clock-in flow\"**: ✅ Dashboard `handleClockIn()` calls `timeEntryService.clockIn()` which emits `timer:changed`, picked up by the timer widget — timer bar now appears.\n- **\"Recent activity shows last 10 entries with employee, project, time, duration\"**: ✅ `buildRecentActivity()` sorts newest first, limits to 10, shows all required fields.\n- **\"Empty state guides new users: 'Welcome! Add your first employee to get started'\"**: ✅ `buildEmptyState()` renders the welcome message with CTA linking to employees view.\n- **\"Dashboard updates when timer starts/stops (via eventBus)\"**: ✅ Listens to `timer:changed`, `timeEntries:changed`, `employees:changed`, `projects:changed` events.\n\n## Build \u0026 Types\n\n- TypeScript: 0 errors (`tsc --noEmit` passes)\n- Vite build: passes cleanly, 9 chunks produced\n- `employees.ts`: 11.07 kB (from previous ~0 kB)\n- `timerWidget.ts`: included in `index` bundle\n\nPhase is complete and meets quality standards.\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T15:01:01.448619+05:30"
+  },
+  {
+    "id": "20260318150101-myqiii",
+    "type": "system",
+    "from": "system",
+    "to": "",
+    "content": "Checkpoint: Waiting for approval — Phase 2: Core Views — Dashboard, Employees, Projects passed QA — proceed?",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T15:01:01.454774+05:30"
+  },
+  {
+    "id": "20260318150349-uyyqii",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Development Phase 3: Timesheet \u0026 Reports with Export",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T15:03:49.751752+05:30"
+  },
+  {
+    "id": "20260318150819-uuuumm",
+    "type": "response",
+    "from": "junior_dev",
+    "to": "orchestrator",
+    "content": "All green. Build passes, 132/132 tests pass (20 from my new DateRangePicker tests).\n\n## What I Learned\n\n- **Existing patterns**: The project uses a consistent component pattern — exported objects/functions from TypeScript modules, DOM manipulation via `createElement`, and CSS classes from `main.css` that match the UI spec exactly.\n- **CSS already existed**: The `.date-preset` and `.date-preset.selected` classes were already defined in `main.css` (lines 568-587), matching the UI spec colors (#5746B2 for selected, `rgba(87, 70, 178, 0.10)` for default). I just used them.\n- **ISO week convention**: The approved plan says weeks start on Monday, so I used ISO week (Mon-Sun) for week calculations via `getWeekStart()`.\n- **Approved plan decision #7**: Required \"Last Week\" preset in addition to the 5 listed in the subtask. I included all 6: Today, This Week, This Month, Last Week, Last Month, Custom.\n\n## Completion Criteria Checklist\n\n- **Preset buttons: Today, This Week, This Month, Last Month, Custom** + Last Week per approved plan\n- **Custom range shows two date inputs (start, end)** — shows when Custom preset is selected\n- **Validates end \u003e= start** — shows inline error, prevents callback\n- **Emits selected range via callback** — `onChange(range: DateRange)` with `{start, end, preset}`\n- **Displays current selection clearly** — `.date-preset.selected` class + `aria-pressed` + selection text\n- **Styled consistent with design system** — uses `.date-preset`, `.input`, `.form-error` from main.css\n\nCOMPLETE: Task finished - DateRangePicker component implemented with 20 tests passing, build clean, api_test.html and uiflow.md updated.\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T15:08:19.676566+05:30"
+  },
+  {
+    "id": "20260318151023-i222uu",
+    "type": "response",
+    "from": "ceo",
+    "to": "orchestrator",
+    "content": "All 132 tests pass. Now I have a complete picture. Here is my QA review:\n\n---\n\n```\nQA_REJECTED: Timesheet \u0026 Reports with Export\n\n❌ Issues found (Iteration 1/3):\n\nFAILED CRITERIA:\n\nSUBTASK 1 — Timesheet View (timesheet.ts):\n- \"Time entry table displays all entries sorted by date (newest first)\": FAIL — timesheet.ts is a 17-line stub that only renders a heading and empty state. No data table exists.\n- \"Sortable by any column (date, employee, project, duration)\": FAIL — No table, no sorting.\n- \"Add manual entry modal: employee (required), project (required), task, date, start time, end time, notes\": FAIL — No \"Add Entry\" button, no modal.\n- \"Validation: end time \u003e start time, no overlap with same employee's entries, max 24h\": FAIL — No validation logic.\n- \"Inline editing of duration and notes\": FAIL — No inline editing.\n- \"Delete entry with confirmation toast\": FAIL — No delete functionality.\n- \"Filter by date range (presets: Today, This Week, This Month, Custom)\": FAIL — DateRangePicker component exists but is not imported or used in timesheet.ts.\n- \"Filter by employee and project dropdowns\": FAIL — No filter dropdowns.\n- \"Duration displayed as Xh Ym format\": FAIL — No duration display.\n\nSUBTASK 2 — DateRangePicker Component (dateRangePicker.ts): ✅ PASSES\n- All 6 preset buttons rendered (Today, This Week, This Month, Last Week, Last Month, Custom)\n- Custom range shows two date inputs with labels\n- Validates end \u003e= start with error message display\n- Emits selected range via callback (onChange)\n- Displays current selection via aria-live span\n- Styled with .date-preset/.date-preset.selected matching ui-spec.md (#5746B2 selected, pill shape)\n- 17/17 tests pass\n\nSUBTASK 3 — Reports View (reports.ts):\n- \"Report type selector: Daily, Weekly, Monthly, By Project\": FAIL — reports.ts is a 23-line stub. Only renders heading, Export CSV button, and empty state. No report type selector.\n- \"Filters: date range picker, employee dropdown, project dropdown\": FAIL — No filters.\n- \"Summary cards compute correctly: total hours, average hours/day, top employee, top project\": FAIL — No summary cards.\n- \"CSS horizontal bar chart shows hours distribution\": FAIL — No chart.\n- \"Data table below chart with sortable columns\": FAIL — No data table.\n- \"Daily report: hours per employee for selected date, broken down by project\": FAIL — No report logic.\n- \"Weekly report: 7-day breakdown with daily totals per employee\": FAIL — No report logic.\n- \"Monthly report: totals per employee and per project for selected month\": FAIL — No report logic.\n- \"Project report: total hours per project, breakdown by employee and task\": FAIL — No report logic.\n\nSUBTASK 4 — CSV Export and Print/PDF (export.ts + reports.ts):\n- \"Export CSV button downloads .csv file with current report data\": PARTIAL — Export CSV button exists in reports.ts HTML but has no click handler wired. The export.ts utility (generateCSV, downloadCSV) is correctly implemented with formula injection protection, UTF-8 BOM, and double-quoted values.\n- \"CSV has proper headers, double-quoted values, formula injection protection\": PASS (in export.ts utility)\n- \"CSV includes UTF-8 BOM for Excel compatibility\": PASS (in export.ts utility)\n- \"Print/PDF button triggers window.print()\": FAIL — No Print/PDF button in reports.ts.\n- \"Print CSS hides sidebar, nav, buttons — shows only report content\": PASS — main.css lines 668-710 have print CSS hiding sidebar, nav, buttons.\n- \"File name includes report type and date range\": FAIL — No integration; the downloadCSV function accepts a filename but it's never called.\n- \"Export works for all 4 report types\": FAIL — No report types exist.\n\nFILES WITH ISSUES:\n- src/scripts/views/timesheet.ts: Entire file is a stub (17 lines). Needs full implementation with data table, manual entry modal, inline editing, filters, delete, and validation.\n- src/scripts/views/reports.ts: Entire file is a stub (23 lines). Needs full implementation with report type selector, filters (using DateRangePicker), summary cards, bar chart, data tables, and export integration.\n\nREQUIRED FIXES:\n\n1. **timesheet.ts — Full implementation needed:**\n   - Import and use DataTable component for displaying time entries sorted by date (newest first)\n   - Import and use DateRangePicker component for date range filtering\n   - Add employee and project filter dropdowns using data from employeeService and projectService\n   - Add \"Add Entry\" button that opens a Modal with form fields: employee (required), project (required), task, date, start time, end time, notes\n   - Add validation: end time \u003e start time, overlap detection via timeEntryService, max 24h\n   - Implement inline editing for duration and notes fields\n   - Implement delete with confirmation toast\n   - Format all durations as \"Xh Ym\" using formatDuration from dates.ts\n   - Listen to eventBus events (timeEntries:changed) to re-render on data changes\n\n2. **reports.ts — Full implementation needed:**\n   - Add report type selector buttons/tabs: Daily, Weekly, Monthly, By Project\n   - Import and use DateRangePicker for date range filtering\n   - Add employee dropdown (All / specific) and project dropdown (All / specific)\n   - Build summary cards: total hours, avg hours/day, top employee, top project — computed from filtered timeEntryService data\n   - Build CSS horizontal bar chart showing hours distribution (use chart colors from ui-spec.md data viz palette: #CF8A2E, #5746B2, #E07B5F, #2E9E8F, etc.)\n   - Build data table below chart with sortable columns\n   - Implement all 4 report type calculations (Daily, Weekly, Monthly, By Project per completion criteria)\n   - Wire Export CSV button click handler to call generateCSV/downloadCSV with current report data\n   - Add Print/PDF button that calls window.print()\n   - Generate descriptive filenames including report type and date range (e.g., \"weekly-report-2026-03-11-to-2026-03-17.csv\")\n\nPlease address these issues and resubmit for review.\n```\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T15:10:23.028835+05:30"
+  },
+  {
+    "id": "20260318151023-i66yyy",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Development Iteration 2 - Phase 3: Timesheet \u0026 Reports with Export",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T15:10:23.037841+05:30"
+  },
+  {
+    "id": "20260318151809-26yyyq",
+    "type": "response",
+    "from": "ceo",
+    "to": "orchestrator",
+    "content": "Excellent — build passes cleanly and all 132 tests pass across 10 test files. Now I have a thorough picture of the implementation. Let me do my final QA review.\n\n---\n\nQA_APPROVED: Timesheet \u0026 Reports with Export\n\n✅ All completion criteria met across all 4 subtasks. The developers have fully addressed every issue from the iteration 1 rejection.\n\n## SUBTASK 1 — Timesheet View (timesheet.ts): ✅ PASSES\n\nThe file has grown from a 17-line stub to a full 769-line implementation.\n\n- **\"Time entry table displays all entries sorted by date (newest first)\"**: ✅ `getFilteredEntries()` (line 38-79) sorts entries with default `sortColumn='date'`, `sortDirection='desc'`. Table rendered via `buildEntryRow()` (line 411-530) inside `\u003ctable class=\"data-table\"\u003e`.\n- **\"Sortable by any column (date, employee, project, duration)\"**: ✅ `handleSort()` (line 81-89) toggles asc/desc. `buildSortHeader()` (line 91-112) builds clickable `\u003cth\u003e` headers for Date, Employee, Project, Duration with ascending/descending triangle indicators.\n- **\"Add manual entry modal: employee (required), project (required), task, date, start time, end time, notes\"**: ✅ `openAddEntryModal()` (line 114-327) creates a full modal with employee select, project select, task select (dynamically populated when project changes at line 181-197), date input (defaults to today), start/end time inputs, and notes. All wired via `Modal.open()`.\n- **\"Validation: end time \u003e start time, no overlap with same employee's entries, max 24h\"**: ✅ Delegates to `timeEntryService.createManualEntry()` which calls `validateTimeRange()` (end \u003e start + max 24h) and `checkOverlap()`. Errors displayed in `errorDiv` (line 321-323).\n- **\"Inline editing of duration and notes\"**: ✅ `startInlineEdit()` (line 329-382) handles both `'notes'` and `'duration'` fields. Duration uses `parseDurationInput()` (line 384-396) which supports \"Xh Ym\", \"Xh\", \"Ym\", and plain number formats. Notes cell and duration cell both have `cursor: pointer` and `title: 'Click to edit'`.\n- **\"Delete entry with confirmation toast\"**: ✅ `deleteEntry()` (line 398-409) calls `timeEntryService.delete()` and shows a success toast with employee/project name. Delete button rendered per row in `buildEntryRow()` (line 514-527) with trash icon.\n- **\"Filter by date range (presets: Today, This Week, This Month, Custom)\"**: ✅ `createDateRangePicker` imported and used (line 572-582) with `onChange` callback that triggers re-render. Includes all presets (Today, This Week, This Month, Last Week, Last Month, Custom).\n- **\"Filter by employee and project dropdowns\"**: ✅ Employee select (line 585-603) and project select (line 606-624) with \"All Employees\"/\"All Projects\" default options. Filter state maintained in module-level vars `employeeFilter` and `projectFilter`.\n- **\"Duration displayed as Xh Ym format\"**: ✅ `formatDuration()` imported from `dates.ts` and used in `buildEntryRow()` at line 476 for completed entries and line 488 for active timers.\n\n## SUBTASK 2 — DateRangePicker Component (dateRangePicker.ts): ✅ PASSES (unchanged from iteration 1)\n\nAlready passed in iteration 1 with 17/17 tests.\n\n## SUBTASK 3 — Reports View (reports.ts): ✅ PASSES\n\nThe file has grown from a 23-line stub to a full 767-line implementation.\n\n- **\"Report type selector: Daily, Weekly, Monthly, By Project\"**: ✅ `buildReportTypeSelector()` (line 328-385) renders 4 buttons with active state using `#5746B2` background per ui-spec.md. Clicking auto-adjusts date range preset.\n- **\"Filters: date range picker, employee dropdown, project dropdown\"**: ✅ All three filters rendered in `renderView()` (line 624-684): DateRangePicker (line 630-640), employee select (line 643-661), project select (line 667-683).\n- **\"Summary cards compute correctly: total hours, average hours/day, top employee, top project\"**: ✅ `computeSummary()` (line 69-95) calculates all four metrics from filtered entries. `buildSummaryCards()` (line 387-425) renders them as `.stat-card` elements with Lucide icons. Uses unique days for average calculation.\n- **\"CSS horizontal bar chart shows hours distribution\"**: ✅ `buildBarChart()` (line 427-480) renders pure CSS horizontal bars using chart colors from ui-spec.md data viz palette (`#CF8A2E`, `#5746B2`, `#E07B5F`, `#2E9E8F`, `#C75A8A`, `#5B8AD4`, `#8BA055`, `#9B6DB0` — line 29-32). Bar width calculated as percentage of max value.\n- **\"Data table below chart with sortable columns\"**: ✅ `buildDataTable()` (line 482-566) renders a sortable `\u003ctable class=\"data-table\"\u003e` with clickable column headers using `handleTableSort()` (line 269-277). `sortTableRows()` (line 279-303) handles sorting.\n- **\"Daily report: hours per employee for selected date, broken down by project\"**: ✅ `computeDailyTable()` (line 144-166) groups by employee then project with totals per employee.\n- **\"Weekly report: 7-day breakdown with daily totals per employee\"**: ✅ `computeWeeklyTable()` (line 168-203) creates columns for each unique date (formatted as \"Mon, Mar 16\"), rows per employee, with per-day and total values.\n- **\"Monthly report: totals per employee and per project for selected month\"**: ✅ `computeMonthlyTable()` (line 205-230) shows both employee rows and project rows with Category/Name/Hours columns.\n- **\"Project report: total hours per project, breakdown by employee and task\"**: ✅ `computeProjectTable()` (line 232-267) groups by project with sub-rows for each employee and task, sorted by total hours descending.\n\n## SUBTASK 4 — CSV Export and Print/PDF (export.ts + reports.ts): ✅ PASSES\n\n- **\"Export CSV button downloads .csv file with current report data\"**: ✅ Export button at line 602-609 with `id=\"export-csv-btn\"` and click handler calling `exportReport()` (line 305-326) which calls `generateCSV()` and `downloadCSV()`.\n- **\"CSV has proper headers, double-quoted values, formula injection protection\"**: ✅ `export.ts` (line 11-17) sanitizes with formula character prefixing and double-quote escaping.\n- **\"CSV includes UTF-8 BOM for Excel compatibility\"**: ✅ `export.ts` line 20: `const BOM = '\\uFEFF'`.\n- **\"Print/PDF button triggers window.print()\"**: ✅ Print button at line 594-600 calls `window.print()`. Styled as `btn-secondary` with printer icon.\n- **\"Print CSS hides sidebar, nav, buttons — shows only report content\"**: ✅ Already confirmed in main.css from iteration 1.\n- **\"File name includes report type and date range\"**: ✅ `exportReport()` at line 320-322 constructs filename as `${typeLabel}-report-${start}-to-${end}.csv` (e.g., `weekly-report-2026-03-16-to-2026-03-22.csv`).\n- **\"Export works for all 4 report types\"**: ✅ `exportReport()` calls `computeTableData()` which dispatches to the correct report computation based on `reportType`.\n\n## Build \u0026 Tests\n\n- **TypeScript**: 0 errors\n- **Vite build**: passes cleanly (10 chunks produced)\n- **Tests**: 132/132 pass across 10 test files\n- **timesheet.ts**: 14.31 kB (from previous stub)\n- **reports.ts**: 14.99 kB (from previous stub)\n\n## Spec Compliance\n\n- **Colors**: Chart bars use ui-spec.md data viz palette (`#CF8A2E`, `#5746B2`, `#E07B5F`, `#2E9E8F`, etc.). Report type selector uses `#5746B2` for active state and `#8C83A8` for inactive — matches spec.\n- **Typography**: Tables use `font-variant-numeric: tabular-nums` for time/duration columns per ui-spec.md.\n- **XSS Prevention**: Both files use `textContent` for user-supplied data. Only structural HTML uses `innerHTML`.\n- **Event-driven updates**: Both views listen to `timeEntries:changed`, `timer:changed`, `employees:changed`, `projects:changed` events and re-render accordingly.\n\nPhase is complete and meets quality standards.\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T15:18:09.030064+05:30"
+  },
+  {
+    "id": "20260318151809-i2aa22",
+    "type": "system",
+    "from": "system",
+    "to": "",
+    "content": "Checkpoint: Waiting for approval — Phase 3: Timesheet \u0026 Reports with Export passed QA — proceed?",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T15:18:09.049315+05:30"
+  },
+  {
+    "id": "20260318152112-a222uu",
+    "type": "system",
+    "from": "orchestrator",
+    "to": "all",
+    "content": "Development Phase 4: Polish \u0026 Data Management",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T15:21:12.794784+05:30"
+  },
+  {
+    "id": "20260318153001-mqiyqi",
+    "type": "response",
+    "from": "ceo",
+    "to": "orchestrator",
+    "content": "I've completed my thorough review of the implementation. Here's my assessment:\n\n---\n\nQA_APPROVED: Polish \u0026 Data Management\n\n✅ All completion criteria met across all 3 subtasks. TypeScript compiles with 0 errors, Vite build produces 9 clean chunks, and all 167 tests pass across 12 test files.\n\n## Subtask 1: Settings Panel with Data Management — PASSES\n\n- **\"Settings panel accessible from top bar gear icon\"**: ✅ Sidebar gear button (`#settings-btn`, `index.html:53`) and mobile top bar gear button (`#mobile-settings-btn`, `index.html:74`) both wired via `initSettings()` (`settings.ts:473-483`), called from `main.ts:26`.\n- **\"Clear All Data button with confirmation dialog — wipes all wtt_ keys\"**: ✅ Red-bordered button (`settings.ts:248-261`) opens confirmation modal via `handleClearData()` (`settings.ts:415-446`) with \"This will delete all employees, projects, time entries, and settings.\" / \"This cannot be undone.\" / \"Delete Everything\" submit. Calls `store.clearAll()` (`store.ts:74-84`) which iterates and removes all `wtt_` prefixed keys.\n- **\"Export All Data downloads JSON file with all collections\"**: ✅ `handleExportData()` (`settings.ts:270-289`) calls `store.exportAll()` (`store.ts:107-123`), creates JSON blob, triggers download with filename `worktime-backup-YYYY-MM-DD.json`.\n- **\"Import Data accepts JSON file, validates schema, offers merge or replace\"**: ✅ `handleImportData()` (`settings.ts:291-340`) creates file input, validates JSON object shape, checks unknown keys (warns), validates arrays. `showImportDialog()` (`settings.ts:342-413`) shows item count and offers \"Merge with existing\" (adds non-duplicate IDs) and \"Replace all data\" (clears + imports).\n- **\"Storage usage bar shows approximate localStorage usage\"**: ✅ `buildStorageIndicator()` (`settings.ts:46-77`) calls `store.getStorageUsage()` (`store.ts:86-105`), renders \"Storage: X of ~Y used\" with percentage and a color-coded bar (indigo \u003c 60%, warning 60-80%, error ≥ 80%).\n- **\"Toast notifications confirm each action\"**: ✅ Every settings action produces a toast: export (`settings.ts:285`), import merge/replace (`settings.ts:384, 401`), clear (`settings.ts:442`), time format toggle (`settings.ts:125, 135`), week start (`settings.ts:170`), default view (`settings.ts:207`).\n\n## Subtask 2: Keyboard Shortcuts — PASSES\n\n- **\"Space toggles clock in/out when on dashboard (not when input focused)\"**: ✅ `keyboard.ts:47-63` checks `getCurrentRoute() === '/dashboard'`, tries `.btn-accent.btn-lg` selector (matches dashboard clock-in button at `dashboard.ts:282`) then falls back to `#timer-stop-btn` for clock-out. Input check at line 44.\n- **\"N opens new time entry modal\"**: ✅ `keyboard.ts:66-78` navigates to `/timesheet`, after 300ms clicks `[data-action=\"add-entry\"]` (set at `timesheet.ts:558`).\n- **\"E, P, R navigate to respective views\"**: ✅ `keyboard.ts:80-96` maps E → `/employees`, P → `/projects`, R → `/reports`. Bonus: D → `/dashboard`.\n- **\"Esc closes any open modal\"**: ✅ `keyboard.ts:35-41` calls `Modal.close()` when Esc pressed. Also backed by `modal.ts:26-28`.\n- **\"Shortcuts disabled when typing in input/textarea fields\"**: ✅ `isInputFocused()` (`keyboard.ts:22-28`) checks INPUT, TEXTAREA, SELECT tags and contentEditable. All non-Esc shortcuts guarded at line 44.\n- **\"Optional: keyboard shortcut hint tooltip on hover\"**: ✅ CSS class `.shortcut-hint` defined (`main.css:707-724`), visible on desktop. Plus `?` key opens a full shortcuts help modal (`keyboard.ts:111-149`) with styled `\u003ckbd\u003e` badges.\n\n## Subtask 3: Responsive Design and Final Polish — PASSES\n\n- **\"Sidebar collapses to hamburger menu on mobile\"**: ✅ `.sidebar-drawer` translates off-screen by default (`main.css:660`), shown at 768px+ (`main.css:678`). Mobile top bar with hamburger (`index.html:67`). `initMobileMenu()` (`main.ts:43-80`) toggles `.open` class and overlay.\n- **\"All data tables scroll horizontally on small screens\"**: ✅ `.table-scroll` wrapper used in employees (`employees.ts:492`), reports (`reports.ts:484`), and timesheet (`timesheet.ts:671`). CSS: `overflow-x: auto; min-width: 600px` (`main.css:648-656`).\n- **\"Timer widget shows compact view on mobile\"**: ✅ `main.css:761-763`: `#timer-bar .text-timer-compact { font-size: 16px; }` on mobile (down from 20px default). Timer bar uses flex layout that adapts.\n- **\"Dashboard summary cards stack on mobile (2x2 or 1 column)\"**: ✅ `dashboard.ts:78`: `grid-template-columns: repeat(auto-fill, minmax(200px, 1fr))` — naturally stacks to 1-column on mobile, 2-column on tablet, 4-column on desktop.\n- **\"Modals are full-screen on mobile, centered on desktop\"**: ✅ `main.css:766-775`: On mobile `modal-overlay` uses `align-items: flex-end`, `modal-container` uses `max-width: 100%; border-radius: 16px 16px 0 0; max-height: 90vh` — slides up as half-sheet. Desktop: centered with 480px max-width.\n- **\"200ms transitions on view switches, modal open/close\"**: ✅ View: `opacity 200ms ease-in-out` (`main.css:644`). Modal: 250ms open / 150ms close per UI spec timing (`main.css:397, 412, 424`).\n- **\"No horizontal overflow on any screen size\"**: ✅ `main.css:731-735`: `html, body { overflow-x: hidden; max-width: 100vw; }` on mobile. Tables have scroll wrappers.\n- **\"Print CSS produces clean single-page report output\"**: ✅ `main.css:829-925`: Comprehensive print styles — hides all chrome (sidebar, nav, timer, buttons, selects), white background, clean table formatting, `@page { margin: 1cm; size: A4; }`, `break-inside: avoid` on cards, `print-color-adjust: exact` for chart bars.\n\n## Build \u0026 Tests\n\n- **TypeScript**: 0 errors\n- **Vite build**: passes cleanly (9 chunks)\n- **Tests**: 167/167 pass across 12 test files\n\n## Spec Compliance\n\n- **Colors**: All spec colors correctly used — primary #5746B2, accent #CF8A2E, background #0D0A1A, surface #17132B, etc. No generic blues (#3B82F6) or greens (#10B981) found.\n- **Typography**: Manrope for headings, Inter for body. `font-variant-numeric: tabular-nums` on timer and table cells.\n- **Tailwind tokens**: All design system tokens from ui-spec.md correctly configured in `tailwind.config.js`.\n- **Accessibility**: Focus rings, aria labels, skip-to-content link, reduced motion support all present.\n\nPhase is complete and meets quality standards.\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T15:30:01.171431+05:30"
+  },
+  {
+    "id": "20260318153001-2iiiaa",
+    "type": "system",
+    "from": "system",
+    "to": "",
+    "content": "Checkpoint: Waiting for approval — Phase 4: Polish \u0026 Data Management passed QA — proceed?",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T15:30:01.255248+05:30"
+  },
+  {
+    "id": "20260318153305-myyqqq",
+    "type": "system",
+    "from": "system",
+    "to": "",
+    "content": "Checkpoint: Waiting for approval — All development phases completed — final acceptance",
+    "metadata": {
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000"
+    },
+    "timestamp": "2026-03-18T15:33:05.22062+05:30"
+  }
+]

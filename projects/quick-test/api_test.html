@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rock Paper Scissors - API / Interaction Test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #0F0F13; color: #F0F0F5; }
+    h1 { color: #E8A838; }
+    h2 { color: #8888A0; border-bottom: 1px solid #2E2E48; padding-bottom: 8px; }
+    .test { margin: 16px 0; padding: 12px 16px; background: #1A1A24; border-radius: 8px; border: 1px solid #2E2E48; }
+    .test-name { font-weight: 600; color: #F0F0F5; }
+    .test-desc { color: #8888A0; font-size: 14px; margin-top: 4px; }
+    .status { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .status.pass { background: #4ADE8020; color: #4ADE80; }
+    .status.manual { background: #A78BFA20; color: #A78BFA; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #2E2E48; }
+    th { color: #8888A0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+    td { color: #F0F0F5; font-size: 14px; }
+    code { background: #24243A; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>Rock Paper Scissors — Test Plan</h1>
+  <p>This is a client-side only game — no API endpoints. Tests cover UI interactions and game logic.</p>
+
+  <h2>Game Logic Tests</h2>
+
+  <div class="test">
+    <span class="status manual">Manual</span>
+    <span class="test-name">Rock beats Scissors</span>
+    <div class="test-desc">Click Rock. If CPU plays Scissors, result should show "You win!" with green styling.</div>
+  </div>
+
+  <div class="test">
+    <span class="status manual">Manual</span>
+    <span class="test-name">Paper beats Rock</span>
+    <div class="test-desc">Click Paper. If CPU plays Rock, result should show "You win!" with green styling.</div>
+  </div>
+
+  <div class="test">
+    <span class="status manual">Manual</span>
+    <span class="test-name">Scissors beats Paper</span>
+    <div class="test-desc">Click Scissors. If CPU plays Paper, result should show "You win!" with green styling.</div>
+  </div>
+
+  <div class="test">
+    <span class="status manual">Manual</span>
+    <span class="test-name">Draw detection</span>
+    <div class="test-desc">When both choose the same, result should show "It's a draw!" with purple styling.</div>
+  </div>
+
+  <div class="test">
+    <span class="status manual">Manual</span>
+    <span class="test-name">Loss detection</span>
+    <div class="test-desc">When CPU's choice beats yours, result should show "You lose!" with red styling.</div>
+  </div>
+
+  <h2>Score Tracking</h2>
+
+  <div class="test">
+    <span class="status manual">Manual</span>
+    <span class="test-name">Score increments correctly</span>
+    <div class="test-desc">Play multiple rounds. Verify player/CPU/draw scores increment only on their respective outcomes.</div>
+  </div>
+
+  <div class="test">
+    <span class="status manual">Manual</span>
+    <span class="test-name">Score animation</span>
+    <div class="test-desc">When a score changes, it should briefly "pop" (scale up then back down).</div>
+  </div>
+
+  <h2>UI Interactions</h2>
+
+  <div class="test">
+    <span class="status manual">Manual</span>
+    <span class="test-name">Button hover states</span>
+    <div class="test-desc">Hovering a choice button should show golden border and scale the emoji up.</div>
+  </div>
+
+  <div class="test">
+    <span class="status manual">Manual</span>
+    <span class="test-name">Keyboard shortcuts</span>
+    <div class="test-desc">Press <code>1/r</code> = Rock, <code>2/p</code> = Paper, <code>3/s</code> = Scissors.</div>
+  </div>
+
+  <div class="test">
+    <span class="status manual">Manual</span>
+    <span class="test-name">History pips</span>
+    <div class="test-desc">After first round, "Recent" section appears with colored dots: green=win, red=lose, purple=draw.</div>
+  </div>
+
+  <div class="test">
+    <span class="status manual">Manual</span>
+    <span class="test-name">Streak badge</span>
+    <div class="test-desc">Win or lose 3+ times in a row to see the streak badge appear in the top-right corner.</div>
+  </div>
+
+  <div class="test">
+    <span class="status manual">Manual</span>
+    <span class="test-name">Reset functionality</span>
+    <div class="test-desc">Click "Reset" to clear all scores, history, and return to initial state.</div>
+  </div>
+
+  <div class="test">
+    <span class="status manual">Manual</span>
+    <span class="test-name">Suspense animation</span>
+    <div class="test-desc">After clicking a choice, there should be a brief "Choosing..." shake animation before the result appears.</div>
+  </div>
+
+  <h2>Keyboard Shortcut Reference</h2>
+  <table>
+    <thead>
+      <tr><th>Key</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>1</code> or <code>r</code></td><td>Play Rock</td></tr>
+      <tr><td><code>2</code> or <code>p</code></td><td>Play Paper</td></tr>
+      <tr><td><code>3</code> or <code>s</code></td><td>Play Scissors</td></tr>
+    </tbody>
+  </table>
+</body>
+</html>

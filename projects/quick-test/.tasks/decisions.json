@@ -1,0 +1,21 @@
+[
+  {
+    "id": "dec_1774080148414074000",
+    "project_id": "quick-test",
+    "task_id": "task_1774079577545329000",
+    "checkpoint_type": "template_approval",
+    "action": "approved",
+    "decided_by": "user",
+    "decided_at": "2026-03-21T13:32:28.414357+05:30"
+  },
+  {
+    "id": "dec_1774080646728426000",
+    "project_id": "quick-test",
+    "task_id": "task_1774079577545329000",
+    "checkpoint_type": "plan_approval",
+    "action": "approved",
+    "feedback": "Plan is comprehensive and well-scoped for a single-file HTML game — clear dark theme palette, defined animations, solid layout structure, and concrete verification steps. Ready for implementation.",
+    "decided_by": "ceo_auto",
+    "decided_at": "2026-03-21T13:40:46.728432+05:30"
+  }
+]

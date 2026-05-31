@@ -1,0 +1,156 @@
+[
+  {
+    "id": "cp_1773823531394022000",
+    "project_id": "worktimetracker",
+    "task_id": "task_1773823350775605000",
+    "type": "template_approval",
+    "status": "resolved",
+    "artifact_path": "projects/worktimetracker/.plans/template.md",
+    "artifact_summary": "Selected template: static-enhanced",
+    "decision": {
+      "id": "dec_1773823668477252000",
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000",
+      "checkpoint_type": "template_approval",
+      "action": "approved",
+      "feedback": "The `static-enhanced` template is the right choice. A work time tracker with localStorage persistence, client-side routing, and browser-based CSV export requires no backend — Vite + Tailwind gives us clean DX, fast builds, and the module system needed to organize multiple views (employees, time tracking, projects, reports). The justification is sound and the proposed customizations cover all the architectural needs.",
+      "decided_by": "ceo_auto",
+      "decided_at": "2026-03-18T14:17:48.477259+05:30"
+    },
+    "created_at": "2026-03-18T14:15:31.394023+05:30",
+    "resolved_at": "2026-03-18T14:17:48.478374+05:30"
+  },
+  {
+    "id": "cp_1773824141211047000",
+    "project_id": "worktimetracker",
+    "task_id": "task_1773823350775605000",
+    "type": "plan_approval",
+    "status": "resolved",
+    "artifact_path": "projects/worktimetracker/.plans/final/approved-plan.md",
+    "artifact_summary": "Development plan ready for review",
+    "decision": {
+      "id": "dec_1773824224370443000",
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000",
+      "checkpoint_type": "plan_approval",
+      "action": "approved",
+      "decided_by": "user",
+      "decided_at": "2026-03-18T14:27:04.370488+05:30"
+    },
+    "created_at": "2026-03-18T14:25:41.211049+05:30",
+    "resolved_at": "2026-03-18T14:27:04.371457+05:30"
+  },
+  {
+    "id": "cp_1773825280557904000",
+    "project_id": "worktimetracker",
+    "task_id": "task_1773823350775605000",
+    "type": "phase_gate",
+    "phase_index": 1,
+    "status": "resolved",
+    "artifact_path": "projects/worktimetracker/.plans/development-plan.json",
+    "artifact_summary": "Phase 1: Foundation \u0026 Core Data Layer passed QA — proceed?",
+    "decision": {
+      "id": "dec_1773825444760497000",
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000",
+      "checkpoint_type": "phase_gate",
+      "phase_index": 1,
+      "action": "approved",
+      "feedback": "All 5 subtasks verified — build passes, Tailwind tokens match spec, layout is responsive with sidebar collapse, localStorage store has proper prefixing/caching/error handling, hash router covers all routes with lazy rendering, and reusable components + utilities are complete with tests. Foundation is solid for Phase 2.",
+      "decided_by": "ceo_auto",
+      "decided_at": "2026-03-18T14:47:24.760498+05:30"
+    },
+    "created_at": "2026-03-18T14:44:40.557905+05:30",
+    "resolved_at": "2026-03-18T14:47:24.762281+05:30"
+  },
+  {
+    "id": "cp_1773826261453988000",
+    "project_id": "worktimetracker",
+    "task_id": "task_1773823350775605000",
+    "type": "phase_gate",
+    "phase_index": 2,
+    "status": "resolved",
+    "artifact_path": "projects/worktimetracker/.plans/development-plan.json",
+    "artifact_summary": "Phase 2: Core Views — Dashboard, Employees, Projects passed QA — proceed?",
+    "decision": {
+      "id": "dec_1773826429742952000",
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000",
+      "checkpoint_type": "phase_gate",
+      "phase_index": 2,
+      "action": "approved",
+      "feedback": "Phase 2 fully implemented and verified. All 4 subtasks (Employee Management, Project \u0026 Task Management, Timer Widget, Dashboard) meet their completion criteria. TypeScript compiles with 0 errors, Vite build passes cleanly. Code quality is high: proper event-driven updates, XSS-safe textContent usage, debounced search, validation, empty states, accessibility attributes, and clean lifecycle management (render/destroy with eventBus subscription cleanup). Proceed to Phase 3 (Timesheet \u0026 Reports with Export).",
+      "decided_by": "ceo_auto",
+      "decided_at": "2026-03-18T15:03:49.742977+05:30"
+    },
+    "created_at": "2026-03-18T15:01:01.453988+05:30",
+    "resolved_at": "2026-03-18T15:03:49.7453+05:30"
+  },
+  {
+    "id": "cp_1773827289048392000",
+    "project_id": "worktimetracker",
+    "task_id": "task_1773823350775605000",
+    "type": "phase_gate",
+    "phase_index": 3,
+    "status": "resolved",
+    "artifact_path": "projects/worktimetracker/.plans/development-plan.json",
+    "artifact_summary": "Phase 3: Timesheet \u0026 Reports with Export passed QA — proceed?",
+    "decision": {
+      "id": "dec_1773827472783579000",
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000",
+      "checkpoint_type": "phase_gate",
+      "phase_index": 3,
+      "action": "approved",
+      "feedback": "Phase 3 (Timesheet \u0026 Reports with Export) passes all criteria — TypeScript clean, 167/167 tests pass, all 4 subtasks fully implemented with proper CSV export (BOM, formula protection, descriptive filenames), 4 report types, sortable tables, date range filtering, and print support. Proceed to Phase 4 (Polish \u0026 Data Management).",
+      "decided_by": "ceo_auto",
+      "decided_at": "2026-03-18T15:21:12.78358+05:30"
+    },
+    "created_at": "2026-03-18T15:18:09.048393+05:30",
+    "resolved_at": "2026-03-18T15:21:12.786216+05:30"
+  },
+  {
+    "id": "cp_1773828001248470000",
+    "project_id": "worktimetracker",
+    "task_id": "task_1773823350775605000",
+    "type": "phase_gate",
+    "phase_index": 4,
+    "status": "resolved",
+    "artifact_path": "projects/worktimetracker/.plans/development-plan.json",
+    "artifact_summary": "Phase 4: Polish \u0026 Data Management passed QA — proceed?",
+    "decision": {
+      "id": "dec_1773828185213332000",
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000",
+      "checkpoint_type": "phase_gate",
+      "phase_index": 4,
+      "action": "approved",
+      "feedback": "Phase 4 (Polish \u0026 Data Management) passes all quality gates. TypeScript compiles cleanly, Vite build succeeds, 189/189 tests pass, and all 4 development phases are now complete with thorough QA approval. The work time tracker application is production-ready with full CRUD, timer functionality, reports/export, settings/backup, keyboard shortcuts, and responsive design — all matching the approved specs.",
+      "decided_by": "ceo_auto",
+      "decided_at": "2026-03-18T15:33:05.213339+05:30"
+    },
+    "created_at": "2026-03-18T15:30:01.248471+05:30",
+    "resolved_at": "2026-03-18T15:33:05.214779+05:30"
+  },
+  {
+    "id": "cp_1773828185219608000",
+    "project_id": "worktimetracker",
+    "task_id": "task_1773823350775605000",
+    "type": "final_acceptance",
+    "status": "resolved",
+    "artifact_path": "projects/worktimetracker/.plans/development-plan.json",
+    "artifact_summary": "All development phases completed — final acceptance",
+    "decision": {
+      "id": "dec_1773828388113900000",
+      "project_id": "worktimetracker",
+      "task_id": "task_1773823350775605000",
+      "checkpoint_type": "final_acceptance",
+      "action": "approved",
+      "feedback": "All 4 development phases completed successfully with comprehensive implementation quality.",
+      "decided_by": "ceo_auto",
+      "decided_at": "2026-03-18T15:36:28.113901+05:30"
+    },
+    "created_at": "2026-03-18T15:33:05.219609+05:30",
+    "resolved_at": "2026-03-18T15:36:28.115144+05:30"
+  }
+]

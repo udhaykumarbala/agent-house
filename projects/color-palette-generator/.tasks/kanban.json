@@ -1,0 +1,17 @@
+[
+  {
+    "id": "kt_1773654141094217000",
+    "project_id": "color-palette-generator",
+    "phase_index": 0,
+    "title": "Test kanban task",
+    "assigned_agent": "senior-dev",
+    "status": "backlog",
+    "priority": "high",
+    "source": "manual",
+    "review_status": "pending",
+    "progress": 0,
+    "position": 0,
+    "created_at": "2026-03-16T15:12:21.094224+05:30",
+    "updated_at": "2026-03-16T15:12:21.094224+05:30"
+  }
+]

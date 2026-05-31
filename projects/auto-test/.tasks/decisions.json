@@ -1,0 +1,33 @@
+[
+  {
+    "id": "dec_1774118115988849000",
+    "project_id": "auto-test",
+    "task_id": "task_1774117988389513000",
+    "checkpoint_type": "plan_approval",
+    "action": "approved",
+    "feedback": "Go ahead",
+    "decided_by": "user",
+    "decided_at": "2026-03-22T00:05:15.988856+05:30"
+  },
+  {
+    "id": "dec_1774118301463186000",
+    "project_id": "auto-test",
+    "task_id": "task_1774117988389513000",
+    "checkpoint_type": "phase_gate",
+    "phase_index": 1,
+    "action": "approved",
+    "feedback": "Looks great",
+    "decided_by": "user",
+    "decided_at": "2026-03-22T00:08:21.463196+05:30"
+  },
+  {
+    "id": "dec_1774118323622824000",
+    "project_id": "auto-test",
+    "task_id": "task_1774117988389513000",
+    "checkpoint_type": "final_acceptance",
+    "action": "approved",
+    "feedback": "Ship it",
+    "decided_by": "user",
+    "decided_at": "2026-03-22T00:08:43.622836+05:30"
+  }
+]

@@ -29,6 +29,14 @@ const (
 	RoleArchitect Role = "architect"
 	RoleSeniorDev Role = "senior_dev"
 	RoleJuniorDev Role = "junior_dev"
+
+	// EPC roles
+	RoleHR          Role = "hr"
+	RoleProjectMgr  Role = "project_manager"
+	RoleProcurement Role = "procurement"
+	RoleSiteEngineer Role = "site_engineer"
+	RoleHSE         Role = "hse"
+	RoleQAInspector Role = "qa_inspector"
 )
 
 // PermissionModes maps agent roles to their Claude Code permission mode.
@@ -46,6 +54,14 @@ var PermissionModes = map[Role]string{
 	RoleArchitect: "bypassPermissions",
 	RoleSeniorDev: "bypassPermissions",
 	RoleJuniorDev: "bypassPermissions",
+
+	// EPC roles
+	RoleHR:           "bypassPermissions",
+	RoleProjectMgr:   "bypassPermissions",
+	RoleProcurement:  "bypassPermissions",
+	RoleSiteEngineer: "bypassPermissions",
+	RoleHSE:          "bypassPermissions",
+	RoleQAInspector:  "bypassPermissions",
 }
 
 // Agent represents a specialized AI agent

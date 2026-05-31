@@ -1,0 +1,14 @@
+[
+  {
+    "id": "20260321115358-6qqiii",
+    "type": "task",
+    "from": "user",
+    "to": "ceo",
+    "content": "Create a simple hello world HTML page with a nice gradient background and centered text",
+    "metadata": {
+      "project_id": "test-live",
+      "task_id": "task_1774074238964127000"
+    },
+    "timestamp": "2026-03-21T11:53:58.964469+05:30"
+  }
+]

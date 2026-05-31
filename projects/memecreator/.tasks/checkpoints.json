@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cp_1773658168099609000",
+    "project_id": "memecreator",
+    "task_id": "task_1773658033417205000",
+    "type": "template_approval",
+    "status": "resolved",
+    "artifact_path": "projects/memecreator/.plans/template.md",
+    "artifact_summary": "Selected template: static-enhanced",
+    "decision": {
+      "id": "dec_1773666322834717000",
+      "project_id": "default",
+      "task_id": "task_1773658033417205000",
+      "checkpoint_type": "template_approval",
+      "action": "approved",
+      "decided_by": "user",
+      "decided_at": "2026-03-16T18:35:22.834924+05:30"
+    },
+    "created_at": "2026-03-16T16:19:28.09961+05:30",
+    "resolved_at": "2026-03-16T18:35:22.8364+05:30"
+  },
+  {
+    "id": "cp_1773666754801747000",
+    "project_id": "memecreator",
+    "task_id": "task_1773658033417205000",
+    "type": "plan_approval",
+    "status": "pending",
+    "artifact_path": "projects/memecreator/.plans/final/approved-plan.md",
+    "artifact_summary": "Development plan ready for review",
+    "created_at": "2026-03-16T18:42:34.801747+05:30"
+  }
+]

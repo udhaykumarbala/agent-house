@@ -1,0 +1,38 @@
+{
+  "task_id": "",
+  "reviews": [
+    {
+      "id": "qa_task_1774079577545329000_p0_i1_1774080997",
+      "task_id": "task_1774079577545329000",
+      "phase_index": 0,
+      "phase_name": "Implementation",
+      "reviewer": "ceo",
+      "status": "rejected",
+      "feedback": "Implementation\n\n❌ Issues found (Iteration 1/3):\n\nFAILED CRITERIA:\n\n**1. \"Single HTML file\" — CRITICAL VIOLATION**\nThe task explicitly requires **one HTML file**. The implementation has **7+ files**:\n- `src/index.html`\n- `src/scripts/main.ts`\n- `src/scripts/utils.ts`\n- `src/styles/main.css`\n- `package.json`\n- `tailwind.config.js`\n- `postcss.config.js`\n- `tsconfig.json`\n- `vite.config.ts`\n\n**2. \"Inline CSS and JS only\" — CRITICAL VIOLATION**\n- CSS is in an external file (`src/styles/main.css`) using Tailwind directives (`@tailwind base`)\n- JS is in external TypeScript files (`src/scripts/main.ts`, `src/scripts/utils.ts`)\n- HTML references external stylesheet: `\u003clink rel=\"stylesheet\" href=\"./styles/main.css\" /\u003e`\n- HTML references external script: `\u003cscript type=\"module\" src=\"./scripts/main.ts\"\u003e`\n- External Google Fonts CDN links on lines 7-9\n\n**3. \"No build tools needed\" — VIOLATION**\n- Requires Vite, TypeScript compiler, Tailwind CSS, PostCSS, Autoprefixer\n- `npm install` + `npm run dev` needed just to view the game\n- Should open directly in a browser with zero setup\n\nFILES WITH ISSUES:\n- `src/index.html`: External CSS/JS references, CDN font links — must be self-contained\n- `src/scripts/main.ts`: Must be plain JavaScript inlined in `\u003cscript\u003e` tag\n- `src/scripts/utils.ts`: Must be merged into the inline script\n- `src/styles/main.css`: Must be plain CSS inlined in `\u003cstyle\u003e` tag\n- `package.json`, `tailwind.config.js`, `postcss.config.js`, `tsconfig.json`, `vite.config.ts`: Should not exist\n\nREQUIRED FIXES:\n\n1. **Delete all files except a single `index.html`** at the project root\n2. **Inline all CSS** in a `\u003cstyle\u003e` tag — write plain CSS, no Tailwind utilities. Convert the Tailwind color tokens to CSS custom properties (e.g., `--color-background: #0F0F13`)\n3. **Inline all JavaScript** in a `\u003cscript\u003e` tag — plain JS, no TypeScript, no ES module imports\n4. **Remove all external dependencies** — no Google Fonts CDN links, no npm packages. Use `system-ui` font stack or embed a font via base64 if critical\n5. **Remove all build tooling** — no package.json, no Vite, no Tailwind config\n6. **The file must open directly in any browser** with zero setup (just double-click `index.html`)\n\nWHAT TO KEEP:\nThe game logic in `utils.ts` and `main.ts` is solid — the `determineResult`, `updateState`, `playRound` flow, keyboard support, streak tracking, and history pips are all good features. Port them to plain JS within a single `\u003cscript\u003e` block. The color palette in `tailwind.config.js` and animations are good — convert to CSS custom properties and `@keyframes`.\n\nPlease rebuild as a single self-contained `index.html` file and resubmit for review.",
+      "failed_criteria": [
+        "*1. \"Single HTML file\" — CRITICAL VIOLATION**",
+        "`src/index.html`",
+        "`src/scripts/main.ts`",
+        "`src/scripts/utils.ts`",
+        "`src/styles/main.css`",
+        "`package.json`",
+        "`tailwind.config.js`",
+        "`postcss.config.js`",
+        "`tsconfig.json`",
+        "`vite.config.ts`",
+        "*2. \"Inline CSS and JS only\" — CRITICAL VIOLATION**",
+        "CSS is in an external file (`src/styles/main.css`) using Tailwind directives (`@tailwind base`)",
+        "JS is in external TypeScript files (`src/scripts/main.ts`, `src/scripts/utils.ts`)",
+        "HTML references external stylesheet: `\u003clink rel=\"stylesheet\" href=\"./styles/main.css\" /\u003e`",
+        "HTML references external script: `\u003cscript type=\"module\" src=\"./scripts/main.ts\"\u003e`",
+        "External Google Fonts CDN links on lines 7-9",
+        "*3. \"No build tools needed\" — VIOLATION**",
+        "Requires Vite, TypeScript compiler, Tailwind CSS, PostCSS, Autoprefixer",
+        "`npm install` + `npm run dev` needed just to view the game",
+        "Should open directly in a browser with zero setup"
+      ],
+      "reviewed_at": "2026-03-21T13:46:37.02242+05:30",
+      "iteration": 1
+    }
+  ]
+}

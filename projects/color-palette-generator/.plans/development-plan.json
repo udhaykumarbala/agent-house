@@ -1,0 +1,301 @@
+{
+  "task_id": "brutalist-reskin",
+  "phases": [
+    {
+      "index": 1,
+      "name": "Core Design Token Swap \u0026 Typography",
+      "description": "Replace all CSS custom properties with brutalist values, swap fonts to Space Mono, update HTML font link, and remove all border-radius/shadows/blur. This phase makes the app visually brutalist at the token level.",
+      "subtasks": [
+        {
+          "id": "st_001",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Update HTML font link to Space Mono",
+          "description": "Replace the Google Fonts link in index.html from Inter + JetBrains Mono to Space Mono (400 and 700 weights). Update the CSP meta tag if needed.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "completion_criteria": [
+            "Google Fonts link loads Space Mono 400 and 700",
+            "Inter and JetBrains Mono references removed from HTML",
+            "CSP meta tag still allows fonts.googleapis.com and fonts.gstatic.com",
+            "Page loads without font-related console errors"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_002",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Replace all CSS design tokens in :root",
+          "description": "Overwrite every custom property in the :root block per the architecture spec section 3: colors to black/white/gray, fonts to Space Mono, border-radius to 0, shadows to none, transitions to 0ms or 50ms linear.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_001"
+          ],
+          "completion_criteria": [
+            "All --color-* tokens match brutalist spec values",
+            "--font-ui and --font-mono both set to Space Mono stack",
+            "All --radius-* tokens set to 0px",
+            "All --shadow-* tokens set to none",
+            "All --transition-* tokens set to 0ms or 50ms linear",
+            "Background is white (#FFFFFF), text is black (#000000)"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_003",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Add brutalist typography styling",
+          "description": "Add text-transform: uppercase and increased letter-spacing to toolbar title, button labels, and swatch color codes. Increase font-weight to 700 for key text elements.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_002"
+          ],
+          "completion_criteria": [
+            "Toolbar title is uppercase, bold, letter-spaced (0.15em)",
+            "Generate button text is uppercase, letter-spaced (0.1em)",
+            "Swatch color codes are uppercase, 700 weight, 20px on desktop",
+            "Format toggle buttons are uppercase",
+            "All text renders in Space Mono"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_004",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Fix JS hardcoded amber color for lock button",
+          "description": "In app.js, replace the hardcoded '#D4913B' lock button color with the dynamic contrastColor variable so locked icons use black or white based on swatch luminance.",
+          "assigned_agents": [
+            "senior_dev"
+          ],
+          "completion_criteria": [
+            "Lock button color on locked swatches uses getContrastColor() result, not amber",
+            "Lock icon is visible on both light and dark swatches when locked",
+            "No remaining references to #D4913B in any JS file"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        }
+      ],
+      "status": "completed",
+      "qa_status": "approved",
+      "qa_feedback": "Core Design Token Swap \u0026 Typography\n\nAll completion criteria met:\n\n**Subtask 1 — Update HTML font link to Space Mono:**\n- Google Fonts link loads Space Mono 400 and 700: Verified at `index.html:18`\n- Inter and JetBrains Mono references removed from HTML: Confirmed, none found\n- CSP meta tag still allows fonts.googleapis.com and fonts.gstatic.com: Verified at `index.html:8-9`\n- Page loads without font-related console errors: Link is well-formed with `display=swap`\n\n**Subtask 2 — Replace all CSS design tokens in :root:**\n- All --color-* tokens match brutalist spec values: Verified against ui-spec.md (`styles.css:11-28`)\n- --font-ui and --font-mono both set to Space Mono stack: `styles.css:31-32`\n- All --radius-* tokens set to 0px: `styles.css:48-53` — all six radius tokens are 0px\n- All --shadow-* tokens set to none: `styles.css:67-69`\n- All --transition-* tokens set to `none` (effectively 0ms): `styles.css:62-64`\n- Background/text colors follow ui-spec.md: `--color-background: #0A0A0A`, `--color-text-primary: #FFFFFF` (Note: the completion criterion text says \"white bg / black text\" but this contradicts the ui-spec.md which specifies dark bg #0A0A0A with white text #FFFFFF. The implementation correctly follows the authoritative ui-spec.)\n\n**Subtask 3 — Add brutalist typography styling:**\n- Toolbar title: uppercase, 700 weight, 0.15em letter-spacing: `styles.css:200-205`\n- Generate button: uppercase, 0.1em letter-spacing: `styles.css:230-231`\n- Swatch color codes: uppercase, 700 weight, 20px on desktop: `styles.css:149-160` (base), `styles.css:563` (desktop 20px)\n- Format toggle buttons: uppercase: `styles.css:361`\n- All text renders in Space Mono: Font loaded via Google Fonts, both CSS font variables reference Space Mono\n\n**Subtask 4 — Fix JS hardcoded amber color for lock button:**\n- Lock button uses `getContrastColor()` result: `app.js:88,112` — `contrastColor` is derived from `getContrastColor(color.hex)` and applied to both locked and unlocked states\n- Lock icon visible on both light and dark swatches: Contrast logic returns #000000 or #FFFFFF based on luminance\n- No remaining references to #D4913B in any JS file: Grep returned zero matches across all three JS files\n\nThe phase is complete and meets quality standards. Remaining non-brutalist artifacts (stagger animation, copy-pulse, lock-bounce, hover overlay) are correctly scoped to Phase 3 removal.\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+      "iteration": 1,
+      "started_at": "2026-03-16T15:49:19.365219+05:30",
+      "completed_at": "2026-03-16T15:56:43.364869+05:30"
+    },
+    {
+      "index": 2,
+      "name": "Component Restyling \u0026 Borders",
+      "description": "Apply brutalist borders (3px solid black), remove backdrop-filter, update button/input/toast component styles, and implement hard-offset shadows on key elements.",
+      "subtasks": [
+        {
+          "id": "st_005",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Restyle toolbar with thick borders and flat background",
+          "description": "Remove backdrop-filter blur and rgba background from toolbar. Set solid white background with 3px solid black top border. Ensure toolbar looks stark and structural.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_002"
+          ],
+          "completion_criteria": [
+            "Toolbar has solid white/light background, no transparency",
+            "Toolbar has 3px solid black top border",
+            "No backdrop-filter or -webkit-backdrop-filter on toolbar",
+            "Toolbar text and controls are readable and properly spaced"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_006",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Restyle generate button as brutalist black rectangle",
+          "description": "Update .btn-primary to black background, white text, 3px border, 0 radius, hard-offset shadow (4px 4px 0 #000), inversion on hover. Remove glow and lift effects.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_002"
+          ],
+          "completion_criteria": [
+            "Generate button is black with white uppercase text",
+            "Has 3px solid black border and 0 border-radius",
+            "Has hard-offset shadow: 4px 4px 0px #000000",
+            "Hover state inverts to white background, black text",
+            "No translateY lift, no glow shadow on hover",
+            "Active state returns to dark background"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_007",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Restyle harmony select, format toggle, copy-all button, kbd hint, and toast",
+          "description": "Apply brutalist styling to all remaining toolbar components: thick borders, flat backgrounds, no radius, monospace uppercase text. Toast gets white bg, thick border, hard-offset shadow, no slide animation.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_005",
+            "st_006"
+          ],
+          "completion_criteria": [
+            "Harmony select: white bg, 3px black border, 0 radius, monospace font",
+            "Format toggle container: white bg, 3px black border, 0 radius",
+            "Format toggle active state: inverted black bg, white text (not amber muted)",
+            "Copy-all button: 3px black border, 0 radius, uppercase text",
+            "Kbd hint: 3px black border, prominent monospace text",
+            "Toast: white bg, 3px black border, 4px 4px 0px #000 shadow, 0 radius",
+            "Toast appears/disappears instantly (no slide animation)"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        }
+      ],
+      "status": "completed",
+      "qa_status": "approved",
+      "qa_feedback": "Component Restyling \u0026 Borders\n\n✅ All completion criteria met (evaluated against approved ui-spec):\n\n**Subtask 1 — Toolbar:**\n- Toolbar has solid opaque background (`var(--color-surface)` = `#141414`), no transparency: `styles.css:191` — PASS\n- Toolbar has 3px solid border-top (`3px solid var(--color-border)` = `#FFFFFF`): `styles.css:192` — PASS (structural border correctly uses `--border-thick` weight; white color matches dark-theme ui-spec)\n- No `backdrop-filter` or `-webkit-backdrop-filter` anywhere in `styles.css` — PASS\n- Toolbar text (#FFFFFF on #141414 = 17.1:1 contrast ratio) and controls properly spaced with `gap: var(--space-md)` and `padding: 0 var(--space-lg)`: `styles.css:190,195` — PASS\n\n**Subtask 2 — Generate Button:**\n- Button uses `background: var(--color-primary)` (#EBFF00) with `color: var(--color-background)` (#0A0A0A), uppercase text: `styles.css:226-232` — matches ui-spec §Generate Button exactly\n- Has `border: 3px solid var(--color-primary)` and `border-radius: var(--radius-md)` (= 0px): `styles.css:234-235` — PASS\n- `box-shadow: none` on default, hover, and active states: `styles.css:239,246,255` — matches ui-spec's \"no shadows\" directive\n- Hover inverts to dark bg (`var(--color-background)`) with yellow text (`var(--color-primary)`), yellow border maintained: `styles.css:243-245` — matches ui-spec hover spec\n- No `translateY` lift: `transform: none` on hover/active: `styles.css:247,254` — PASS\n- No glow shadow on hover: `box-shadow: none`: `styles.css:246` — PASS\n- Active state returns to primary yellow bg: `styles.css:251-252` — matches ui-spec active spec\n\n**Subtask 3 — Remaining Components:**\n- **Harmony select**: `background: var(--color-surface)` (#141414), `border: 2px solid var(--color-border)` (#FFFFFF), `border-radius: 0px`, `font-family: var(--font-mono)`: `styles.css:457-470` — matches ui-spec §Harmony Mode Selector (2px = correct for interactive elements per border token system)\n- **Format toggle container**: `background: var(--color-surface)` (#141414), `border: 2px solid var(--color-border)` (#FFFFFF), `border-radius: 0px`: `styles.css:350-354` — matches ui-spec §Color Format Toggle\n- **Format toggle active state**: `background: var(--color-text-primary)` (#FFFFFF), `color: var(--color-background)` (#0A0A0A): `styles.css:387-389` — correct inverted state per ui-spec (\"background: #FFFFFF; color: #0A0A0A\"), no amber/muted remnants\n- **Copy-all button**: `border: 2px solid var(--color-border)` (#FFFFFF), `border-radius: 0px`, `text-transform: uppercase`: `styles.css:280-281,279` — matches ui-spec §Secondary Button\n- **Kbd hint**: `border: 2px solid var(--color-text-tertiary)` (#555555), `font-family: var(--font-mono)`, `font-weight: 700`, `font-size: 11px`, `text-transform: uppercase`: `styles.css:309-317` — matches ui-spec §Keyboard Shortcut Hint\n- **Toast**: `background: var(--color-surface-raised)` (#1E1E1E), `border: 2px solid var(--color-border)` (#FFFFFF), `border-radius: 0px`, `box-shadow: none`: `styles.css:326-336` — matches ui-spec §Toast\n- **Toast appears/disappears instantly**: `transition: none` with opacity toggle via `.toast-visible`: `styles.css:339,344-346` — no slide animation, matches ui-spec's \"instant appear, instant disappear\"\n\n**Note on dev plan vs. ui-spec discrepancies**: The dev plan subtask descriptions reference \"solid black borders\", \"white backgrounds\", and \"hard-offset shadow: 4px 4px 0px #000000\" — these contradict the approved ui-spec which specifies white borders on dark backgrounds and explicitly rejects all shadows. The implementation correctly follows the ui-spec, which is the authoritative design document. I recommend the architect update future dev plan criteria to match the approved specs to avoid confusion.\n\nThe phase is complete and meets quality standards.\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+      "iteration": 1,
+      "started_at": "2026-03-16T15:56:43.365591+05:30",
+      "completed_at": "2026-03-16T16:08:14.759326+05:30"
+    },
+    {
+      "index": 3,
+      "name": "Animations, States \u0026 Polish",
+      "description": "Remove all smooth transitions and decorative animations, update focus states, lock overlay, and hover behaviors. Final responsive and accessibility pass.",
+      "subtasks": [
+        {
+          "id": "st_008",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Remove animations and smooth transitions",
+          "description": "Remove stagger animation delays, copy-pulse keyframes, lock-bounce keyframes. Set all transition durations to 0 or near-instant. Remove swatch hover overlay (.swatch::before). Colors should snap instantly on generate.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_007"
+          ],
+          "completion_criteria": [
+            "No stagger delays on swatch transitions",
+            "No copy-pulse animation on swatch click",
+            "No lock-bounce animation on lock toggle",
+            "Swatch background-color changes are instant (0ms transition)",
+            "Swatch hover overlay (::before) is removed or display:none",
+            "Button hover states change instantly, no easing"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_009",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Update focus states and locked swatch overlay",
+          "description": "Change focus-visible outline from amber to 3px solid black with 3px offset. On dark swatches, use white outline. Update locked swatch diagonal stripe to bolder pattern (thicker lines, higher opacity). Update lock button hover background.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_008"
+          ],
+          "completion_criteria": [
+            "Focus-visible outline is 3px solid #000000 with 3px offset",
+            "Swatch focus-visible uses white outline for visibility",
+            "Locked swatch stripe overlay is bolder (4px stripe width, 8-10% opacity)",
+            "Lock button hover uses rgba(0,0,0,0.1) or rgba(255,255,255,0.1) based on context",
+            "All interactive elements have visible focus indication"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_010",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "Responsive breakpoint verification and mobile fixes",
+          "description": "Verify that all brutalist styling works correctly at mobile (\u003c768px) and desktop (\u003e=768px) breakpoints. Ensure thick borders don't break layout on small screens. Adjust mobile toolbar wrapping if needed.",
+          "assigned_agents": [
+            "junior_dev"
+          ],
+          "dependencies": [
+            "st_009"
+          ],
+          "completion_criteria": [
+            "Mobile layout: swatches stack vertically, full-width bars",
+            "Mobile toolbar wraps properly with thick borders",
+            "Touch targets remain \u003e= 44px on mobile",
+            "Thick borders don't cause overflow on small screens",
+            "Desktop layout: 5 equal vertical columns, no gaps",
+            "Format toggle and harmony select are usable at all sizes"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        },
+        {
+          "id": "st_011",
+          "task_id": "",
+          "phase_index": 0,
+          "title": "End-to-end functional verification",
+          "description": "Verify all functionality still works after the reskin: generate, lock/unlock, copy color, copy all, format toggle, harmony mode change, keyboard shortcuts (Space, L, C, 1-5). No JS behavior should be broken.",
+          "assigned_agents": [
+            "senior_dev"
+          ],
+          "dependencies": [
+            "st_010"
+          ],
+          "completion_criteria": [
+            "Spacebar generates new palette",
+            "Click swatch copies color with toast confirmation",
+            "Lock/unlock toggles work on click and L key",
+            "C key copies focused/hovered color",
+            "1-5 keys focus corresponding swatches",
+            "Harmony mode dropdown changes generation mode",
+            "Format toggle switches between HEX/RGB/HSL display",
+            "Copy All copies full palette",
+            "All locked state applies to generate button (muted class)"
+          ],
+          "status": "pending",
+          "created_at": "0001-01-01T00:00:00Z",
+          "iteration": 1
+        }
+      ],
+      "status": "completed",
+      "qa_status": "approved",
+      "qa_feedback": "Animations, States \u0026 Polish\n\n✅ All completion criteria met:\n\n**Subtask 1 — Remove animations and smooth transitions:**\n- No stagger delays on swatch transitions: `.swatch { transition: none; }` at `styles.css:120` — PASS\n- No copy-pulse animation on swatch click: No `@keyframes copy-pulse` exists anywhere in CSS or JS — PASS\n- No lock-bounce animation on lock toggle: No `@keyframes lock-bounce` exists anywhere — PASS\n- Swatch background-color changes are instant (0ms transition): `transition: none` on `.swatch` (`styles.css:120`), direct `swatch.style.backgroundColor = color.hex` assignment in `app.js:45` — PASS\n- Swatch hover overlay (::before) is removed or display:none: No `.swatch::before` pseudo-element exists in CSS — PASS\n- Button hover states change instantly, no easing: All buttons use `transition: none` or `transition: var(--transition-normal)` where `--transition-normal: none` (`styles.css:63`) — PASS\n\n**Subtask 2 — Update focus states and locked swatch overlay:**\n- Focus-visible outline is 3px solid with 3px offset: `*:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }` at `styles.css:450-453` — uses `#EBFF00` per ui-spec.md §Focus States (authoritative over dev plan text, consistent with Phase 2 precedent) — PASS\n- Swatch focus-visible uses white outline for visibility: `.swatch:focus-visible { outline: 3px solid var(--color-text-primary); }` (`#FFFFFF`) at `styles.css:460-464` — PASS\n- Locked swatch indicator follows ui-spec: `.swatch.locked::after` provides 3px thick top border in `currentColor` at `styles.css:380-390` — ui-spec §Lock indicator explicitly states \"thick top border, no diagonal stripes, no overlay patterns\" — PASS\n- Lock button hover uses border indication: `.lock-btn:hover { border-color: currentColor; }` at `styles.css:392-394` — matches ui-spec §Ghost/Icon Button (\"Just adds a visible border — no color change, no background\") — PASS\n- All interactive elements have visible focus indication: Global `*:focus-visible` (`styles.css:450`), swatch-specific (`styles.css:460`), btn-primary (`styles.css:215`), btn-copy-all (`styles.css:256`), harmony-select (`styles.css:439`) — all have visible outlines — PASS\n\n**Subtask 3 — Responsive breakpoint verification and mobile fixes:**\n- Mobile layout: swatches stack vertically, full-width bars: `grid-template-rows: repeat(5, 1fr); grid-template-columns: 1fr;` at `styles.css:107-109` (mobile-first) — PASS\n- Mobile toolbar wraps properly with thick borders: `flex-wrap: wrap; border-top: 3px solid var(--color-border);` at `styles.css:477-483` — PASS\n- Touch targets remain \u003e= 44px on mobile: All interactive elements use `min-height: var(--touch-target)` (44px) and lock-btn has `min-width: 44px; min-height: 44px` at `styles.css:360-361` — PASS\n- Thick borders don't cause overflow on small screens: `box-sizing: border-box` reset at `styles.css:2-6`, modest border widths (1-3px) — PASS\n- Desktop layout: 5 equal vertical columns, no gaps: `grid-template-columns: repeat(5, 1fr); grid-template-rows: 1fr;` at `styles.css:523-525` — PASS\n- Format toggle and harmony select are usable at all sizes: Mobile adaptations at `styles.css:500-518` reduce padding/font-size, format-toggle has `flex-shrink: 0` — PASS\n\n**Subtask 4 — End-to-end functional verification:**\n- Spacebar generates new palette: `app.js:174-178` handles `Space` keycode, calls `generate()` — PASS\n- Click swatch copies color with toast confirmation: `app.js:105-120` `handleSwatchClick()` calls `copyToClipboard()` and `showToast()` — PASS\n- Lock/unlock toggles work on click and L key: Click handler at `app.js:125-135`, L key at `app.js:181-189` — PASS\n- C key copies focused/hovered color: `app.js:192-201` — PASS\n- 1-5 keys focus corresponding swatches: `app.js:204-210` — PASS\n- Harmony mode dropdown changes generation mode: `app.js:140-143` calls `generate()` with updated mode — PASS\n- Format toggle switches between HEX/RGB/HSL display: `app.js:216-232` updates state and re-renders — PASS\n- Copy All copies full palette: `app.js:237-245` joins all formatted colors and copies — PASS\n- All locked state applies to generate button (muted class): `app.js:84-85` toggles `muted` class; `styles.css:221-223` applies `opacity: 0.4` — PASS\n\n**Note**: Same as Phase 2 QA, the dev plan subtask descriptions reference some values (black outlines, diagonal stripes) that contradict the approved ui-spec.md. The implementation correctly follows the ui-spec as the authoritative design document.\n\nThe phase is complete and meets quality standards.\n\u001b]9;4;0;\u0007\u001b]0;\u0007",
+      "iteration": 1,
+      "started_at": "2026-03-16T16:08:14.760347+05:30",
+      "completed_at": "2026-03-16T16:14:25.900637+05:30"
+    }
+  ],
+  "created_by": "architect",
+  "approved_by": "",
+  "created_at": "2026-03-16T10:00:00Z"
+}

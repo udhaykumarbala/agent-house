@@ -1,0 +1,12 @@
+{
+  "taskId": "task_1773067193513248000",
+  "projectId": "default",
+  "task": "Create a static webpage about a agenthouse application where multiple ai agents combine to run a company in different roles",
+  "createdAt": "2026-03-09T20:09:53.516477+05:30",
+  "completedAt": "2026-03-09T20:09:54.399447+05:30",
+  "status": "failed",
+  "turns": 14,
+  "duration": "1s",
+  "filesCreated": [],
+  "error": "phase discussion failed: agent ceo failed: claude error: command error: exit status 1"
+}

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+                 font-src 'self' https://fonts.gstatic.com;
+                 script-src 'self';
+                 img-src 'self' data:;
+                 connect-src 'none';">
+  <title>Color Palette Generator</title>
+  <meta name="description" content="Generate beautiful color palettes instantly. One click to copy. No sign-up required.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="app">
+    <main class="palette-grid" role="list" aria-label="Color palette">
+      <div class="swatch" role="listitem" tabindex="0" data-index="0">
+        <button class="lock-btn" aria-label="Lock this color" aria-pressed="false" data-index="0">
+          <svg class="lock-icon lock-icon-unlocked" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+          <svg class="lock-icon lock-icon-locked" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none"/></svg>
+        </button>
+        <span class="swatch-color-code"></span>
+      </div>
+      <div class="swatch" role="listitem" tabindex="0" data-index="1">
+        <button class="lock-btn" aria-label="Lock this color" aria-pressed="false" data-index="1">
+          <svg class="lock-icon lock-icon-unlocked" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+          <svg class="lock-icon lock-icon-locked" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none"/></svg>
+        </button>
+        <span class="swatch-color-code"></span>
+      </div>
+      <div class="swatch" role="listitem" tabindex="0" data-index="2">
+        <button class="lock-btn" aria-label="Lock this color" aria-pressed="false" data-index="2">
+          <svg class="lock-icon lock-icon-unlocked" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+          <svg class="lock-icon lock-icon-locked" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none"/></svg>
+        </button>
+        <span class="swatch-color-code"></span>
+      </div>
+      <div class="swatch" role="listitem" tabindex="0" data-index="3">
+        <button class="lock-btn" aria-label="Lock this color" aria-pressed="false" data-index="3">
+          <svg class="lock-icon lock-icon-unlocked" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+          <svg class="lock-icon lock-icon-locked" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none"/></svg>
+        </button>
+        <span class="swatch-color-code"></span>
+      </div>
+      <div class="swatch" role="listitem" tabindex="0" data-index="4">
+        <button class="lock-btn" aria-label="Lock this color" aria-pressed="false" data-index="4">
+          <svg class="lock-icon lock-icon-unlocked" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+          <svg class="lock-icon lock-icon-locked" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none"/></svg>
+        </button>
+        <span class="swatch-color-code"></span>
+      </div>
+    </main>
+
+    <footer class="toolbar" role="toolbar" aria-label="Palette controls">
+      <span class="toolbar-title">Palette</span>
+      <div class="toolbar-center">
+        <select id="harmony-select" class="harmony-select" aria-label="Harmony mode">
+          <option value="random" selected>Random</option>
+          <option value="analogous">Analogous</option>
+          <option value="complementary">Complementary</option>
+          <option value="triadic">Triadic</option>
+          <option value="split-complementary">Split-Complementary</option>
+          <option value="monochromatic">Monochromatic</option>
+        </select>
+        <button id="generate-btn" class="btn-primary" aria-label="Generate new color palette">
+          Generate
+          <kbd class="kbd-hint">Space</kbd>
+        </button>
+      </div>
+      <div class="toolbar-actions">
+        <div class="format-toggle" role="radiogroup" aria-label="Color format">
+          <button class="format-btn active" data-format="hex" role="radio" aria-checked="true" aria-label="HEX color format">HEX</button>
+          <button class="format-btn" data-format="rgb" role="radio" aria-checked="false" aria-label="RGB color format">RGB</button>
+          <button class="format-btn" data-format="hsl" role="radio" aria-checked="false" aria-label="HSL color format">HSL</button>
+        </div>
+        <button id="copy-all-btn" class="btn-copy-all" aria-label="Copy all palette colors to clipboard">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy All
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="sr-announce" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="js/colors.js"></script>
+  <script src="js/clipboard.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

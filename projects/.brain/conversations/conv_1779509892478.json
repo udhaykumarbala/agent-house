@@ -1,0 +1,12 @@
+[
+  {
+    "role": "user",
+    "content": "whats pending",
+    "timestamp": 1779509900693
+  },
+  {
+    "role": "assistant",
+    "content": "Here's what's pending:\n\n**📧 Unread Emails (7)**\n- 2 client emails (Phase 2 progress report needed by end of week for Project Alpha)\n- 2 vendor emails (XYZ Steel delivery delay \u0026 invoice)\n- 1 RFI on column tolerances (Atlas Consulting)\n- 2 job applications from Raj Kumar (Site Supervisor for Highway Bridge)\n\n**🏗️ Project Alpha — Critical Issues**\n- ⚠️ Steel delivery delayed 2 weeks (April 5 → April 19)\n- Foundation Work milestone at risk — depends on XYZ Steel\n- Risk: delays cascade to Structural Erection and Panel Installation\n- Budget: $4.2M of $6.8M spent (62%)\n- Board meeting: April 1st — Sarah Jones needs progress report\n\n**📋 Pending Milestones**\n- Alpha: Foundation Work (in progress), Structural Erection, Panel Installation, Grid Connection\n- Beta: Client Response (due March 28)\n- Gamma: Feasibility Review (due April 1), Bid Decision (due April 10)\n\n**👤 Applicants (1)**\n- Raj Kumar — Site Supervisor for Highway Bridge, status: new\n\n**📁 Active Project**\n- dice-roller (0 files — needs work)",
+    "timestamp": 1779509907513
+  }
+]

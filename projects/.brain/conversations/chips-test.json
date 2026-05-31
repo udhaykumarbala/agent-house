@@ -1,0 +1,12 @@
+[
+  {
+    "role": "user",
+    "content": "Delete the impersonation emails",
+    "timestamp": 1779480925879
+  },
+  {
+    "role": "assistant",
+    "content": "I found 1 impersonation email in your inbox:\n\n**Email 4** - ID: email_atlas_1_impersonation\nFrom: Ahmed Rahman — XYZ Steel (ahmed.r@gmail.com)\nSubject: URGENT — Updated Bank Account Details for Payment\n\n⚠️ This email is flagged as impersonation — it claims to be from XYZ Steel Corp (@vendorxyz.com) but was sent from a gmail.com address.",
+    "timestamp": 1779480929443
+  }
+]

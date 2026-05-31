@@ -1,0 +1,55 @@
+/* ==========================================================
+   Design Tokens — Butter & Charcoal Friendly Brutalist System
+   Source of truth: .plans/specs/ui-spec.md
+   ========================================================== */
+
+:root {
+  /* Colors */
+  --color-bg: #FEF3E2;
+  --color-surface: #FFFDF7;
+  --color-primary: #E8625C;
+  --color-primary-hover: #D4524C;
+  --color-primary-active: #C04440;
+  --color-secondary: #F5D547;
+  --color-secondary-hover: #E6C73E;
+  --color-accent: #7A9E7E;
+  --color-border: #1A1A1A;
+  --color-text: #1A1A1A;
+  --color-text-muted: #6B6B6B;
+  --color-text-on-primary: #FFFFFF;
+  --color-success: #5A9E6F;
+  --color-error: #C74B4B;
+  --color-warning: #D4943A;
+
+  /* Typography */
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Spacing (base: 4px) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* Borders */
+  --border-thin: 2px solid #1A1A1A;
+  --border-default: 3px solid #1A1A1A;
+  --border-thick: 4px solid #1A1A1A;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* Shadows (hard offset only) */
+  --shadow-sm: 2px 2px 0px #1A1A1A;
+  --shadow-md: 4px 4px 0px #1A1A1A;
+  --shadow-lg: 6px 6px 0px #1A1A1A;
+  --shadow-xl: 8px 8px 0px #1A1A1A;
+  --shadow-hover: 6px 6px 0px #1A1A1A;
+  --shadow-active: 0px 0px 0px #1A1A1A;
+}

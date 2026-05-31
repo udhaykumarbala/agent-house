@@ -1,0 +1,1 @@
+(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[974],{9332:(e,n,s)=>{Promise.resolve().then(s.bind(s,8152))},8152:(e,n,s)=>{"use strict";s.r(n),s.d(n,{default:()=>u});var r=s(2115);function u(){return(0,r.useEffect)(()=>{window.location.replace("/mission/")},[]),null}}},e=>{var n=n=>e(e.s=n);e.O(0,[441,517,358],()=>n(9332)),_N_E=e.O()}]);

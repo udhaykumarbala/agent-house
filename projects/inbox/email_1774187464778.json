@@ -1,0 +1,15 @@
+{
+  "id": "email_1774187464778",
+  "from": "sarah.jones@clientabc.com",
+  "from_name": "Sarah Jones",
+  "to": "projects@epc-demo.com",
+  "subject": "Request for Phase 2 Progress Update — Project Alpha",
+  "body": "Dear Project Team,\n\nAs we approach the end of Q1, I would like to request a progress update on Phase 2 of Project Alpha (Solar Farm).\n\nSpecifically, I need:\n1. Current completion percentage vs. planned\n2. Budget utilization report\n3. Updated timeline with any changes\n4. Risk register with mitigation status\n\nCould you please prepare this report by end of week? Our board meeting is scheduled for April 1st and I need to present the project status.\n\nThank you,\nSarah Jones\nVP Operations, ABC Energy Corp",
+  "date": "2026-03-22T19:21:04.779033+05:30",
+  "read": false,
+  "replied": false,
+  "category": "client",
+  "trust_status": "trusted",
+  "trust_reason": "Non-vendor email — no trust check required",
+  "direction": "inbound"
+}

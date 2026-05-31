@@ -1,0 +1,23 @@
+{
+  "id": "qa_inspector",
+  "name": "QA/QC Inspector",
+  "color": "#6366F1",
+  "icon": "🔍",
+  "execution": {
+    "default_mode": "session",
+    "phase_modes": {
+      "research": "oneshot",
+      "planning": "session",
+      "qa_review": "session"
+    },
+    "model": "",
+    "max_turns": 50,
+    "timeout": "10m",
+    "claude_permission": "bypassPermissions"
+  },
+  "phases": ["research", "planning", "qa_review"],
+  "tools": {
+    "builtin": ["Read", "Write", "Glob", "Grep", "Bash"],
+    "mcp_servers": []
+  }
+}

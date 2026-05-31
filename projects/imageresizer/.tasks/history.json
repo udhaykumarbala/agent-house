@@ -1,0 +1,22 @@
+{
+  "projectId": "imageresizer",
+  "tasks": [
+    {
+      "taskId": "task_1773654774575483000",
+      "summary": "how can we add more feature to this",
+      "createdAt": "2026-03-16T15:22:54.579814+05:30",
+      "status": "running",
+      "turns": 0,
+      "filesCreated": 0
+    },
+    {
+      "taskId": "task_1773649496775918000",
+      "summary": "Build a image resizer website, minimal \u0026 in fri...",
+      "createdAt": "2026-03-16T13:54:56.789061+05:30",
+      "completedAt": "2026-03-16T14:25:00.670019+05:30",
+      "status": "completed",
+      "turns": 20,
+      "filesCreated": 0
+    }
+  ]
+}

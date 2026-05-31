@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WorkTime Tracker - API Test</title>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #0D0A1A; color: #ECE9F5; padding: 24px; }
+    h1 { font-family: 'Manrope', sans-serif; margin-bottom: 16px; }
+    h2 { font-family: 'Manrope', sans-serif; color: #CF8A2E; margin-top: 24px; }
+    .test-group { background: #17132B; border-radius: 8px; padding: 16px; margin: 12px 0; }
+    button { background: #5746B2; color: #ECE9F5; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; margin: 4px; font-size: 13px; }
+    button:hover { background: #483A96; }
+    button.accent { background: #CF8A2E; color: #0D0A1A; }
+    button.danger { background: #D94B4B; }
+    .result { background: #201B38; padding: 12px; border-radius: 8px; margin-top: 8px; font-size: 13px; white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
+    .pass { border-left: 3px solid #3DB87A; }
+    .fail { border-left: 3px solid #D94B4B; }
+    code { color: #CF8A2E; }
+  </style>
+</head>
+<body>
+  <h1>WorkTime Tracker — Service API Tests</h1>
+  <p>Manual test page for localStorage data services. Open DevTools console for details.</p>
+
+  <h2>Store</h2>
+  <div class="test-group">
+    <button onclick="testStoreInit()">Test store.init()</button>
+    <button onclick="testStoreGetSet()">Test store.get/set()</button>
+    <button onclick="testStoreClearAll()" class="danger">Test store.clearAll()</button>
+    <div id="store-result" class="result"></div>
+  </div>
+
+  <h2>Employee Service</h2>
+  <div class="test-group">
+    <button onclick="testCreateEmployee()">Create Employee</button>
+    <button onclick="testGetAllEmployees()">Get All Employees</button>
+    <button onclick="testGetActiveEmployees()">Get Active Employees</button>
+    <div id="employee-result" class="result"></div>
+  </div>
+
+  <h2>Project Service</h2>
+  <div class="test-group">
+    <button onclick="testCreateProject()">Create Project</button>
+    <button onclick="testGetAllProjects()">Get All Projects</button>
+    <button onclick="testCreateTask()">Create Task</button>
+    <button onclick="testGetProjectTasks()">Get Project Tasks</button>
+    <button onclick="testCycleTaskStatus()">Cycle Task Status</button>
+    <button onclick="testDeleteProject()" class="danger">Delete Last Project</button>
+    <div id="project-result" class="result"></div>
+  </div>
+
+  <h2>Time Entry Service</h2>
+  <div class="test-group">
+    <button onclick="testClockIn()" class="accent">Clock In</button>
+    <button onclick="testClockOut()" class="danger">Clock Out</button>
+    <button onclick="testGetActiveTimers()">Get Active Timers</button>
+    <button onclick="testManualEntry()">Create Manual Entry</button>
+    <button onclick="testGetTodayEntries()">Get Today's Entries</button>
+    <button onclick="testGetTodayTotalHours()">Get Today Total Hours</button>
+    <div id="time-result" class="result"></div>
+  </div>
+
+  <h2>Dashboard Data</h2>
+  <div class="test-group">
+    <button onclick="testDashboardData()">Get Dashboard Summary</button>
+    <div id="dashboard-result" class="result"></div>
+  </div>
+
+  <h2>Settings &amp; Data Management</h2>
+  <div class="test-group">
+    <button onclick="testGetStorageUsage()">Get Storage Usage</button>
+    <button onclick="testExportAllData()">Export All Data</button>
+    <button onclick="testImportSample()">Import Sample Data</button>
+    <button onclick="testGetSettings()">Get Settings</button>
+    <button onclick="testSetTimeFormat()">Toggle Time Format</button>
+    <div id="settings-result" class="result"></div>
+  </div>
+
+  <h2>Keyboard Shortcuts</h2>
+  <div class="test-group">
+    <p style="color: #8C83A8; font-size: 13px; margin-bottom: 8px;">
+      Press <code>?</code> in the main app to see shortcuts help. Available shortcuts:
+      <code>Space</code> (clock in/out on dashboard),
+      <code>N</code> (new entry),
+      <code>D</code> (dashboard),
+      <code>E</code> (employees),
+      <code>P</code> (projects),
+      <code>R</code> (reports),
+      <code>Esc</code> (close modal)
+    </p>
+    <div id="keyboard-result" class="result">Keyboard shortcuts are active in the main app, not this test page.</div>
+  </div>
+
+  <h2>DateRangePicker Component</h2>
+  <div class="test-group">
+    <button onclick="testDateRangePresets()">Test Preset Ranges</button>
+    <button onclick="testDateRangeMount()">Mount Picker</button>
+    <div id="datepicker-mount" style="margin-top: 12px;"></div>
+    <div id="datepicker-result" class="result"></div>
+  </div>
+
+  <script type="module">
+    import { store } from './src/scripts/data/store.ts';
+    import { employeeService } from './src/scripts/data/employeeService.ts';
+    import { projectService } from './src/scripts/data/projectService.ts';
+    import { timeEntryService } from './src/scripts/data/timeEntryService.ts';
+    import { formatDuration } from './src/scripts/utils/dates.ts';
+    import { createDateRangePicker, computePresetRange } from './src/scripts/components/dateRangePicker.ts';
+
+    store.init();
+    projectService.ensureGeneralProject();
+
+    function show(id, data, ok = true) {
+      const el = document.getElementById(id);
+      el.className = 'result ' + (ok ? 'pass' : 'fail');
+      el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    }
+
+    // --- Store ---
+    window.testStoreInit = () => {
+      store.init();
+      show('store-result', 'store.init() OK');
+    };
+    window.testStoreGetSet = () => {
+      store.set('_test', [{ a: 1 }]);
+      const v = store.get('_test');
+      show('store-result', { set: [{ a: 1 }], get: v });
+      store.remove('_test');
+    };
+    window.testStoreClearAll = () => {
+      store.clearAll();
+      projectService.ensureGeneralProject();
+      show('store-result', 'All wtt_ keys cleared, General project re-created');
+    };
+
+    // --- Employees ---
+    window.testCreateEmployee = () => {
+      try {
+        const emp = employeeService.create({ name: 'Test Employee ' + Date.now(), role: 'Developer', department: 'Engineering' });
+        show('employee-result', emp);
+      } catch (e) { show('employee-result', e.message, false); }
+    };
+    window.testGetAllEmployees = () => {
+      show('employee-result', employeeService.getAll());
+    };
+    window.testGetActiveEmployees = () => {
+      show('employee-result', employeeService.getActive());
+    };
+
+    // --- Projects ---
+    window.testCreateProject = () => {
+      try {
+        const proj = projectService.create({ name: 'Test Project ' + Date.now(), color: '#CF8A2E' });
+        show('project-result', proj);
+      } catch (e) { show('project-result', e.message, false); }
+    };
+    window.testGetAllProjects = () => {
+      show('project-result', projectService.getAll());
+    };
+    window.testCreateTask = () => {
+      const projects = projectService.getAll().filter(p => p.id !== 'general');
+      if (projects.length === 0) { show('project-result', 'Create a project first', false); return; }
+      try {
+        const task = projectService.createTask({ projectId: projects[projects.length - 1].id, name: 'Task ' + Date.now() });
+        show('project-result', task);
+      } catch (e) { show('project-result', e.message, false); }
+    };
+    window.testGetProjectTasks = () => {
+      const projects = projectService.getAll().filter(p => p.id !== 'general');
+      if (projects.length === 0) { show('project-result', 'No projects', false); return; }
+      show('project-result', projectService.getTasksByProject(projects[projects.length - 1].id));
+    };
+    window.testCycleTaskStatus = () => {
+      const tasks = projectService.getAllTasks();
+      if (tasks.length === 0) { show('project-result', 'Create a task first', false); return; }
+      const task = tasks[tasks.length - 1];
+      const next = task.status === 'todo' ? 'in_progress' : task.status === 'in_progress' ? 'done' : 'todo';
+      const updated = projectService.updateTaskStatus(task.id, next);
+      show('project-result', updated);
+    };
+    window.testDeleteProject = () => {
+      const projects = projectService.getAll().filter(p => p.id !== 'general');
+      if (projects.length === 0) { show('project-result', 'No deletable projects', false); return; }
+      try {
+        projectService.delete(projects[projects.length - 1].id);
+        show('project-result', 'Deleted last project');
+      } catch (e) { show('project-result', e.message, false); }
+    };
+
+    // --- Time Entries ---
+    window.testClockIn = () => {
+      const emps = employeeService.getActive();
+      if (emps.length === 0) { show('time-result', 'Create an employee first', false); return; }
+      try {
+        const timer = timeEntryService.clockIn(emps[0].id, 'general');
+        show('time-result', timer);
+      } catch (e) { show('time-result', e.message, false); }
+    };
+    window.testClockOut = () => {
+      const timers = timeEntryService.getActiveTimers();
+      if (timers.length === 0) { show('time-result', 'No active timers', false); return; }
+      try {
+        const entry = timeEntryService.clockOut(timers[0].employeeId);
+        show('time-result', entry);
+      } catch (e) { show('time-result', e.message, false); }
+    };
+    window.testGetActiveTimers = () => {
+      show('time-result', timeEntryService.getActiveTimers());
+    };
+    window.testManualEntry = () => {
+      const emps = employeeService.getActive();
+      if (emps.length === 0) { show('time-result', 'Create an employee first', false); return; }
+      const now = new Date();
+      const start = new Date(now.getTime() - 3600000).toISOString();
+      const end = now.toISOString();
+      try {
+        const entry = timeEntryService.createManualEntry({
+          employeeId: emps[0].id, projectId: 'general',
+          date: now.toISOString().split('T')[0], clockIn: start, clockOut: end
+        });
+        show('time-result', entry);
+      } catch (e) { show('time-result', e.message, false); }
+    };
+    window.testGetTodayEntries = () => {
+      show('time-result', timeEntryService.getTodayEntries());
+    };
+    window.testGetTodayTotalHours = () => {
+      const mins = timeEntryService.getTodayTotalHours();
+      show('time-result', `Total today: ${formatDuration(mins)} (${mins.toFixed(1)} minutes)`);
+    };
+
+    // --- DateRangePicker ---
+    window.testDateRangePresets = () => {
+      const presets = ['today', 'thisWeek', 'thisMonth', 'lastWeek', 'lastMonth'];
+      const results = {};
+      presets.forEach(key => { results[key] = computePresetRange(key); });
+      show('datepicker-result', results);
+    };
+    window.testDateRangeMount = () => {
+      const mount = document.getElementById('datepicker-mount');
+      mount.innerHTML = '';
+      const picker = createDateRangePicker({
+        onChange: (range) => show('datepicker-result', { event: 'onChange', range }),
+        initialPreset: 'thisWeek',
+      });
+      mount.appendChild(picker);
+      show('datepicker-result', 'DateRangePicker mounted — click presets or set custom dates');
+    };
+
+    // --- Settings & Data Management ---
+    window.testGetStorageUsage = () => {
+      const usage = store.getStorageUsage();
+      const formatBytes = (b) => b < 1024 ? `${b} B` : b < 1024*1024 ? `${(b/1024).toFixed(1)} KB` : `${(b/(1024*1024)).toFixed(2)} MB`;
+      show('settings-result', {
+        used: formatBytes(usage.used),
+        total: formatBytes(usage.total),
+        percentage: usage.percentage + '%'
+      });
+    };
+    window.testExportAllData = () => {
+      const data = store.exportAll();
+      const keys = Object.keys(data);
+      let totalItems = 0;
+      keys.forEach(k => { if (Array.isArray(data[k])) totalItems += data[k].length; });
+      show('settings-result', { collections: keys, totalItems, sample: data });
+    };
+    window.testImportSample = () => {
+      const sample = {
+        employees: [{ id: 'test-import-1', name: 'Imported Employee', role: 'Tester', department: 'QA', hourlyRate: null, status: 'active', color: '#E07B5F', createdAt: new Date().toISOString() }],
+        projects: [{ id: 'test-import-proj', name: 'Imported Project', description: 'Test import', color: '#2E9E8F', status: 'active', createdAt: new Date().toISOString() }]
+      };
+      store.importAll(sample);
+      show('settings-result', 'Imported sample data: 1 employee + 1 project');
+    };
+    window.testGetSettings = () => {
+      const settings = store.get('settings');
+      show('settings-result', settings.length > 0 ? settings[0] : { message: 'No settings saved yet (defaults used)' });
+    };
+    window.testSetTimeFormat = () => {
+      let settings = store.get('settings');
+      const current = settings.length > 0 ? settings[0] : { timeFormat: '24h', weekStartsOn: 'monday', defaultView: 'dashboard' };
+      current.timeFormat = current.timeFormat === '24h' ? '12h' : '24h';
+      store.set('settings', [current]);
+      show('settings-result', { message: `Time format set to ${current.timeFormat}`, settings: current });
+    };
+
+    // --- Dashboard ---
+    window.testDashboardData = () => {
+      const data = {
+        totalHoursToday: formatDuration(timeEntryService.getTodayTotalHours()),
+        activeTimers: timeEntryService.getActiveTimers().length,
+        totalActiveEmployees: employeeService.getActive().length,
+        activeProjects: projectService.getActive().length,
+        todayEntries: timeEntryService.getTodayEntries().length,
+      };
+      show('dashboard-result', data);
+    };
+  </script>
+</body>
+</html>

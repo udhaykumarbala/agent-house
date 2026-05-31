@@ -1,0 +1,11 @@
+[
+  {
+    "id": "dec_1774114616464128000",
+    "project_id": "test3",
+    "task_id": "task_1774114508317130000",
+    "checkpoint_type": "template_approval",
+    "action": "approved",
+    "decided_by": "user",
+    "decided_at": "2026-03-21T23:06:56.464152+05:30"
+  }
+]

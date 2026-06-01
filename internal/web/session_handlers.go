@@ -309,11 +309,20 @@ func (s *Server) handleProjectDetail(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 
-	// Get task history
+	// Get task history. history.json is a TaskHistory OBJECT
+	// ({projectId, tasks:[...]}), so unmarshalling into a bare slice fails
+	// silently and yields nil — which is why the project page showed
+	// "No tasks yet" despite /api/tasks returning the task. Read the object's
+	// tasks array (keys: taskId, summary, status, turns, filesCreated).
 	var tasks []map[string]interface{}
+	var hist struct {
+		Tasks []map[string]interface{} `json:"tasks"`
+	}
 	historyPath := projectDir + "/.tasks/history.json"
 	if data, err := os.ReadFile(historyPath); err == nil {
-		json.Unmarshal(data, &tasks)
+		if json.Unmarshal(data, &hist) == nil {
+			tasks = hist.Tasks
+		}
 	}
 
 	// Get session metrics

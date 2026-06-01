@@ -40,6 +40,12 @@ export function MissionApp() {
   const [selected, setSelected] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => new Date());
+  // Guard time-dependent rendering so the server prerender and the client's
+  // first (hydration) render are identical. The app is a static export, so the
+  // server HTML freezes the build-time clock; rendering live time on first
+  // paint causes React hydration error #418. Render the clock only after mount.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // initial load
   useEffect(() => {
@@ -121,19 +127,21 @@ export function MissionApp() {
     []
   );
 
-  const dateLabel = now
-    .toLocaleString("en-US", {
-      weekday: "short",
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-      timeZone: "UTC",
-    })
-    .toUpperCase()
-    .replace(",", " ·")
-    .concat(" UTC");
+  const dateLabel = mounted
+    ? now
+        .toLocaleString("en-US", {
+          weekday: "short",
+          day: "2-digit",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+          timeZone: "UTC",
+        })
+        .toUpperCase()
+        .replace(",", " ·")
+        .concat(" UTC")
+    : "";
 
   return (
     <div className="app" data-screen-label="Mission v2 · workspace">

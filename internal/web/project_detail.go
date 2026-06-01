@@ -139,17 +139,47 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
       <div class="card-header">Development Plan</div>
       <div class="card-body" id="devPlan"></div>
     </div>
+
+    <!-- QA Verdicts -->
+    <div class="card">
+      <div class="card-header">QA Verdicts <span class="count" id="qaCount"></span></div>
+      <div class="card-body" id="qaReviews"></div>
+    </div>
   </div>
 
   <!-- Continue building -->
   <div class="continue-section">
     <div class="card">
-      <div class="card-header">Continue Building</div>
+      <div class="card-header">Continue Building &amp; Instruct Agents</div>
       <div class="card-body">
-        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Submit a follow-up task to continue developing this project.</p>
+        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Submit a follow-up task to the whole team (full pipeline) or directly to one agent.</p>
+        <div style="margin-bottom:8px">
+          <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Assign to</label>
+          <select id="continueAgent" style="width:100%;background:var(--bg-raised);border:1px solid var(--border-default);color:var(--text-primary);padding:9px 12px;border-radius:8px;font-family:var(--font-ui);font-size:13px">
+            <option value="">🏢 Whole team — run the full pipeline</option>
+            <optgroup label="Software team">
+              <option value="senior_dev">Senior Developer</option>
+              <option value="junior_dev">Junior Developer</option>
+              <option value="architect">Architect</option>
+              <option value="ui">UI Designer</option>
+              <option value="ux">UX Designer</option>
+              <option value="security">Security Expert</option>
+              <option value="pm">Product Manager</option>
+              <option value="ceo">CEO</option>
+            </optgroup>
+            <optgroup label="EPC / Construction team">
+              <option value="project_manager">Project Manager</option>
+              <option value="procurement">Procurement</option>
+              <option value="site_engineer">Site Engineer</option>
+              <option value="qa_inspector">QA Inspector</option>
+              <option value="hse">HSE Officer</option>
+              <option value="hr">HR</option>
+            </optgroup>
+          </select>
+        </div>
         <div class="continue-input">
-          <textarea id="continueTask" placeholder="Describe what to change or add..."></textarea>
-          <button id="continueBtn" onclick="submitContinuation()">Continue</button>
+          <textarea id="continueTask" placeholder="Describe the task or change..."></textarea>
+          <button id="continueBtn" onclick="submitContinuation()">Send</button>
         </div>
         <div id="continueStatus" style="font-size:11px;color:var(--text-muted);margin-top:8px"></div>
       </div>
@@ -195,12 +225,41 @@ async function loadProject() {
     const data = await res.json();
     renderFiles(data.files || []);
     renderTasks(data.tasks || []);
-    renderSessions(data.sessions);
+    renderSessions(data.sessions, data.meta);
     renderDevPlan(data.dev_plan);
     document.getElementById('fileCount').textContent = (data.file_count || 0) + ' files';
   } catch (e) {
     console.error('Failed to load project:', e);
   }
+
+  // QA verdicts (separate endpoint)
+  try {
+    const qres = await fetch('/api/qa-reviews?project=' + encodeURIComponent(PROJECT_ID));
+    const qdata = await qres.json();
+    renderQA(qdata.reviews || []);
+  } catch (e) { renderQA([]); }
+}
+
+function renderQA(reviews) {
+  const el = document.getElementById('qaReviews');
+  document.getElementById('qaCount').textContent = reviews.length ? (reviews.length + ' reviews') : '';
+  if (!reviews.length) { el.innerHTML = '<div class="empty-msg">No QA reviews yet</div>'; return; }
+  el.innerHTML = reviews.map(r => {
+    const ok = (r.status === 'approved' || r.status === 'passed');
+    const tag = ok ? 'success' : 'error';
+    const icon = ok ? '✓' : '✗';
+    const fb = String(r.feedback || '').trim();
+    const summary = fb.split('\n').filter(l => l.trim())[0] || r.status;
+    return '<div class="task-item">' +
+      '<div class="task-title">' + icon + ' Phase ' + (r.phase_index||'?') + ': ' + esc(r.phase_name || '') +
+        (r.iteration > 1 ? ' <span style="color:var(--text-muted)">(iter ' + r.iteration + ')</span>' : '') + '</div>' +
+      '<div class="task-meta">' +
+      '<span class="tag ' + tag + '">' + esc(r.status) + '</span>' +
+      '<span>by ' + esc(r.reviewer || '?') + '</span>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--text-secondary);margin-top:6px;line-height:1.5">' + esc(summary.substring(0,200)) + '</div>' +
+      '</div>';
+  }).join('');
 }
 
 function renderFiles(files) {
@@ -226,22 +285,46 @@ function renderTasks(tasks) {
   el.innerHTML = tasks.map(t => {
     const status = t.status || t.Status || 'unknown';
     const isOk = status === 'completed' || status === 'success';
-    const task = t.task || t.Task || 'Task';
+    const task = t.summary || t.task || t.Task || 'Task';
     const dur = t.duration || t.Duration || '';
-    const files = t.files_created || t.FilesCreated || [];
+    const turns = t.turns || t.Turns || 0;
+    // filesCreated is a numeric count in TaskSummary; older shapes used an array
+    const fc = t.filesCreated;
+    const fileCount = (typeof fc === 'number') ? fc
+      : (Array.isArray(t.files_created || t.FilesCreated) ? (t.files_created || t.FilesCreated).length : 0);
     return '<div class="task-item">' +
-      '<div class="task-title">' + esc(task.substring(0, 120)) + '</div>' +
+      '<div class="task-title">' + esc(String(task).substring(0, 120)) + '</div>' +
       '<div class="task-meta">' +
       '<span class="tag ' + (isOk ? 'success' : 'error') + '">' + status + '</span>' +
+      (turns ? '<span>' + turns + ' turns</span>' : '') +
       (dur ? '<span>' + dur + '</span>' : '') +
-      '<span>' + files.length + ' files</span>' +
+      '<span>' + fileCount + ' files</span>' +
       '</div></div>';
   }).join('');
 }
 
-function renderSessions(metrics) {
+function renderSessions(metrics, meta) {
   const el = document.getElementById('agentMetrics');
-  if (!metrics || !metrics.agent_metrics) {
+  const hasLive = metrics && metrics.agent_metrics && Object.keys(metrics.agent_metrics).length > 0;
+  if (!hasLive) {
+    // No LIVE session metrics (they are in-memory and reset on server restart).
+    // Fall back to the summary persisted in project.json so the post-completion
+    // view still shows the team and totals.
+    if (meta && (meta.team || meta.total_cost)) {
+      const team = meta.team || [];
+      const teamHtml = team.map(r => '<span class="tag" style="margin-right:4px">' + esc(r) + '</span>').join('') || '-';
+      el.innerHTML =
+        '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Live metrics reset on restart — showing saved summary.</div>' +
+        '<div class="agent-row"><div class="agent-dot" style="background:transparent"></div><div class="agent-name">Team</div><div class="agent-tools">' + teamHtml + '</div></div>' +
+        '<div class="agent-row" style="font-weight:600;border-top:2px solid var(--border-default);margin-top:4px;padding-top:10px">' +
+        '<div class="agent-dot" style="background:transparent"></div><div class="agent-name">Total</div>' +
+        '<div class="agent-stat">' + team.length + ' agents</div>' +
+        '<div class="agent-stat">' + (meta.total_turns || 0) + ' turns</div>' +
+        '<div class="agent-stat">' + (meta.files_created || 0) + ' files</div>' +
+        '<div class="agent-stat" style="color:var(--st-complete)">$' + (Number(meta.total_cost) || 0).toFixed(2) + '</div>' +
+        '<div class="agent-tools"></div></div>';
+      return;
+    }
     el.innerHTML = '<div class="empty-msg">No session data — run a task first</div>';
     return;
   }
@@ -320,20 +403,29 @@ async function submitContinuation() {
   const textarea = document.getElementById('continueTask');
   const task = textarea.value.trim();
   if (!task) return;
+  const agentRole = document.getElementById('continueAgent').value;
   const btn = document.getElementById('continueBtn');
   btn.disabled = true;
   document.getElementById('continueStatus').textContent = 'Submitting...';
   try {
-    const res = await fetch('/api/task', {
+    // Whole team -> full pipeline (/api/task). Specific agent -> /api/inject
+    // (runs immediately when idle, else drains in between phases).
+    const url = agentRole ? '/api/inject' : '/api/task';
+    const body = agentRole
+      ? {task: task, agent_role: agentRole, project_id: PROJECT_ID, priority: 'high'}
+      : {task: task, project_id: PROJECT_ID};
+    const res = await fetch(url, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({task: task, project_id: PROJECT_ID})
+      body: JSON.stringify(body)
     });
     const data = await res.json();
     if (data.success) {
       textarea.value = '';
+      const who = agentRole ? ('Task sent to ' + agentRole) : 'Pipeline started';
       document.getElementById('continueStatus').innerHTML =
-        'Task started! <a href="/live">Watch live</a> | <a href="/mission">Mission Control</a>';
+        who + '! <a href="/live">Watch live</a> | <a href="/mission">Mission Control</a>';
+      setTimeout(loadProject, 4000);
     } else {
       document.getElementById('continueStatus').textContent = 'Error: ' + (data.error || 'Failed');
       btn.disabled = false;
@@ -342,6 +434,7 @@ async function submitContinuation() {
     document.getElementById('continueStatus').textContent = 'Error: ' + e.message;
     btn.disabled = false;
   }
+  setTimeout(() => { btn.disabled = false; }, 2000);
 }
 
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }

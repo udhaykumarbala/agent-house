@@ -314,9 +314,19 @@ export function ConductorApp() {
                 <div className="meta">
                   <span className="nm">Conductor</span>
                   <span>·</span>
-                  <span>{hasHistory ? "today's briefing" : "let me show you what's going on"}</span>
+                  <span>{hasHistory ? "today's briefing" : "new conversation"}</span>
                 </div>
-                <BriefingCard briefing={briefing} />
+                {/* A brand-new conversation starts clean — no carried-over thread
+                    and no global activity dump. The briefing only leads a thread
+                    that already has history. */}
+                {hasHistory ? (
+                  <BriefingCard briefing={briefing} />
+                ) : (
+                  <div style={{ color: "var(--text-secondary)", lineHeight: 1.6, fontSize: "14px" }}>
+                    Fresh start. Tell me what you need and I will route it to the
+                    right specialist. Pick a starter below, or just type.
+                  </div>
+                )}
               </div>
             </div>
           )}

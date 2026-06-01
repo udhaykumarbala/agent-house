@@ -33,10 +33,11 @@ type AgentSession struct {
 	stderr     io.ReadCloser
 	translator *Translator
 
-	mu        sync.Mutex
-	listeners []chan AgentEvent
-	done      chan struct{} // closed when process exits
-	spawned   bool
+	mu             sync.Mutex
+	listeners      []chan AgentEvent
+	done           chan struct{} // closed when process exits
+	spawned        bool
+	turnInProgress bool // a SendTask turn is currently running (serializes turns)
 }
 
 // NewAgentSession creates a new agent session (does not spawn until first use).
@@ -303,14 +304,57 @@ func (s *AgentSession) writeStdin(msg interface{}) error {
 // Returns the text response, all events, and any error.
 func (s *AgentSession) SendTask(ctx context.Context, prompt string) (string, []AgentEvent, error) {
 	s.mu.Lock()
-	needsSpawn := !s.spawned || s.State == StateIdle
+	if s.State == StateTerminated {
+		s.mu.Unlock()
+		return "", nil, fmt.Errorf("session terminated")
+	}
+	// Serialize turns: one persistent claude process handles one turn at a time.
+	// Without this guard two concurrent SendTask calls on the same session (e.g.
+	// the chat path and the orchestrator both resolving the same {project,role}
+	// session) could each decide to spawn — starting two processes and crossing
+	// their event streams.
+	if s.turnInProgress {
+		s.mu.Unlock()
+		return "", nil, fmt.Errorf("session busy: another turn is in progress")
+	}
+	s.turnInProgress = true
+	s.State = StateActive
+	// Decide respawn from real process liveness (a finished-but-alive session is
+	// State==Idle now, so we can't key off State). Snapshot s.done under the lock
+	// to avoid racing the reassignment below / in watchExit.
+	done := s.done
+	needsSpawn := !s.spawned
+	if !needsSpawn {
+		select {
+		case <-done:
+			needsSpawn = true // process exited; respawn below
+		default:
+		}
+	}
 	s.mu.Unlock()
 
-	// Spawn or respawn if needed
+	// Always release the turn guard and return to idle when the turn ends. The
+	// process stays alive across turns to preserve conversation memory. Without
+	// this the session would report "active"/"working" forever (watchExit only
+	// fires on actual process exit).
+	defer func() {
+		s.mu.Lock()
+		s.turnInProgress = false
+		if s.State == StateActive {
+			s.State = StateIdle
+		}
+		s.mu.Unlock()
+	}()
+
+	// Spawn or respawn if needed (serialized by turnInProgress, so only one
+	// SendTask is ever in this block for a given session).
 	if needsSpawn {
 		if s.spawned {
-			// Process died, need to respawn
+			// Process died — recreate the done channel under the lock before respawn.
+			s.mu.Lock()
 			s.done = make(chan struct{})
+			done = s.done
+			s.mu.Unlock()
 			s.translator.Reset()
 		}
 		if err := s.spawn(); err != nil {
@@ -390,8 +434,9 @@ func (s *AgentSession) SendTask(ctx context.Context, prompt string) (string, []A
 			s.Abort()
 			return response.String(), events, ctx.Err()
 
-		case <-s.done:
-			// Process exited - return what we have
+		case <-done:
+			// Process exited - return what we have. `done` is the snapshot
+			// captured for this turn (matches the process spawned above).
 			if response.Len() > 0 {
 				return response.String(), events, nil
 			}
@@ -456,11 +501,15 @@ func (s *AgentSession) Abort() error {
 
 // IsAlive returns whether the Claude process is still running.
 func (s *AgentSession) IsAlive() bool {
+	s.mu.Lock()
+	done := s.done
+	spawned := s.spawned
+	s.mu.Unlock()
 	select {
-	case <-s.done:
+	case <-done:
 		return false
 	default:
-		return s.spawned
+		return spawned
 	}
 }
 

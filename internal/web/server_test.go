@@ -70,8 +70,19 @@ func TestHandleAgents(t *testing.T) {
 		t.Fatal("Expected agents array")
 	}
 
-	if len(agents) != 8 {
-		t.Errorf("Expected 8 agents, got %d", len(agents))
+	// Roster is the IT pack (8) + the EPC pack (6) = 14 roles.
+	if len(agents) != 14 {
+		t.Errorf("Expected 14 agents, got %d", len(agents))
+	}
+
+	// With no live sessions, no agent should report active=true. This guards the
+	// fix that derives "active" from live session state instead of permanent
+	// orchestrator-map membership (which left agents stuck "working" forever).
+	for _, a := range agents {
+		m, _ := a.(map[string]interface{})
+		if active, _ := m["active"].(bool); active {
+			t.Errorf("agent %v should not be active with no live sessions", m["role"])
+		}
 	}
 }
 

@@ -110,11 +110,26 @@ func (s *Server) processAgentChat(projectDir, projectID, roleStr, userMessage st
 		return
 	}
 
-	// Create agent
-	a, err := agent.NewAgent(role)
-	if err != nil {
-		log.Printf("[CHAT] Failed to create agent %s: %v", roleStr, err)
-		return
+	// Create agent — registry-first so EPC roles (hr, procurement, site_engineer,
+	// hse, project_manager, qa_inspector) are chat-able too, not just the 8
+	// hardcoded software roles. Mirrors orchestrator.getAgent.
+	var a *agent.Agent
+	if s.agentRegistry != nil {
+		a, err = s.agentRegistry.CreateAgent(role)
+		if err != nil {
+			log.Printf("[CHAT] Registry lookup for %s failed, falling back to hardcoded: %v", roleStr, err)
+		}
+	}
+	if a == nil {
+		a, err = agent.NewAgent(role)
+		if err != nil {
+			log.Printf("[CHAT] Failed to create agent %s: %v", roleStr, err)
+			return
+		}
+	}
+	// Give the agent session access so EPC/session-mode agents can execute.
+	if sm := s.orchestrator.GetSessionManager(); sm != nil {
+		a.SessionManager = sm
 	}
 
 	log.Printf("[CHAT] %s processing chat message", roleStr)

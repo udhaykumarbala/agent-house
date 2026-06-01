@@ -41,6 +41,7 @@ type Server struct {
 	brainHandler    *BrainHandler      // Brain chat handler
 	emailHandlers   *EmailHandlers     // Email engine handlers
 	scenarioEngine  *scenario.Engine   // Capability-composing scenario runners
+	agentRegistry   *agent.Registry    // File-based agent defs (incl. EPC roles) for handlers
 }
 
 // Config holds server configuration
@@ -95,6 +96,7 @@ func NewServer(config Config) *Server {
 	// Load file-based agent registry
 	agentRegistry := agent.NewRegistry("agents")
 	server.orchestrator.SetAgentRegistry(agentRegistry)
+	server.agentRegistry = agentRegistry // also used directly by handlers (e.g. EPC chat)
 
 	// Initialize email handlers
 	server.emailHandlers = NewEmailHandlers(config.ProjectDir)
@@ -329,8 +331,21 @@ func (s *Server) handleAgents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get active agents from orchestrator
+	// Get agents the orchestrator has instantiated (the live team roster).
 	activeAgents := s.orchestrator.GetAgents()
+
+	// Derive *currently working* roles from live session state, not lifetime
+	// map membership. Without this, any agent that ever ran reports active=true
+	// forever and the UI shows "Working..." permanently. A session is active
+	// only for the duration of an in-flight turn (see session.SendTask).
+	workingNow := map[string]bool{}
+	if sm := s.orchestrator.GetSessionManager(); sm != nil {
+		for _, info := range sm.ListAll() {
+			if info.State == session.StateActive {
+				workingNow[info.AgentRole] = true
+			}
+		}
+	}
 
 	// Build response with all roles — IT pack + EPC pack. Without the EPC
 	// roles here, scenario message authors like "hr"/"procurement" had no
@@ -352,9 +367,13 @@ func (s *Server) handleAgents(w http.ResponseWriter, r *http.Request) {
 			"color":       getRoleColor(role),
 		}
 
+		// Keep the proper display name for any agent on the roster…
 		if a, ok := activeAgents[role]; ok {
-			info["active"] = true
 			info["name"] = a.Name
+		}
+		// …but only mark it active if it is actually executing a turn right now.
+		if workingNow[string(role)] {
+			info["active"] = true
 		}
 
 		agentInfos = append(agentInfos, info)

@@ -14,11 +14,17 @@ import (
 
 	"pty-claude-test/internal/agent"
 	"pty-claude-test/internal/brain"
+	"pty-claude-test/internal/checkpoint"
 	"pty-claude-test/internal/message"
 	"pty-claude-test/internal/orchestrator"
 	"pty-claude-test/internal/session"
 	"pty-claude-test/internal/task"
 )
+
+// globalSettingsDir holds the global default WorkflowSettings (run mode +
+// decision timeout) that newly created projects inherit. It's a pseudo-project
+// directory so it reuses the same checkpoint settings store + API.
+const globalSettingsProject = "_global"
 
 // BrainHandler manages the Brain chat interface.
 type BrainHandler struct {
@@ -29,6 +35,7 @@ type BrainHandler struct {
 	store        *message.Store
 	projDir      string
 	hub          *Hub
+	routerClient *session.APIClient // fast tier-1 model (flash-lite) for instant intermediary feedback; nil disables it
 	emailEngine  interface{ MarkReplied(string); DeleteEmail(string) bool; UpdateApplicantStatus(string,string) bool }
 }
 
@@ -91,6 +98,7 @@ func (bh *BrainHandler) HandleChat(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Message string `json:"message"`
 		UserID  string `json:"user_id"`
+		Scope   string `json:"scope"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid body", http.StatusBadRequest)
@@ -103,12 +111,26 @@ func (bh *BrainHandler) HandleChat(w http.ResponseWriter, r *http.Request) {
 	if req.UserID == "" {
 		req.UserID = "default"
 	}
+	// Scope selects the EPC site/tenant for scoped actions (run_scenario, etc.).
+	// Until the two-doors landing passes it explicitly per company, default to
+	// the seeded EPC demo site so the Conductor operates on Atlas data.
+	if req.Scope == "" {
+		req.Scope = "atlas-site"
+	}
 
-	// Route through Brain
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	// Tier 1: fire an instant intermediary via the fast flash-lite router so the
+	// user sees the Conductor dispatching to a specialist while the authoritative
+	// (tier-2) response is still generating. Best-effort, never blocks Route.
+	if bh.routerClient != nil {
+		go bh.emitIntermediary(req.Message, req.Scope)
+	}
+
+	// Route through Brain. Allow generous headroom for slower third-party model
+	// hosts (e.g. Featherless cold-starts); a warm call should be far faster.
+	ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
 	defer cancel()
 
-	decision, err := bh.router.Route(ctx, req.UserID, req.Message)
+	decision, err := bh.router.Route(ctx, req.UserID, req.Message, req.Scope)
 	if err != nil {
 		log.Printf("[BRAIN] Routing failed: %v", err)
 		writeJSON(w, map[string]interface{}{
@@ -120,7 +142,17 @@ func (bh *BrainHandler) HandleChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Execute the decision
-	result := bh.executor.Execute(decision)
+	result := bh.executor.Execute(decision, req.Scope)
+
+	// Never emit a blank bubble: if the model returned an empty response (e.g. an
+	// off-topic prompt it correctly declined to act on), substitute a polite,
+	// on-domain redirect so the user never sees an empty message.
+	if strings.TrimSpace(result.Response) == "" {
+		result.Response = "I'm focused on running the Atlas site — projects, vendors, invoices, schedule, RFIs, the inbox, and hiring. Ask me about any of those and I'll get on it."
+		if result.Action == "" || result.Action == brain.ActionRespond {
+			result.Action = brain.ActionRespond
+		}
+	}
 
 	// Broadcast brain activity to WebSocket
 	brainEvent, _ := json.Marshal(map[string]interface{}{
@@ -151,6 +183,43 @@ func (bh *BrainHandler) HandleChat(w http.ResponseWriter, r *http.Request) {
 		"success":     result.Success,
 		"suggestions": suggestions,
 	})
+}
+
+// emitIntermediary runs the fast tier-1 router (flash-lite) to pick the likely
+// specialist plus a one-line status, then emits it as a message FROM that agent.
+// That instantly pulses the agent in the workforce panel and shows a
+// "dispatching…" line in the conductor — masking tier-2 latency. Best-effort:
+// any failure is silently ignored so the authoritative response is unaffected.
+func (bh *BrainHandler) emitIntermediary(userMsg, scope string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	const sys = `You are a fast dispatcher for an EPC construction-site AI assistant. ` +
+		`Given the director's message, reply with ONLY a compact JSON object: ` +
+		`{"agent":"<one of: procurement, project_manager, site_engineer, hr, hse, qa_inspector, conductor>", ` +
+		`"line":"<a 4-9 word present-tense status, e.g. Routing to Procurement to verify the invoice>"}`
+	resp, err := bh.routerClient.SendMessage(ctx, sys, userMsg)
+	if err != nil || resp == nil {
+		return
+	}
+	var r struct {
+		Agent string `json:"agent"`
+		Line  string `json:"line"`
+	}
+	txt := strings.TrimSpace(resp.Text)
+	if i := strings.Index(txt, "{"); i >= 0 {
+		txt = txt[i:]
+	}
+	if json.Unmarshal([]byte(txt), &r) != nil || strings.TrimSpace(r.Line) == "" {
+		return
+	}
+	if r.Agent == "" {
+		r.Agent = "conductor"
+	}
+	m := message.NewMessage(message.TypeSystem, r.Agent, "conductor", r.Line)
+	m.Metadata.ProjectID = scope
+	m.Metadata.Tags = []string{"routing"} // NOT "scenario" — conductor suppresses scenario-tagged WS dupes
+	bh.store.Add(m)
+	bh.hub.Broadcast(m)
 }
 
 // defaultSuggestionsFor builds context-aware fallback chips when the Brain
@@ -320,6 +389,20 @@ func isConfirmationPrompt(s string) bool {
 // handleCreateProject is called by the executor when Brain decides to create a project.
 func (bh *BrainHandler) handleCreateProject(projectID, taskStr string) error {
 	log.Printf("[BRAIN] Creating project: %s — %s", projectID, taskStr[:min(len(taskStr), 80)])
+
+	// Inherit the global default run mode so the build runs at the autonomy
+	// level the user picked (manual / semi_auto / full_auto / blitz). New
+	// projects with no settings file otherwise default to semi_auto.
+	if g, err := checkpoint.LoadSettings(bh.projDir + "/" + globalSettingsProject); err == nil && g.RunMode != "" {
+		s := *g
+		s.ProjectID = projectID
+		s.ApplyRunModePreset(g.RunMode)
+		if err := checkpoint.SaveSettings(bh.projDir+"/"+projectID, &s); err != nil {
+			log.Printf("[BRAIN] could not seed run mode for %s: %v", projectID, err)
+		} else {
+			log.Printf("[BRAIN] project %s inherits run mode %q (timeout %dm)", projectID, s.RunMode, s.DecisionTimeoutMinutes)
+		}
+	}
 
 	// Start task in background (same as handleTask in server.go)
 	go func() {

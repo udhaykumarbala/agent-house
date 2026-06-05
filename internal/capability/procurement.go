@@ -122,13 +122,37 @@ func (p *Procurement) ValidateInvoice(senderEmail, vendorID string, amount float
 		VendorID:    vendorID,
 		SenderEmail: senderEmail,
 	}
+	// publicDomainBEC is the strongest signal we can use when the vendor can't be
+	// verified from the registry: a vendor PAYMENT request from a public mail
+	// provider (gmail/outlook/etc.) is suspicious regardless of which vendor it
+	// claims to be. Only applied on the unverified paths below — a vendor found
+	// in the registry still goes through the normal allowlist/domain checks.
+	publicDomainBEC := func(note string) bool {
+		d := domainOf(senderEmail)
+		if !isPublicDomain(d) {
+			return false
+		}
+		out.ImpersonationRisk = true
+		out.Reasons = append(out.Reasons, fmt.Sprintf("%s; sender uses a public mail provider (%s) — classic BEC pattern", note, d))
+		if amount >= 50000 {
+			out.Reasons = append(out.Reasons, fmt.Sprintf("amount $%.0f exceeds $50k human-review threshold", amount))
+		}
+		out.Recommendation = "block_vendor_and_notify_finance"
+		return true
+	}
 	if vendorID == "" {
+		if publicDomainBEC("payment request with no verifiable vendor") {
+			return out, nil
+		}
 		out.Reasons = append(out.Reasons, "no vendor specified")
 		out.Recommendation = "ask_procurement_to_classify"
 		return out, nil
 	}
 	v, err := p.Get(vendorID)
 	if err != nil {
+		if publicDomainBEC(fmt.Sprintf("vendor %q not in registry", vendorID)) {
+			return out, nil
+		}
 		out.Reasons = append(out.Reasons, fmt.Sprintf("vendor %q not in registry", vendorID))
 		out.Recommendation = "verify_vendor_identity"
 		return out, nil

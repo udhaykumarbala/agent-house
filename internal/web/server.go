@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -101,9 +102,26 @@ func NewServer(config Config) *Server {
 	// Initialize email handlers
 	server.emailHandlers = NewEmailHandlers(config.ProjectDir)
 
-	// Initialize Brain handler
+	// Initialize Brain handler. The Brain emits structured JSON decisions, so put
+	// its client in JSON mode (oneshot agents create their own prose-mode clients).
 	apiClient := session.NewAPIClient()
+	apiClient.JSONMode = true
 	server.brainHandler = NewBrainHandler(apiClient, server.orchestrator, config.Store, hub, config.ProjectDir)
+	// Tier-1 fast router (e.g. gemini-3.1-flash-lite) for instant intermediary
+	// feedback — same endpoint/key as the main client, just a faster model.
+	if rm := os.Getenv("ONESHOT_ROUTER_MODEL"); rm != "" {
+		server.brainHandler.routerClient = apiClient.WithModel(rm)
+		log.Printf("[API-CLIENT] Tier-1 router model: %s", rm)
+	}
+	// Warm the model in the background so the FIRST on-stage prompt isn't a
+	// cold-start (observed ~14s cold vs ~5s warm on Gemini 3.5 Flash).
+	if apiClient.IsAvailable() {
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			_, _ = apiClient.SendMessage(ctx, "Reply with: OK", "warmup")
+		}()
+	}
 	server.brainHandler.emailEngine = server.emailHandlers.GetEngine()
 
 	// Start cron scheduler
@@ -246,6 +264,7 @@ func (s *Server) Start(port int) error {
 	// Scenario engine — capability-composing multi-step flows
 	s.registerScenarios()
 	mux.HandleFunc("/api/scenarios", s.handleScenarioList)
+	mux.HandleFunc("/api/scenario/reseed", s.handleReseed) // exact path wins over the prefix below
 	mux.HandleFunc("/api/scenario/", s.handleScenarioRun)
 
 	// Conversation lifecycle (named threads + command-palette search).
@@ -881,6 +900,13 @@ func getRoleName(role agent.Role) string {
 		agent.RoleArchitect: "Software Architect",
 		agent.RoleSeniorDev: "Senior Developer",
 		agent.RoleJuniorDev: "Junior Developer",
+		// EPC / construction roster
+		agent.RoleHR:           "HR Manager",
+		agent.RoleProjectMgr:   "Project Manager",
+		agent.RoleProcurement:  "Procurement Lead",
+		agent.RoleSiteEngineer: "Site Engineer",
+		agent.RoleHSE:          "HSE Officer",
+		agent.RoleQAInspector:  "QA Inspector",
 	}
 	if name, ok := names[role]; ok {
 		return name
@@ -1159,9 +1185,16 @@ func (s *Server) handleFileContent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Prevent directory traversal attacks
-	if !strings.HasPrefix(absPath, absProjectDir) {
+	// Prevent directory traversal attacks. Require a path-separator boundary so
+	// sibling directories like "projects-evil" can't satisfy a bare prefix match.
+	if absPath != absProjectDir && !strings.HasPrefix(absPath, absProjectDir+string(os.PathSeparator)) {
 		http.Error(w, "Access denied", http.StatusForbidden)
+		return
+	}
+
+	// A directory is not a readable file — return 400 rather than a 500 from ReadFile.
+	if info, statErr := os.Stat(absPath); statErr == nil && info.IsDir() {
+		http.Error(w, "Path is a directory, not a file", http.StatusBadRequest)
 		return
 	}
 

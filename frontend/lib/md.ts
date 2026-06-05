@@ -42,6 +42,57 @@ const isTableSep = (l: string): boolean =>
 
 const looksLikeRow = (l: string): boolean => l.trim().includes("|");
 
+/**
+ * Last-resort safety net: the Brain occasionally emits a JSON *decision* envelope
+ * ({"action":"respond","response":"…markdown…","suggestions":[…]}) as the reply
+ * text — usually when the markdown body contains literal newlines that break a
+ * strict JSON parse upstream. Rendering that raw envelope looks broken, so we
+ * detect it and return just the inner `response` value. Tolerant of malformed
+ * JSON (unescaped newlines) via a manual string scan when JSON.parse fails.
+ * Returns the input unchanged when it is not an envelope.
+ */
+export function cleanReply(raw: string): string {
+  if (!raw) return raw;
+  const s = raw.trim();
+  if (!(s.startsWith("{") && s.includes('"action"') && s.includes('"response"')))
+    return raw;
+
+  // 1) Strict parse — the happy path when the envelope is well-formed.
+  try {
+    const o = JSON.parse(s) as { response?: unknown };
+    if (typeof o.response === "string" && o.response.trim()) return o.response;
+  } catch {
+    /* fall through to tolerant scan */
+  }
+
+  // 2) Tolerant scan: pull the "response" value even if the JSON is malformed.
+  const key = '"response"';
+  const ki = s.indexOf(key);
+  if (ki < 0) return raw;
+  let i = s.indexOf('"', ki + key.length); // opening quote of the value
+  if (i < 0) return raw;
+  i++;
+  let buf = "";
+  for (; i < s.length; i++) {
+    const c = s[i];
+    if (c === "\\") {
+      const n = s[i + 1];
+      buf += n === "n" ? "\n" : n === "t" ? "\t" : n;
+      i++;
+      continue;
+    }
+    if (c === '"') {
+      // A real closing quote is followed (modulo whitespace) by , or }.
+      const rest = s.slice(i + 1).trimStart();
+      if (rest === "" || rest.startsWith(",") || rest.startsWith("}")) break;
+      buf += c; // a literal quote inside the markdown body
+      continue;
+    }
+    buf += c;
+  }
+  return buf.trim() ? buf : raw;
+}
+
 export function renderMarkdown(src: string): string {
   if (!src) return "";
   const lines = src.replace(/\r\n/g, "\n").split("\n");

@@ -65,10 +65,20 @@ func (ValidateInvoice) Run(ctx Context) (Result, error) {
 	res.Steps = append(res.Steps, pStep)
 	HelpEmitStep(ctx.Emitter, ctx.Scope, res.Scenario, pStep)
 
+	// Resolve a display name for the claimed vendor — VendorName is empty when the
+	// sender couldn't be tied to a registry entry (e.g. a gmail BEC sender), so
+	// fall back to the claimed id / a generic phrase rather than printing "".
+	claimed := check.VendorName
+	if claimed == "" {
+		claimed = vendorID
+	}
+	if claimed == "" {
+		claimed = "a known vendor"
+	}
 	switch {
 	case check.ImpersonationRisk:
 		res.Summary = fmt.Sprintf("Impersonation risk: %s purporting to be %s.",
-			sender, check.VendorName)
+			sender, claimed)
 		res.Suggestions = append(res.Suggestions, Suggestion{
 			Title:  "Block this sender",
 			Detail: "Add the sender to the blocklist and refuse any payment changes.",
@@ -87,7 +97,7 @@ func (ValidateInvoice) Run(ctx Context) (Result, error) {
 		})
 		res.Suggestions = append(res.Suggestions, Suggestion{
 			Title:  "Verify via known channel",
-			Detail: fmt.Sprintf("Call %s on a number on file to confirm — never reply to the suspicious email.", check.VendorName),
+			Detail: fmt.Sprintf("Call %s on a number on file to confirm — never reply to the suspicious email.", claimed),
 			Action: "verify_oob",
 		})
 	case check.Trusted && check.Recommendation == "pause_payment_until_contract_renewed":

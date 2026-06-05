@@ -202,13 +202,42 @@ func deriveName(id string, msgs []ChatMessage) string {
 		if head == "" {
 			continue
 		}
-		return truncateRunes(firstLine(head), 60)
+		return intentTitle(firstLine(head))
 	}
 	// id like "conv_<ms>" → "Conversation <last-4>"
 	if strings.HasPrefix(id, "conv_") {
 		return "New conversation"
 	}
 	return id
+}
+
+// intentTitle gives a build/modify conversation a clean, intent-labeled name
+// ("Build: <app>" / "Modify: <thing>") so the history palette reads like a
+// project list. Non-build chat keeps its raw first-line headline.
+func intentTitle(head string) string {
+	lc := strings.ToLower(strings.TrimSpace(head))
+	strip := func(s, prefix string) string {
+		s = strings.TrimSpace(s[len(prefix):])
+		// Drop leading filler so "Build a todo app" → "todo app".
+		for _, f := range []string{"a ", "an ", "the ", "me a ", "me an ", "me the ", "us a "} {
+			if strings.HasPrefix(strings.ToLower(s), f) {
+				s = strings.TrimSpace(s[len(f):])
+				break
+			}
+		}
+		return s
+	}
+	for _, p := range []string{"build ", "create ", "make ", "develop ", "scaffold "} {
+		if strings.HasPrefix(lc, p) {
+			return truncateRunes("Build: "+strip(head, p), 60)
+		}
+	}
+	for _, p := range []string{"modify ", "change ", "update ", "improve ", "refactor ", "add ", "fix "} {
+		if strings.HasPrefix(lc, p) {
+			return truncateRunes("Modify: "+strip(head, p), 60)
+		}
+	}
+	return truncateRunes(head, 60)
 }
 
 func firstLine(s string) string {

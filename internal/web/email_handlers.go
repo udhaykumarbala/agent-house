@@ -82,6 +82,19 @@ func (eh *EmailHandlers) HandleReceive(w http.ResponseWriter, r *http.Request) {
 
 	email, trust := eh.engine.ReceiveEmail(req.From, req.FromName, req.To, req.Subject, req.Body)
 
+	// Gateway dropped the message — return 403 with the reason so the
+	// caller (simulator, UI, or real intake) can surface the alert
+	// instead of pretending the email was accepted.
+	if trust != nil && trust.Status == "blocked" {
+		writeJSON(w, map[string]interface{}{
+			"success": false,
+			"blocked": true,
+			"trust":   trust,
+			"error":   trust.Reason,
+		})
+		return
+	}
+
 	result := map[string]interface{}{
 		"success":  true,
 		"email":    email,

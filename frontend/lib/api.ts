@@ -62,6 +62,15 @@ export async function fetchCheckpoints(
   return Array.isArray(data) ? data : (data.checkpoints ?? []);
 }
 
+/** Aggregate checkpoints across every project (each annotated with its run mode
+ * + decision timeout). Lets Mission follow whichever build is running. */
+export async function fetchAllCheckpoints(): Promise<ApiCheckpoint[]> {
+  const data = await getJSON<{ checkpoints: ApiCheckpoint[] }>(
+    `/api/checkpoints/all`
+  );
+  return data?.checkpoints ?? [];
+}
+
 export async function resolveCheckpoint(
   id: string,
   decision: "approved" | "rejected",
@@ -213,18 +222,60 @@ export interface ChatReply {
   suggestions?: string[];
 }
 
+// ── Run-mode / workflow settings ──
+export interface WorkflowSettings {
+  project_id?: string;
+  run_mode: string; // manual | semi_auto | full_auto | blitz
+  decision_timeout_minutes: number;
+  require_template_approval?: boolean;
+  require_plan_approval?: boolean;
+  require_phase_gate?: boolean;
+  require_final_acceptance?: boolean;
+}
+
+/** The global default run mode new builds inherit. `_global` is a pseudo-project
+ * that holds the default WorkflowSettings via the same checkpoint settings API. */
+export async function getRunMode(
+  project = "_global"
+): Promise<WorkflowSettings | null> {
+  return getJSON<WorkflowSettings>(
+    `/api/settings/workflow?project=${encodeURIComponent(project)}`
+  );
+}
+
+export async function setRunMode(
+  run_mode: string,
+  decision_timeout_minutes: number,
+  project = "_global"
+): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/settings/workflow?project=${encodeURIComponent(project)}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ run_mode, decision_timeout_minutes }),
+      }
+    );
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 /** Send a message through the Brain router (POST /api/chat). `conv` is the
  * conversation id (kept as `user_id` in the wire payload for backend
  * compatibility — that field is what the store keys on). */
 export async function sendChat(
   message: string,
-  conv = "default"
+  conv = "default",
+  scope?: string
 ): Promise<ChatReply | null> {
   try {
     const res = await fetch(`${API_BASE}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, user_id: conv }),
+      body: JSON.stringify({ message, user_id: conv, scope }),
     });
     if (!res.ok) return null;
     const raw = (await res.json()) as ChatReply;

@@ -24,7 +24,7 @@ func (ProcessInbox) Example() map[string]any {
 func (ProcessInbox) Run(ctx Context) (Result, error) {
 	res := Result{Scenario: "process_inbox", Scope: ctx.Scope}
 
-	max := 8
+	max := 15 // triage the full demo inbox in one sweep; caller can override via "max"
 	if v, ok := ctx.Input["max"].(float64); ok && v > 0 {
 		max = int(v)
 	}
@@ -82,8 +82,25 @@ func (ProcessInbox) Run(ctx Context) (Result, error) {
 		}
 		switch e.Category {
 		case "vendor":
-			// Procurement does a domain check against the registry.
-			if proc != nil {
+			// Trust the ingestion-time trust check first: the email engine already
+			// flagged impersonation (domain mismatch / public-mail BEC) when the
+			// message was received. This is authoritative and catches the fake or
+			// unknown vendor_id that a registry-only ValidateInvoice check misses.
+			if e.TrustStatus == "impersonation" {
+				impersonations++
+				t.Severity = "critical"
+				reason := e.TrustReason
+				if reason == "" {
+					reason = "sender domain does not match the claimed vendor (possible BEC)"
+				}
+				if strings.HasPrefix(strings.ToUpper(reason), "IMPERSONATION") {
+					t.Verdict = reason
+				} else {
+					t.Verdict = "IMPERSONATION RISK — " + reason
+				}
+				t.Suggestion = "block_vendor_and_notify_finance"
+			} else if proc != nil {
+				// Procurement does a domain check against the registry.
 				check, _ := proc.ValidateInvoice(e.From, e.VendorID, 0)
 				if check.ImpersonationRisk {
 					impersonations++
@@ -113,8 +130,17 @@ func (ProcessInbox) Run(ctx Context) (Result, error) {
 				if name == "" {
 					name = e.From
 				}
-				applied := e.Subject
+				// Derive a DETERMINISTIC id from the source email so re-sweeping the
+				// same inbox replaces the record instead of minting a new one each
+				// time (an empty id => new app_<nanotime> on every run => runaway
+				// duplicates). Idempotent: one application email => one applicant.
+				applied := strings.TrimSpace(strings.TrimPrefix(e.Subject, "Application —"))
+				applied = strings.TrimSpace(strings.TrimPrefix(applied, "Application -"))
+				if applied == "" {
+					applied = e.Subject
+				}
 				_, _ = hr.Store(capability.Applicant{
+					ID:            "app_email_" + e.ID,
 					Name:          name,
 					Email:         e.From,
 					AppliedFor:    applied,

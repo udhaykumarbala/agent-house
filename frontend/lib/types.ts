@@ -52,6 +52,16 @@ export interface ApiCheckpoint {
   artifact_summary?: string;
   created_at: string;
   resolved_at?: string | null;
+  // Annotations from /api/checkpoints/all (per-project run mode + timeout).
+  project?: string;
+  run_mode?: string;
+  decision_timeout_minutes?: number;
+  decision?: {
+    action: string;
+    feedback?: string;
+    decided_by: string;
+    decided_at?: string;
+  } | null;
 }
 
 // ── UI view-models (what the reference components render) ──
@@ -80,6 +90,8 @@ export interface HitlVM {
   trace: string;
   primary: string;
   live: boolean; // backed by a real checkpoint id
+  /** Full-auto only: epoch ms when the CEO auto-decides if the human hasn't. */
+  deadline?: number;
 }
 
 export interface FeedVM {

@@ -80,32 +80,55 @@ export function mapAgents(
 const PROFESSIONAL = (role: string) =>
   `role:${role.replace(/[^a-z_]/gi, "") || "agent"}`;
 
-export function mapCheckpoints(cps: ApiCheckpoint[]): HitlVM[] {
+/** Format a full-auto countdown: ms remaining → "auto in M:SS". */
+function fmtRemaining(ms: number): string {
+  if (ms <= 0) return "deciding…";
+  const s = Math.floor(ms / 1000);
+  return `auto in ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+/** Map pending checkpoints to HITL cards. Pass `nowMs` (Date.now()) so full-auto
+ * gates render a live countdown to the CEO's auto-decision. */
+export function mapCheckpoints(cps: ApiCheckpoint[], nowMs = 0): HitlVM[] {
   return cps
     .filter((c) => c.status === "pending")
     .map((c) => {
       const summary = c.artifact_summary || c.type;
+      const proj = c.project || c.project_id;
+      // Full-auto: deadline = created_at + decision_timeout_minutes.
+      let deadline: number | undefined;
+      let timer = "pending";
+      if (c.run_mode === "full_auto" && c.decision_timeout_minutes) {
+        const created = Date.parse(c.created_at);
+        if (!isNaN(created)) {
+          deadline = created + c.decision_timeout_minutes * 60_000;
+          timer = nowMs ? fmtRemaining(deadline - nowMs) : `auto in ${c.decision_timeout_minutes}:00`;
+        }
+      } else if (c.run_mode) {
+        timer = c.run_mode === "blitz" ? "auto" : "awaiting you";
+      }
       return {
         id: c.id,
         initials: (c.type || "CP").slice(0, 2).toUpperCase(),
         state: "awaiting",
         title: summary,
-        detail: `${c.type} · task#${(c.task_id || "").slice(0, 6)}`,
+        detail: `${proj} · ${c.type}`,
         tag: c.type.toUpperCase(),
-        timer: "pending",
+        timer,
         roleTag: PROFESSIONAL(c.type),
         desc: c.artifact_summary
           ? esc(c.artifact_summary)
           : `Checkpoint <code>${esc(c.type)}</code> awaiting your decision.`,
         payload: [
           ["type", c.type, "str"],
-          ["task_id", c.task_id || "", "str"],
+          ["project", proj, "str"],
+          ["run mode", c.run_mode || "—", "str"],
           ["artifact", c.artifact_path || "—", "str"],
-          ["status", c.status, ""],
         ],
-        trace: `checkpoint#${c.id} · project ${c.project_id} · all events audited`,
+        trace: `checkpoint#${c.id} · project ${proj} · all events audited`,
         primary: "Approve",
         live: true,
+        deadline,
       };
     });
 }
@@ -157,7 +180,7 @@ export interface WfRow {
  * This lets scenario step emits visibly pulse the workforce panel (each
  * scenario step is a single message, but it's the strongest live signal
  * we have until orchestrator activity reporting is real-time). */
-const ACTIVE_WINDOW_MS = 60_000;
+const ACTIVE_WINDOW_MS = 8_000;
 
 export function mapWorkforce(
   agents: ApiAgent[],

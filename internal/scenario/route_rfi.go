@@ -84,8 +84,9 @@ func (RouteRFI) Run(ctx Context) (Result, error) {
 	//    process_applicants uses, so the score scale is consistent.
 	hr, _ := capability.NewHR(ctx.DataRoot, ctx.Scope)
 	jd := capability.JD{
-		Title:    discipline + " specialist",
-		MustHave: append([]string{discipline}, hits...),
+		Title:      discipline + " specialist",
+		MustHave:   []string{discipline}, // the discipline is the hard requirement
+		NiceToHave: hits,                  // RFI jargon (column/plumb/...) only boosts — never penalizes a real specialist to 0
 	}
 	matches, _ := hr.Match(jd, 3)
 	hrStep := Step{

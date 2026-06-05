@@ -348,6 +348,35 @@ func (o *Orchestrator) waitForCheckpoint(cpType string, phaseIndex int, artifact
 		return nil, nil // Don't block on storage failure
 	}
 
+	// Blitz mode: auto-approve immediately so the build runs end-to-end with no
+	// human pause and no CEO review round-trip. The checkpoint + decision are
+	// still recorded, so the run leaves a full "auto-approved" audit trail.
+	if settings.RunMode == checkpoint.RunModeBlitz {
+		dec := checkpoint.Decision{
+			ID:             checkpoint.GenerateDecisionID(),
+			ProjectID:      projectID,
+			TaskID:         result.TaskID,
+			CheckpointType: cpType,
+			PhaseIndex:     phaseIndex,
+			Action:         checkpoint.DecisionApproved,
+			Feedback:       "Auto-approved — blitz mode (no gates).",
+			DecidedBy:      "auto_blitz",
+			DecidedAt:      time.Now(),
+		}
+		_ = checkpoint.AddDecision(o.config.ProjectDir, dec)
+		_, _ = checkpoint.ResolveCheckpoint(o.config.ProjectDir, cp.ID, dec)
+		if o.checkpointNotify != nil {
+			o.checkpointNotify(cp.ID, cpType, artifactSummary, phaseIndex, true, dec.DecidedBy, string(dec.Action))
+		}
+		bm := message.NewMessage(message.TypeSystem, "ceo", "", fmt.Sprintf("⚡ Blitz auto-approved %s — %s", cpType, artifactSummary))
+		bm.Metadata.ProjectID = projectID
+		bm.Metadata.TaskID = result.TaskID
+		o.store.Add(bm)
+		o.notify(bm)
+		log.Printf("[CHECKPOINT] Blitz auto-approved: type=%s id=%s", cpType, cp.ID)
+		return &dec, nil
+	}
+
 	// Set as pending
 	o.cpMu.Lock()
 	o.pendingCP = &cp
@@ -504,6 +533,18 @@ Review the above artifact and respond with EXACTLY one of these on its own line:
 	// Resolve on disk
 	checkpoint.ResolveCheckpoint(o.config.ProjectDir, cp.ID, *dec)
 	checkpoint.AddDecision(o.config.ProjectDir, *dec)
+
+	// Surface the auto-decision + its reasoning in the live feed, so the human
+	// can see WHAT the CEO decided and WHY even though it ran unattended.
+	note := fmt.Sprintf("🤖 Auto-decided %s after %dm: %s", cp.Type, minutes, strings.ToUpper(string(dec.Action)))
+	if dec.Feedback != "" {
+		note += " — " + dec.Feedback
+	}
+	am := message.NewMessage(message.TypeSystem, "ceo", "", note)
+	am.Metadata.ProjectID = projectID
+	am.Metadata.TaskID = result.TaskID
+	o.store.Add(am)
+	o.notify(am)
 
 	// Send to channel
 	select {

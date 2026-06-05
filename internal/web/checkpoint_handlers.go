@@ -5,11 +5,50 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
 	"pty-claude-test/internal/checkpoint"
 )
+
+// handleAllCheckpoints aggregates checkpoints across every project dir, each
+// annotated with its project's run mode + decision timeout (so the UI can show
+// a live countdown for full-auto gates), sorted newest-first.
+func (s *Server) handleAllCheckpoints(w http.ResponseWriter, r *http.Request) {
+	type cpOut struct {
+		checkpoint.Checkpoint
+		Project                string `json:"project"`
+		RunMode                string `json:"run_mode"`
+		DecisionTimeoutMinutes int    `json:"decision_timeout_minutes"`
+	}
+	out := []cpOut{}
+	pending := 0
+	if entries, err := os.ReadDir(s.projectDir); err == nil {
+		for _, e := range entries {
+			if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || strings.HasPrefix(e.Name(), "_") {
+				continue
+			}
+			projDir := filepath.Join(s.projectDir, e.Name())
+			cps, err := checkpoint.LoadCheckpoints(projDir)
+			if err != nil || len(cps) == 0 {
+				continue
+			}
+			rm, to := "", 0
+			if st, err := checkpoint.LoadSettings(projDir); err == nil {
+				rm, to = st.RunMode, st.DecisionTimeoutMinutes
+			}
+			for _, cp := range cps {
+				out = append(out, cpOut{Checkpoint: cp, Project: e.Name(), RunMode: rm, DecisionTimeoutMinutes: to})
+				if cp.Status == "pending" {
+					pending++
+				}
+			}
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].CreatedAt.After(out[j].CreatedAt) })
+	writeJSON(w, map[string]interface{}{"checkpoints": out, "count": len(out), "pending_count": pending})
+}
 
 // handleCheckpoints handles GET /api/checkpoints?project=xxx
 func (s *Server) handleCheckpoints(w http.ResponseWriter, r *http.Request) {
@@ -54,6 +93,15 @@ func (s *Server) handleCheckpointByID(w http.ResponseWriter, r *http.Request) {
 
 	if cpID == "" {
 		http.Error(w, "Checkpoint ID required", http.StatusBadRequest)
+		return
+	}
+
+	// GET /api/checkpoints/all — aggregate checkpoints across every project,
+	// each annotated with its project's run mode + decision timeout so the UI
+	// can render a countdown. Lets Mission follow whichever build is running
+	// (each build runs on its own orchestrator + project dir).
+	if cpID == "all" && r.Method == http.MethodGet {
+		s.handleAllCheckpoints(w, r)
 		return
 	}
 
@@ -175,6 +223,15 @@ func (s *Server) handleWorkflowSettings(w http.ResponseWriter, r *http.Request) 
 		}
 		if settings.ProjectID == "" {
 			settings.ProjectID = projectID
+		}
+		// When a known run mode is named, (re)apply its preset so the gate flags
+		// + decision timeout match the mode (the request's decision_timeout_minutes
+		// is honored for full_auto). Any other value ("custom"/"") persists the
+		// raw Require* flags as sent, for advanced per-gate tweaking.
+		switch settings.RunMode {
+		case checkpoint.RunModeManual, checkpoint.RunModeSemiAuto,
+			checkpoint.RunModeFullAuto, checkpoint.RunModeBlitz:
+			settings.ApplyRunModePreset(settings.RunMode)
 		}
 		if err := checkpoint.SaveSettings(projectDir, &settings); err != nil {
 			http.Error(w, "Failed to save settings", http.StatusInternalServerError)

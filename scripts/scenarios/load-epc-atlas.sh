@@ -9,12 +9,26 @@
 # second run overwrites instead of duplicating.
 set -euo pipefail
 
-HOST="${HOST:-http://localhost:8099}"
+HOST="${HOST:-http://localhost:8080}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 INBOX="$ROOT/projects/inbox"
 PROJ="$ROOT/projects/atlas-site"
 
 mkdir -p "$INBOX" "$PROJ/.tasks" "$PROJ/inbox" "$PROJ/drawings"
+
+DATA="$ROOT/data/atlas-site"
+mkdir -p "$DATA"
+
+# ── Reset to a clean demo slate (makes reseed idempotent) ────────────
+# The capability stores append/replace by id and never prune, so without a
+# reset the inbox sweep's auto-stored applicants accumulate forever. Clear
+# the atlas inbox + the three scoped stores so the POSTs below rebuild a
+# clean, fully-known dataset on every run.
+echo "→ resetting atlas-site stores + inbox to a clean slate"
+rm -f "$INBOX"/*.json 2>/dev/null || true
+printf '[]' > "$DATA/applicants.json"
+printf '[]' > "$DATA/vendors.json"
+printf '[]' > "$DATA/milestones.json"
 
 now() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
 ago() { # ago <minutes>
@@ -132,6 +146,26 @@ CV and references attached. Available for interview from May 22.
 Sincerely,
 Raj Kumar"
 
+# ── Additional emails from a JSON manifest ──────────────────────────
+# Data-driven so realistic bodies (amounts, newlines) don't fight bash
+# quoting. Each manifest entry carries id/from/subject/body/category/etc.
+# + ago_minutes; we stamp date/to/flags and drop ago_minutes on write.
+MANIFEST="$ROOT/scripts/scenarios/atlas-emails.json"
+if [[ -f "$MANIFEST" ]]; then
+  echo
+  echo "→ seeding additional emails from $(basename "$MANIFEST")"
+  mcount=$(jq 'length' "$MANIFEST")
+  for ((n=0; n<mcount; n++)); do
+    mid=$(jq -r ".[$n].id" "$MANIFEST")
+    magom=$(jq -r ".[$n].ago_minutes" "$MANIFEST")
+    mts=$(ago "$magom")
+    jq --arg date "$mts" --arg to "ops@atlas-construction.com" \
+       ".[$n] + {date:\$date, to:\$to, read:false, replied:false, direction:\"inbound\"} | del(.ago_minutes)" \
+       "$MANIFEST" > "$INBOX/${mid}.json"
+    echo "  ✓ ${mid}.json · $(jq -r ".[$n].category" "$MANIFEST") · $(jq -r '.['"$n"'].trust_status // "-"' "$MANIFEST")"
+  done
+fi
+
 echo
 echo "→ adding scoped cron jobs for atlas-site"
 post_cron() {
@@ -160,6 +194,17 @@ post_app() {
 post_app '{"id":"app_raj","name":"Raj Kumar","email":"raj.kumar@email.com","applied_for":"Site Supervisor for Highway Bridge Project","experience_years":12,"key_skills":["civil","bridge","highway","concrete","rebar"],"certifications":["PE","PMP"]}'
 post_app '{"id":"app_anita","name":"Anita Verma","email":"anita.verma@email.com","applied_for":"Senior Site Engineer","experience_years":9,"key_skills":["civil","structural","autocad","rfi","qa"],"certifications":["PE"]}'
 post_app '{"id":"app_keshav","name":"Keshav Iyer","email":"keshav@email.com","applied_for":"HSE Officer","experience_years":6,"key_skills":["hse","safety","compliance","incident response"],"certifications":["NEBOSH"]}'
+# Broader pipeline across disciplines — gives HR matching real winners per RFI
+# (electrical→Li, civil/bridge→Fatima, structural→Diego, QA→Grace, MEP→Omar,
+# HSE→Nadia) plus one deliberately non-technical applicant (Ben) so the matcher
+# can honestly return "no fit" for technical roles.
+post_app '{"id":"app_li","name":"Li Wei","email":"li.wei@email.com","applied_for":"Senior Electrical Engineer","experience_years":11,"key_skills":["electrical","switchgear","cable","transformer","voltage","earthing"],"certifications":["PE"]}'
+post_app '{"id":"app_omar","name":"Omar Haddad","email":"omar.haddad@email.com","applied_for":"Mechanical/MEP Engineer","experience_years":8,"key_skills":["hvac","piping","mep","pump","mechanical","ducting"],"certifications":["PE"]}'
+post_app '{"id":"app_grace","name":"Grace Park","email":"grace.park@email.com","applied_for":"QA/QC Inspector","experience_years":7,"key_skills":["inspection","qa","qc","ncr","punchlist","test report"],"certifications":["CWI"]}'
+post_app '{"id":"app_diego","name":"Diego Santos","email":"diego.santos@email.com","applied_for":"Structural Engineer","experience_years":14,"key_skills":["structural","concrete","rebar","beam","slab","autocad"],"certifications":["PE","SE"]}'
+post_app '{"id":"app_fatima","name":"Fatima Noor","email":"fatima.noor@email.com","applied_for":"Civil Engineer — Bridges","experience_years":10,"key_skills":["civil","bridge","highway","foundation","geotech","drainage"],"certifications":["PE"]}'
+post_app '{"id":"app_nadia","name":"Nadia Rahman","email":"nadia.rahman@email.com","applied_for":"HSE Manager","experience_years":9,"key_skills":["hse","safety","ppe","scaffold","incident"],"certifications":["NEBOSH","IOSH"]}'
+post_app '{"id":"app_ben","name":"Ben Carter","email":"ben.carter@email.com","applied_for":"Site Administrator","experience_years":5,"key_skills":["admin","scheduling","documentation","procurement support"],"certifications":[]}'
 
 # ── Procurement vendors ──────────────────────────────────────────────
 echo
@@ -172,6 +217,15 @@ post_vendor() {
 post_vendor '{"id":"vendor_xyz","name":"XYZ Steel","domain":"vendorxyz.com","trusted_emails":["ar@vendorxyz.com","ahmed.rahman@vendorxyz.com"],"contact_person":"Ahmed Rahman","contract_active":true}'
 post_vendor '{"id":"vendor_alpha","name":"AlphaConcrete","domain":"alphaconcrete.io","trusted_emails":["accounts@alphaconcrete.io"],"contact_person":"Priya Shah","contract_active":true}'
 post_vendor '{"id":"vendor_beta","name":"BetaElectrics","domain":"betaelectrics.com","trusted_emails":["finance@betaelectrics.com"],"contact_person":"Liu Chen","contract_active":false}'
+# Wider supplier base. GeoSound is deliberately contract_active=false so a
+# genuine invoice from its real domain still triggers "pause payment until
+# contract renewed". The others are active and back the new invoices/quotes.
+post_vendor '{"id":"vendor_apex","name":"Apex Cement & Aggregates","domain":"apexcement.com","trusted_emails":["billing@apexcement.com"],"contact_person":"Marcus Webb","contract_active":true}'
+post_vendor '{"id":"vendor_titan","name":"Titan Cranes & Rigging","domain":"titancranes.com","trusted_emails":["ar@titancranes.com"],"contact_person":"Elena Petrov","contract_active":true}'
+post_vendor '{"id":"vendor_volt","name":"Voltura Power Systems","domain":"volturapower.com","trusted_emails":["invoices@volturapower.com"],"contact_person":"Sanjay Mehta","contract_active":true}'
+post_vendor '{"id":"vendor_geo","name":"GeoSound Surveys","domain":"geosound.co","trusted_emails":["accounts@geosound.co"],"contact_person":"Dana Kim","contract_active":false}'
+post_vendor '{"id":"vendor_safe","name":"SafeGuard PPE Supplies","domain":"safeguardppe.com","trusted_emails":["sales@safeguardppe.com"],"contact_person":"Tom Becker","contract_active":true}'
+post_vendor '{"id":"vendor_aqua","name":"AquaFlow Plumbing & MEP","domain":"aquaflowmep.com","trusted_emails":["billing@aquaflowmep.com"],"contact_person":"Rosa Iglesias","contract_active":true}'
 
 # ── Schedule milestones (one deliberately slipping) ─────────────────
 echo
@@ -187,10 +241,21 @@ post_ms '{"id":"ms_foundation","title":"Foundation work","due_date":"2026-03-30"
 post_ms '{"id":"ms_slab_c7","title":"Pour C-7 slab","due_date":"2026-05-15","status":"in_progress","pct_complete":40,"owner":"site_engineer"}'
 post_ms '{"id":"ms_steel_erect","title":"Structural steel erection","due_date":"2026-06-15","status":"pending","pct_complete":0,"owner":"site_engineer"}'
 post_ms '{"id":"ms_grid_test","title":"Grid connection & testing","due_date":"2026-07-15","status":"pending","pct_complete":0,"owner":"qa_inspector"}'
+# ── Project Gamma (Highway Bridge) + Project Beta (Substation) ───────
+# Multiple live projects so the schedule view + briefing span more than the
+# Solar Farm. Mix of slip severities (minor/moderate/critical) + a blocked
+# milestone tied to the inactive BetaElectrics contract.
+post_ms '{"id":"ms_alpha_panels","title":"Project Alpha — PV panel installation","due_date":"2026-06-02","status":"in_progress","pct_complete":15,"owner":"site_engineer"}'
+post_ms '{"id":"ms_hb_survey","title":"Highway Bridge — topographic survey","due_date":"2026-04-10","status":"completed","pct_complete":100,"owner":"site_engineer"}'
+post_ms '{"id":"ms_hb_piles","title":"Highway Bridge — pier pile driving","due_date":"2026-05-20","status":"in_progress","pct_complete":55,"owner":"site_engineer"}'
+post_ms '{"id":"ms_hb_deck","title":"Highway Bridge — deck segment casting","due_date":"2026-06-28","status":"pending","pct_complete":0,"owner":"site_engineer"}'
+post_ms '{"id":"ms_sub_civil","title":"Substation — civil foundations","due_date":"2026-05-30","status":"in_progress","pct_complete":70,"owner":"site_engineer"}'
+post_ms '{"id":"ms_sub_switch","title":"Substation — switchgear delivery & install","due_date":"2026-06-10","status":"blocked","pct_complete":10,"owner":"site_engineer"}'
+post_ms '{"id":"ms_sub_commission","title":"Substation — commissioning","due_date":"2026-07-20","status":"pending","pct_complete":0,"owner":"qa_inspector"}'
 
 echo
 echo "→ done. Seeded:"
-echo "   - 5 emails"
+echo "   - $(ls "$INBOX"/*.json 2>/dev/null | wc -l | tr -d ' ') emails"
 echo "   - 2 cron jobs"
 echo "   - $(curl -s "$HOST/api/cap/hr/applicants?scope=atlas-site" | jq -r .count) applicants"
 echo "   - $(curl -s "$HOST/api/cap/procurement/vendors?scope=atlas-site" | jq -r .count) vendors"

@@ -4,11 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   fetchAgents,
   fetchMessages,
-  fetchCheckpoints,
+  fetchAllCheckpoints,
   resolveCheckpoint,
   connectWS,
   DEFAULT_PROJECT,
 } from "@/lib/api";
+import { getCompany, companyConfig, type Company } from "@/lib/company";
 import {
   mapAgents,
   mapCheckpoints,
@@ -45,7 +46,12 @@ export function MissionApp() {
   // server HTML freezes the build-time clock; rendering live time on first
   // paint causes React hydration error #418. Render the clock only after mount.
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [company, setCompanyState] = useState<Company>("software");
+  const cfg = companyConfig(company);
+  useEffect(() => {
+    setMounted(true);
+    setCompanyState(getCompany());
+  }, []);
 
   // initial load
   useEffect(() => {
@@ -54,7 +60,7 @@ export function MissionApp() {
       const [a, m, c] = await Promise.all([
         fetchAgents(),
         fetchMessages(),
-        fetchCheckpoints(),
+        fetchAllCheckpoints(),
       ]);
       if (!on) return;
       setAgents(a);
@@ -72,7 +78,7 @@ export function MissionApp() {
   useEffect(() => {
     const refetch = () => {
       fetchMessages().then(setMessages);
-      fetchCheckpoints().then(setCheckpoints);
+      fetchAllCheckpoints().then(setCheckpoints);
       fetchAgents().then(setAgents);
     };
     return connectWS((e) => {
@@ -86,29 +92,66 @@ export function MissionApp() {
     }, setConnected);
   }, []);
 
+  // Fast (1s) tick only while a full-auto gate is counting down, so its
+  // "auto in M:SS" stays live without churning the page otherwise.
+  const [tickMs, setTickMs] = useState(0);
+  const hasCountdown = useMemo(
+    () =>
+      checkpoints.some(
+        (c) => c.status === "pending" && c.run_mode === "full_auto"
+      ),
+    [checkpoints]
+  );
+  useEffect(() => {
+    if (!hasCountdown) return;
+    setTickMs(Date.now());
+    const i = setInterval(() => setTickMs(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, [hasCountdown]);
+
   // ── derive view-models; fall back to the reference sample per-section ──
-  const liveHitl = useMemo(() => mapCheckpoints(checkpoints), [checkpoints]);
+  const liveHitl = useMemo(
+    () => mapCheckpoints(checkpoints, tickMs),
+    [checkpoints, tickMs]
+  );
   const hitl: HitlVM[] = liveHitl.length > 0 ? liveHitl : SAMPLE_HITL;
 
+  // Only the active company's roster, with proper display names.
+  const roster = useMemo(
+    () =>
+      agents
+        .filter((a) => cfg.roles.includes(a.role))
+        .map((a) => ({ ...a, name: a.name || cfg.roleNames[a.role] || a.role })),
+    [agents, cfg]
+  );
   const pendingRoles = useMemo(
     () => new Set(liveHitl.map((h) => h.tag.toLowerCase())),
     [liveHitl]
   );
   const liveGroups = useMemo(
-    () => mapAgents(agents, pendingRoles),
-    [agents, pendingRoles]
+    () => mapAgents(roster, pendingRoles),
+    [roster, pendingRoles]
   );
   const groups =
     liveGroups.reduce((n, g) => n + g.agents.length, 0) > 0
       ? liveGroups
       : SAMPLE_AGENT_GROUPS;
 
-  const liveFeed = useMemo(() => mapMessages(messages), [messages]);
+  // The message store is shared across companies; show only this company's
+  // agents (+ system/conductor) so the EPC roster doesn't bleed into the
+  // software feed and vice-versa.
+  const companyMsgs = useMemo(() => {
+    const rs = new Set<string>(cfg.roles);
+    return messages.filter(
+      (m) => !m.from || m.from === "system" || m.from === "conductor" || rs.has(m.from)
+    );
+  }, [messages, cfg]);
+  const liveFeed = useMemo(() => mapMessages(companyMsgs), [companyMsgs]);
   const feed = liveFeed.length > 0 ? liveFeed : SAMPLE_FEED;
 
   const stats =
     liveHitl.length > 0 || liveFeed.length > 0
-      ? statsFrom(agents, hitl, feed)
+      ? statsFrom(roster, hitl, feed)
       : SAMPLE_STATS;
 
   const activeHitl = hitl.find((h) => h.id === selected) ?? hitl[0];
@@ -146,15 +189,15 @@ export function MissionApp() {
   return (
     <div className="app" data-screen-label="Mission v2 · workspace">
       <TopBar
-        project="Atlas Construction"
-        site={`Site 02 · Mission`}
-        pack="EPC"
+        project={cfg.label}
+        site={`Mission`}
+        pack={cfg.short}
         packCount={`${groups.reduce((n, g) => n + g.agents.length, 0)}`}
         pendingCount={hitl.length}
         user="Marcus L."
       />
       <Sidebar
-        packName="EPC"
+        packName={cfg.short}
         packMeta={`${groups.reduce(
           (n, g) => n + g.agents.length,
           0

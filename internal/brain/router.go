@@ -33,12 +33,31 @@ func NewRouter(apiClient *session.APIClient, projectsDir string, conversations *
 // Route processes a user message and returns a BrainDecision.
 // This is the core Brain loop: assemble context → call API → parse decision.
 // Supports re-calls for server-mediated actions (read_file, etc.)
-func (r *Router) Route(ctx context.Context, userID, message string) (*BrainDecision, error) {
+func (r *Router) Route(ctx context.Context, userID, message, scope string) (*BrainDecision, error) {
 	// Store user message
 	r.conversations.Add(userID, "user", message)
 
 	// Assemble workspace context
 	workspaceCtx := AssembleContext(r.projectsDir)
+
+	// Make the Brain company-aware. Agent House runs two companies; the scope
+	// selects which one so the Brain routes intents correctly (and never offers
+	// the other company's actions).
+	switch scope {
+	case "software":
+		workspaceCtx = "COMPANY: Software Studio — an agent-driven software solutions company. You are its Conductor.\n" +
+			"- \"Build / Create / Make <an app>\" → action create_project (pick a short, kebab-case project_id from the app's name).\n" +
+			"- \"Change / Add / Fix / Improve <X> in <app>\" → action delegate to the right engineer on that project.\n" +
+			"- The team runs a full autonomous SDLC: PRD → design → development → QA, with human checkpoints whose autonomy is governed by the project's run mode.\n" +
+			"- This studio has NO email inbox, vendors, applicants, invoices, or construction-site data. If asked to process an inbox, validate an invoice, check vendors, or run a site scenario, briefly say that belongs to the construction company — NOT the software studio. NEVER invent inbox/email/vendor/applicant results here.\n" +
+			"- Do NOT use the construction scenarios (process_inbox, validate_invoice, route_rfi, schedule_check, morning_briefing) — those belong to the EPC company.\n\n" +
+			workspaceCtx
+	case "", "default":
+		// Generic — no company banner.
+	default:
+		// EPC construction site/tenant.
+		workspaceCtx = fmt.Sprintf("CURRENT EPC SITE / SCOPE: %s\n(All scenarios and capability data operate on this scope.)\n\n%s", scope, workspaceCtx)
+	}
 
 	// Get recent conversation history
 	history := r.conversations.GetRecent(userID, 10)
@@ -88,22 +107,37 @@ func (r *Router) Route(ctx context.Context, userID, message string) (*BrainDecis
 		decision.Response = "This requires deeper analysis. Let me look into it more thoroughly."
 	}
 
-	// Safety: if Brain tries to send_reply without user confirmation, show draft first
-	if decision.Action == ActionSendReply || decision.Action == ActionDeleteEmail {
-		isConfirmation := strings.Contains(strings.ToLower(message), "yes") ||
-			strings.Contains(strings.ToLower(message), "send") ||
-			strings.Contains(strings.ToLower(message), "confirm") ||
-			strings.Contains(strings.ToLower(message), "go ahead") ||
-			strings.Contains(strings.ToLower(message), "delete")
-
-		if !isConfirmation && decision.Action == ActionSendReply && decision.Params["body"] != "" {
-			log.Printf("[BRAIN] Converting premature send_reply to draft preview")
-			draft := fmt.Sprintf("**Draft Reply:**\n\n---\n\nTo: %s\nSubject: %s\n\n%s\n\n---\n\nConfirm to send?",
-				decision.Params["to"], decision.Params["subject"], decision.Params["body"])
-			decision = &BrainDecision{
-				Action:      ActionRespond,
-				Response:    draft,
-				Suggestions: []string{"Send this reply", "Edit draft", "Cancel"},
+	// Safety: a reply only goes out AFTER the user has seen a draft and confirmed.
+	// Confirmation is proven by CONVERSATION STATE (the prior assistant turn was a
+	// draft) — NOT by keywords, because a chip label like "Send reply to Sarah"
+	// contains "send" yet no draft was ever shown.
+	if decision.Action == ActionSendReply {
+		priorDraft := false
+		for i := len(history) - 1; i >= 0; i-- {
+			if history[i].Role == "assistant" {
+				lc := strings.ToLower(history[i].Content)
+				priorDraft = strings.Contains(lc, "confirm to send") ||
+					strings.Contains(lc, "draft reply") ||
+					strings.Contains(lc, "draft:")
+				break
+			}
+		}
+		if !priorDraft {
+			log.Printf("[BRAIN] send_reply with no prior draft — showing the draft first")
+			if body := decision.Params["body"]; body != "" {
+				draft := fmt.Sprintf("**Draft Reply:**\n\n---\n\nTo: %s\nSubject: %s\n\n%s\n\n---\n\nConfirm to send?",
+					decision.Params["to"], decision.Params["subject"], body)
+				decision = &BrainDecision{
+					Action:      ActionRespond,
+					Response:    draft,
+					Suggestions: []string{"Send this reply", "Edit draft", "Cancel"},
+				}
+			} else {
+				decision = &BrainDecision{
+					Action:      ActionRespond,
+					Response:    "Let me draft that reply first so you can review it before it goes out.",
+					Suggestions: []string{"Draft the reply", "Cancel"},
+				}
 			}
 		}
 	}
@@ -202,9 +236,33 @@ func parseDecision(text string) (*BrainDecision, error) {
 		}
 	}
 
+	// Try 4: tolerant salvage — the text IS a decision envelope but strict JSON
+	// parsing failed (e.g. the long markdown "response" body carries unescaped
+	// newlines). Hand-extract the response so we answer instead of dumping raw
+	// JSON at the user.
+	if strings.Contains(text, `"action"`) && strings.Contains(text, `"response"`) {
+		if resp := extractJSONStringField(text, "response"); resp != "" {
+			decision.Action = ActionRespond
+			decision.Response = resp
+			goto parsed
+		}
+	}
+
 	return nil, fmt.Errorf("no valid JSON action found in response (%.200s)", text)
 
 parsed:
+
+	// Safety-net: some models wrap the real decision inside a respond's response
+	// field (a nested JSON object). Unwrap it so the intended action actually fires.
+	if decision.Action == ActionRespond {
+		inner := strings.TrimSpace(decision.Response)
+		if strings.HasPrefix(inner, "{") && strings.Contains(inner, `"action"`) {
+			var nested BrainDecision
+			if json.Unmarshal([]byte(inner), &nested) == nil && nested.Action != "" && nested.Action != ActionRespond {
+				decision = nested
+			}
+		}
+	}
 
 	// ALWAYS clean suggestion text from response (even if JSON suggestions exist)
 	if decision.Response != "" {
@@ -222,6 +280,59 @@ parsed:
 	}
 
 	return &decision, nil
+}
+
+// extractJSONStringField pulls a single string field value out of a JSON-ish
+// blob even when the blob is NOT valid JSON (e.g. the value carries unescaped
+// newlines). It locates "key": "…" and returns the unescaped value, treating
+// the first quote that is followed (modulo whitespace) by , or } as the close.
+func extractJSONStringField(text, key string) string {
+	marker := `"` + key + `"`
+	ki := strings.Index(text, marker)
+	if ki < 0 {
+		return ""
+	}
+	i := ki + len(marker)
+	for i < len(text) && text[i] != '"' { // advance to the value's opening quote
+		i++
+	}
+	if i >= len(text) {
+		return ""
+	}
+	i++ // past the opening quote
+	var b strings.Builder
+	for ; i < len(text); i++ {
+		c := text[i]
+		if c == '\\' && i+1 < len(text) {
+			switch n := text[i+1]; n {
+			case 'n':
+				b.WriteByte('\n')
+			case 't':
+				b.WriteByte('\t')
+			case 'r':
+				// drop carriage returns
+			case '"', '\\', '/':
+				b.WriteByte(n)
+			default:
+				b.WriteByte(n)
+			}
+			i++
+			continue
+		}
+		if c == '"' {
+			j := i + 1
+			for j < len(text) && (text[j] == ' ' || text[j] == '\t' || text[j] == '\n' || text[j] == '\r') {
+				j++
+			}
+			if j >= len(text) || text[j] == ',' || text[j] == '}' {
+				break // real terminator
+			}
+			b.WriteByte('"') // literal quote inside the markdown body
+			continue
+		}
+		b.WriteByte(c)
+	}
+	return strings.TrimSpace(b.String())
 }
 
 // extractSuggestionsFromText pulls suggestion-like lines from response text.
@@ -462,6 +573,10 @@ You manage projects built by teams of AI agents (CEO, PM, UX, UI, Security, Arch
 4. ONLY use send_reply action AFTER the user confirms (says "yes", "send", "confirm"). First show the draft with action "respond", then send on confirmation.
 5. For send_reply, include email_id of the original email in params.
 6. Put suggestions in the JSON "suggestions" array, NEVER as bullet text in the response.
+7. NEVER invent data. Do not state counts, names, IDs, or facts that are not in the workspace context. If asked for something that isn't there (e.g. "list all 5 candidates" when only one applicant exists), state exactly what IS there and that there are no others. "Only one applicant (Raj Kumar) has applied" beats fabricating names or numbers — a wrong count destroys trust.
+8. The only project/scope is the current EPC site (e.g. "atlas-site"). "Project Alpha / Beta / Gamma" are work items WITHIN that site, NOT separate Agent House projects — never call project_status or read_file with project_id "alpha"/"beta"/"gamma", and never suggest doing so. For their status use run_scenario "schedule_check" or "morning_briefing".
+9. escalate is ONLY for an initial, open-ended "go deeply analyze X" request. If the user ASKS YOU TO PRODUCE a plan/summary/analysis (e.g. "give me the mitigation plan", "show the cascading impact and recovery options", or after approving an escalation), RESPOND directly with the full plan — do NOT escalate again.
+10. Any reply-related suggestion you emit MUST say "Draft …" (never "Send …"). A reply is only ever sent after the user has seen the draft and explicitly confirms.
 
 ## Available Actions
 
@@ -498,6 +613,15 @@ You manage projects built by teams of AI agents (CEO, PM, UX, UI, Security, Arch
 {"action": "archive_email", "params": {"email_id": "email_123"}, "response": "Email archived."}
   → Archive an email (move out of active inbox).
 
+{"action": "run_scenario", "params": {"scenario": "process_inbox"}, "response": "Sweeping the inbox and routing each item to the right specialist..."}
+  → Run a multi-agent EPC operations scenario that FANS WORK OUT to specialist agents (procurement, hr, project_manager, site_engineer) — they pulse live in the workforce panel. Use this for EPC operations. Available scenarios (put the name in params.scenario):
+    • "process_inbox"      → triage/sweep the whole inbox, route each email to a discipline
+    • "morning_briefing"   → one-page brief: schedule slips + inbox state + HR pipeline + vendor health
+    • "validate_invoice"   → verify a vendor invoice; flag impersonation/BEC (params: sender_email, vendor_id, amount)
+    • "route_rfi"          → classify an incoming RFI by discipline + find a matching specialist (params: rfi_id, subject, body)
+    • "schedule_check"     → scan milestones; flag slipping ones with mitigations
+    • "process_applicants" → screen/rank job applicants for a role (params: request)
+
 ## Decision Rules
 
 1. Greeting or simple question → respond
@@ -508,6 +632,15 @@ You manage projects built by teams of AI agents (CEO, PM, UX, UI, Security, Arch
 6. "Show me [file] from [project]" → read_file
 7. Complex analysis across multiple files → escalate
 8. If unsure, ask for clarification via respond
+9. "Process / triage / sweep my inbox" → run_scenario (process_inbox)
+10. "What needs my attention today / morning briefing" → run_scenario (morning_briefing)
+11. "Is this invoice/vendor legit / verify invoice / is this email safe" → run_scenario (validate_invoice)
+12. "Incoming RFI / who handles RFI #N" → run_scenario (route_rfi)
+13. "Check the schedule / what's slipping / milestone status" → run_scenario (schedule_check)
+14. "Screen / rank applicants / who can fill [role]" → run_scenario (process_applicants)
+
+## Proactive Delegation (CRITICAL — do not just narrate)
+When a task clearly belongs to a discipline or an operations scenario, DELEGATE or RUN_SCENARIO in the SAME turn — never merely state which agent *should* handle it. If your response names an agent or says you will route / triage / verify / check / screen something, your "action" MUST be "delegate" or "run_scenario", NOT "respond". Keep the descriptive prose in "response" for the human, but always carry the real action so work actually fans out.
 
 ## Confirmation for Destructive Actions
 
@@ -559,4 +692,12 @@ Make suggestions contextual:
 - security: Security audits, vulnerability fixes
 - ux: UX improvements, flow changes
 - ui: Visual design, styling changes
-- ceo: Strategic decisions, reviews`
+- ceo: Strategic decisions, reviews
+
+## EPC / Construction Agent Roles (for delegation on EPC sites)
+- procurement: vendors, invoices, POs, BEC / impersonation checks
+- project_manager: schedule, milestones, slips, client progress updates
+- site_engineer: RFIs, field/technical queries, drawings
+- hse: safety, compliance, incident response
+- qa_inspector: inspections, punch lists, quality
+- hr: hiring, applicant screening`

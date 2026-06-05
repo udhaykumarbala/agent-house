@@ -16,7 +16,7 @@ type Email struct {
 	RepliedAt   string    `json:"replied_at,omitempty"`
 	Category    string    `json:"category"`     // vendor, job_application, client, internal, unknown
 	VendorID    string    `json:"vendor_id,omitempty"`
-	TrustStatus string    `json:"trust_status"` // trusted, new_contact, untrusted, impersonation
+	TrustStatus string    `json:"trust_status"` // trusted, new_contact, untrusted, impersonation, blocked
 	TrustReason string    `json:"trust_reason"`
 	Direction   string    `json:"direction"`    // inbound, outbound
 	ReplyTo     string    `json:"reply_to,omitempty"`
@@ -48,9 +48,14 @@ type Applicant struct {
 
 // TrustResult holds the outcome of a vendor trust check.
 type TrustResult struct {
-	Status      string   `json:"status"`       // trusted, new_contact, untrusted, impersonation
+	Status      string   `json:"status"`       // trusted, new_contact, untrusted, impersonation, blocked
 	Reason      string   `json:"reason"`
 	RiskFactors []string `json:"risk_factors,omitempty"`
 	VendorID    string   `json:"vendor_id,omitempty"`
 	VendorName  string   `json:"vendor_name,omitempty"`
+	// Blocked indicates the gateway refused the message entirely. When
+	// true, the email was NOT stored and no listeners were notified.
+	Blocked     bool     `json:"blocked,omitempty"`
+	BlockMode   string   `json:"block_mode,omitempty"`  // "exact" | "domain" | "pattern" | "bec_filter" | "display_name_spoof"
+	BlockMatch  string   `json:"block_match,omitempty"` // the entry value / rule that fired
 }

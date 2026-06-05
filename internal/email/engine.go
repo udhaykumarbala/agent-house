@@ -19,6 +19,7 @@ type Engine struct {
 	vendors    []*Vendor
 	applicants []*Applicant
 	listeners  []func(*Email) // called when new email arrives
+	blocklist  *Blocklist     // gateway-level deny list (exacts/domains/patterns) + BEC content rules
 }
 
 // NewEngine creates an email engine rooted at the given data directory.
@@ -26,6 +27,7 @@ func NewEngine(dataDir string) *Engine {
 	e := &Engine{dataDir: dataDir}
 	os.MkdirAll(filepath.Join(dataDir, "inbox"), 0755)
 	os.MkdirAll(filepath.Join(dataDir, "outbox"), 0755)
+	e.blocklist = NewBlocklist(dataDir)
 	e.loadVendors()
 	e.loadInbox()
 	e.loadApplicants()
@@ -43,6 +45,15 @@ func (e *Engine) OnEmail(fn func(*Email)) {
 func (e *Engine) ReceiveEmail(from, fromName, to, subject, body string) (*Email, *TrustResult) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+
+	// Gateway-level security check. Runs FIRST so a blocked sender
+	// never reaches classify/trust/store/listeners. The blocklist is
+	// also responsible for auditing the drop to blocked.jsonl.
+	if block := e.evaluateSecurity(from, fromName, subject, body); block != nil {
+		log.Printf("[EMAIL] BLOCKED at gateway: from=%s subject=%q mode=%s match=%q reason=%s",
+			from, subject, block.BlockMode, block.BlockMatch, block.Reason)
+		return nil, block
+	}
 
 	email := &Email{
 		ID:        fmt.Sprintf("email_%d", time.Now().UnixMilli()),
@@ -83,6 +94,71 @@ func (e *Engine) ReceiveEmail(from, fromName, to, subject, body string) (*Email,
 	}
 
 	return email, trust
+}
+
+// evaluateSecurity is the gateway deny-list check. Returns a populated
+// *TrustResult with Blocked=true when the email should be dropped, or
+// nil when the message is allowed through to classify/trust/store.
+//
+// Order of checks (each one fires independently and short-circuits):
+//  1. Blocklist exact address (e.g. ahmed.r@gmail.com)
+//  2. Blocklist domain (e.g. any *@gmail.com — only if an operator
+//     added that rule; the default list is exact-only to keep the
+//     false-positive rate at zero on legitimate gmail senders)
+//  3. Blocklist address-pattern
+//  4. Built-in BEC content patterns (urgent-bank-change, etc.)
+//  5. Display-name spoofing (public-domain sender claiming a senior
+//     exec/finance role in the display name)
+func (e *Engine) evaluateSecurity(from, fromName, subject, body string) *TrustResult {
+	if e.blocklist == nil {
+		return nil
+	}
+	if entry, ok := e.blocklist.MatchAddress(from); ok {
+		reason := entry.Reason
+		if reason == "" {
+			reason = fmt.Sprintf("sender %q on blocklist (%s)", from, entry.Mode)
+		}
+		e.blocklist.Audit(BlockedEvent{
+			From: from, FromName: fromName, Subject: subject,
+			Reason: reason, Mode: entry.Mode, Match: entry.Value,
+		})
+		return &TrustResult{
+			Status:     "blocked",
+			Reason:     reason,
+			Blocked:    true,
+			BlockMode:  entry.Mode,
+			BlockMatch: entry.Value,
+		}
+	}
+	if name, snippet := e.blocklist.MatchContent(subject, body); name != "" {
+		reason := fmt.Sprintf("BEC content filter (%s) fired: %q", name, snippet)
+		e.blocklist.Audit(BlockedEvent{
+			From: from, FromName: fromName, Subject: subject,
+			Reason: reason, Mode: "bec_filter", Match: name,
+		})
+		return &TrustResult{
+			Status:     "blocked",
+			Reason:     reason,
+			Blocked:    true,
+			BlockMode:  "bec_filter",
+			BlockMatch: name,
+		}
+	}
+	if role := e.blocklist.MatchDisplayName(from, fromName); role != "" {
+		reason := fmt.Sprintf("display-name spoof: public-mail sender %q claims role %q in display name", from, role)
+		e.blocklist.Audit(BlockedEvent{
+			From: from, FromName: fromName, Subject: subject,
+			Reason: reason, Mode: "display_name_spoof", Match: role,
+		})
+		return &TrustResult{
+			Status:     "blocked",
+			Reason:     reason,
+			Blocked:    true,
+			BlockMode:  "display_name_spoof",
+			BlockMatch: role,
+		}
+	}
+	return nil
 }
 
 // GetInbox returns all inbox emails.
@@ -186,6 +262,26 @@ func (e *Engine) AddTrustedEmail(vendorID, emailAddr string) bool {
 		}
 	}
 	return false
+}
+
+// BlockSender adds a sender / domain / pattern to the gateway blocklist.
+func (e *Engine) BlockSender(mode, value, reason, addedBy string) error {
+	return e.blocklist.Add(BlockedEntry{
+		Mode:    mode,
+		Value:   value,
+		Reason:  reason,
+		AddedBy: addedBy,
+	})
+}
+
+// UnblockSender removes an entry from the blocklist.
+func (e *Engine) UnblockSender(mode, value string) error {
+	return e.blocklist.Remove(mode, value)
+}
+
+// ListBlocked returns a copy of the current blocklist.
+func (e *Engine) ListBlocked() []BlockedEntry {
+	return e.blocklist.List()
 }
 
 // classify determines the email category.

@@ -30,6 +30,10 @@ type Executor struct {
 	OnSendReply     func(to, subject, body, emailID string) error
 	OnMarkRead      func(emailID string)
 	OnShortlist     func(applicantID, status string)
+	// OnRunScenario runs a multi-agent capability scenario on a scope and
+	// returns a human-readable summary + suggestion titles. Steps stream to the
+	// workforce panel via the engine's emitter (wired server-side).
+	OnRunScenario func(name, scope string, input map[string]string) (summary string, suggestions []string, err error)
 }
 
 // NewExecutor creates an executor with the given project directory.
@@ -39,9 +43,13 @@ func NewExecutor(projectsDir string) *Executor {
 	}
 }
 
-// Execute runs a Brain decision and returns the result.
-func (e *Executor) Execute(decision *BrainDecision) *ExecutionResult {
+// Execute runs a Brain decision and returns the result. scope selects which
+// EPC site/tenant scoped actions (run_scenario) operate on.
+func (e *Executor) Execute(decision *BrainDecision, scope string) *ExecutionResult {
 	switch decision.Action {
+	case ActionRunScenario:
+		return e.executeRunScenario(decision, scope)
+
 	case ActionRespond:
 		return &ExecutionResult{
 			Response: decision.Response,
@@ -86,6 +94,44 @@ func (e *Executor) Execute(decision *BrainDecision) *ExecutionResult {
 			Action:   decision.Action,
 			Success:  true,
 		}
+	}
+}
+
+// executeRunScenario dispatches a capability scenario (process_inbox,
+// validate_invoice, route_rfi, etc.) which fans work out to specialist agents.
+// The Brain's framing prose leads; the scenario's summary + suggestion chips
+// follow.
+func (e *Executor) executeRunScenario(decision *BrainDecision, scope string) *ExecutionResult {
+	name := decision.Params["scenario"]
+	if name == "" || e.OnRunScenario == nil {
+		// Nothing to run — fall back to the Brain's text.
+		return &ExecutionResult{Response: decision.Response, Action: ActionRespond, Success: true}
+	}
+	summary, suggestions, err := e.OnRunScenario(name, scope, decision.Params)
+	if err != nil {
+		return &ExecutionResult{
+			Response: fmt.Sprintf("%s\n\n(Could not run %s: %v)", decision.Response, name, err),
+			Action:   ActionRespond,
+			Success:  false,
+		}
+	}
+	// Use the scenario's deterministic summary as the authoritative response —
+	// the Brain's free-text preamble can fabricate counts/names (a demo killer).
+	// Fall back to the Brain's text only if the scenario produced no summary.
+	resp := summary
+	if resp == "" {
+		resp = decision.Response
+	}
+	// Surface the scenario's structured suggestions as the chat chips (the
+	// handler reads decision.Suggestions after Execute).
+	if len(suggestions) > 0 {
+		decision.Suggestions = suggestions
+	}
+	return &ExecutionResult{
+		Response:  resp,
+		Action:    ActionRunScenario,
+		ProjectID: scope, // so the UI can sync the active project/scope selector
+		Success:   true,
 	}
 }
 
@@ -280,11 +326,13 @@ func (e *Executor) executeProjectStatus(decision *BrainDecision) *ExecutionResul
 	metaPath := e.projectsDir + "/" + projectID + "/project.json"
 	data, err := os.ReadFile(metaPath)
 	if err != nil {
+		// Unknown project — usually "alpha/beta/gamma", which are work items on
+		// the active EPC site, not separate Agent House projects. Respond
+		// gracefully (success=true) instead of a hard error bubble.
 		return &ExecutionResult{
-			Response:  fmt.Sprintf("Project '%s' not found.", projectID),
-			Action:    ActionProjectStatus,
-			ProjectID: projectID,
-			Success:   false,
+			Response: fmt.Sprintf("There's no separate project named %q — Alpha, Beta and Gamma are work items on the active site, not standalone projects. For their status, ask me for a schedule check or your morning briefing.", projectID),
+			Action:   ActionRespond,
+			Success:  true,
 		}
 	}
 

@@ -30,6 +30,16 @@ const (
 	TypePreQAReview      = "pre_qa_review"
 )
 
+// Run modes — autonomy presets over the checkpoint engine. A mode sets which
+// gates are active AND how a pending gate is resolved (wait vs timed
+// auto-decide vs instant auto-approve). See ApplyRunModePreset.
+const (
+	RunModeManual   = "manual"    // gate everything; wait for the human, forever
+	RunModeSemiAuto = "semi_auto" // gate PRD+Design+phase+final; wait for the human
+	RunModeFullAuto = "full_auto" // same gates; show a countdown, then CEO decides w/ reasoning
+	RunModeBlitz    = "blitz"     // auto-approve every gate instantly (logged), never block
+)
+
 // Decision records a human or auto-delegated decision at a checkpoint.
 type Decision struct {
 	ID             string         `json:"id"`
@@ -62,6 +72,7 @@ type Checkpoint struct {
 // WorkflowSettings controls which checkpoints are active and auto-delegation.
 type WorkflowSettings struct {
 	ProjectID               string `json:"project_id"`
+	RunMode                 string `json:"run_mode"` // manual | semi_auto | full_auto | blitz
 	RequireTemplateApproval bool   `json:"require_template_approval"`
 	RequirePlanApproval     bool   `json:"require_plan_approval"`
 	RequirePhaseGate        bool   `json:"require_phase_gate"`
@@ -69,22 +80,64 @@ type WorkflowSettings struct {
 	RequireResearchReview   bool   `json:"require_research_review"`
 	RequireSpecReview       bool   `json:"require_spec_review"`
 	RequirePreQAReview      bool   `json:"require_pre_qa_review"`
-	AutoDelegateMinutes     int    `json:"auto_delegate_minutes"`
+	// DecisionTimeoutMinutes is the full-auto countdown (minutes) the human has
+	// to respond before the CEO agent auto-decides. AutoDelegateMinutes is kept
+	// as the live knob the orchestrator reads (preset mirrors one into the other).
+	DecisionTimeoutMinutes int `json:"decision_timeout_minutes"`
+	AutoDelegateMinutes    int `json:"auto_delegate_minutes"`
 }
 
 // ─── Defaults ──────────────────────────────────────────
 
 func DefaultSettings(projectID string) WorkflowSettings {
-	return WorkflowSettings{
-		ProjectID:               projectID,
-		RequireTemplateApproval: true,
-		RequirePlanApproval:     true,
-		RequirePhaseGate:        true,
-		RequireFinalAcceptance:  true,
-		RequireResearchReview:   false,
-		RequireSpecReview:       false,
-		RequirePreQAReview:      false,
-		AutoDelegateMinutes:     0,
+	s := WorkflowSettings{ProjectID: projectID, DecisionTimeoutMinutes: 5}
+	s.ApplyRunModePreset(RunModeSemiAuto) // default: present choices, wait for the human
+	return s
+}
+
+// ApplyRunModePreset configures the gate flags + auto-decide behavior for a
+// named run mode. The standard SDLC gate set is template (Design), plan (PRD),
+// phase_gate, and final_acceptance. Individual Require* flags can still be
+// toggled afterwards; the mode is just the starting preset. Unknown modes fall
+// back to semi_auto.
+func (s *WorkflowSettings) ApplyRunModePreset(mode string) {
+	// Standard gate set shared by semi/full/blitz.
+	standard := func() {
+		s.RequireTemplateApproval = true
+		s.RequirePlanApproval = true
+		s.RequirePhaseGate = true
+		s.RequireFinalAcceptance = true
+		s.RequireResearchReview = false
+		s.RequireSpecReview = false
+		s.RequirePreQAReview = false
+	}
+	if s.DecisionTimeoutMinutes <= 0 {
+		s.DecisionTimeoutMinutes = 5
+	}
+	switch mode {
+	case RunModeManual:
+		s.RunMode = RunModeManual
+		// Maximum control: gate every stage, never auto-decide.
+		s.RequireTemplateApproval = true
+		s.RequirePlanApproval = true
+		s.RequirePhaseGate = true
+		s.RequireFinalAcceptance = true
+		s.RequireResearchReview = true
+		s.RequireSpecReview = true
+		s.RequirePreQAReview = true
+		s.AutoDelegateMinutes = 0
+	case RunModeFullAuto:
+		s.RunMode = RunModeFullAuto
+		standard()
+		s.AutoDelegateMinutes = s.DecisionTimeoutMinutes // countdown → CEO decides
+	case RunModeBlitz:
+		s.RunMode = RunModeBlitz
+		standard() // gates stay enabled so each one logs an auto-approved decision
+		s.AutoDelegateMinutes = 0
+	default: // semi_auto
+		s.RunMode = RunModeSemiAuto
+		standard()
+		s.AutoDelegateMinutes = 0 // wait for the human, no timer
 	}
 }
 
@@ -327,6 +380,20 @@ func LoadSettings(projectDir string) (*WorkflowSettings, error) {
 	var s WorkflowSettings
 	if err := json.Unmarshal(data, &s); err != nil {
 		return nil, err
+	}
+	// Back-compat: settings files written before run-modes existed have no
+	// RunMode. Infer one from the legacy AutoDelegateMinutes knob so existing
+	// projects keep behaving sensibly (a timeout implies full-auto).
+	if s.RunMode == "" {
+		if s.AutoDelegateMinutes > 0 {
+			s.DecisionTimeoutMinutes = s.AutoDelegateMinutes
+			s.RunMode = RunModeFullAuto
+		} else {
+			s.RunMode = RunModeSemiAuto
+		}
+		if s.DecisionTimeoutMinutes <= 0 {
+			s.DecisionTimeoutMinutes = 5
+		}
 	}
 	return &s, nil
 }

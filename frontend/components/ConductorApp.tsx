@@ -12,7 +12,9 @@ import {
   connectWS,
 } from "@/lib/api";
 import { mapWorkforce, mapFires, mapCheckpoints } from "@/lib/mapper";
-import { renderMarkdown } from "@/lib/md";
+import { renderMarkdown, cleanReply } from "@/lib/md";
+import { getCompany, companyConfig, type Company } from "@/lib/company";
+import { RunModeControl } from "./RunModeControl";
 import { humanize } from "@/lib/humanize";
 import { composeBriefing, type Briefing } from "@/lib/briefing";
 import { BriefingCard } from "./BriefingCard";
@@ -49,6 +51,9 @@ export function ConductorApp() {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [hasHistory, setHasHistory] = useState(false);
   const [thinking, setThinking] = useState(false);
+  // Live backend activity shown WHILE thinking — scenario steps + tier-1 routing
+  // narration stream in here so the wait reads as "agents working", not dead dots.
+  const [liveSteps, setLiveSteps] = useState<string[]>([]);
   const [text, setText] = useState("");
   const [agents, setAgents] = useState<ApiAgent[]>([]);
   const [messages, setMessages] = useState<ApiMessage[]>([]);
@@ -60,17 +65,25 @@ export function ConductorApp() {
   // The conversation ID is the unit of persistence. The URL is the source
   // of truth (so reloading lands the user back in the same conversation),
   // backed by localStorage if no ?conv= is present.
-  const [convId, setConvId] = useState<string>(() => {
-    if (typeof window === "undefined") return "default";
-    const url = new URL(window.location.href);
-    const fromQuery = url.searchParams.get("conv");
-    if (fromQuery) return fromQuery;
-    const stored = window.localStorage.getItem("ah:conv");
-    return stored || "default";
-  });
+  // Every page load starts a FRESH conversation — we never restore old history
+  // into the thread (past conversations stay reachable via History/⌘K). Start
+  // empty, then mint the id after mount to avoid a static-export hydration
+  // mismatch (see MissionApp #418).
+  const [convId, setConvId] = useState<string>("");
+  // Active company (software studio vs EPC). Resolved after mount to avoid a
+  // static-export hydration mismatch; drives the roster, scope + chrome labels.
+  const [company, setCompanyState] = useState<Company>("software");
+  const cfg = companyConfig(company);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fromQuery = new URL(window.location.href).searchParams.get("conv");
+    setConvId(fromQuery || `conv_${Date.now()}`);
+    setCompanyState(getCompany());
+  }, []);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const convRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const sendingRef = useRef(false); // synchronous send-lock (state `thinking` races on rapid Enter+click)
 
   // Persist convId across reloads — URL + localStorage.
   useEffect(() => {
@@ -106,6 +119,7 @@ export function ConductorApp() {
   // Refetch history + reset the visible thread whenever convId changes —
   // covers initial load, "New conversation" clicks, and palette switches.
   useEffect(() => {
+    if (!convId) return; // wait until the fresh conversation id is minted on mount
     let on = true;
     setLoaded(false);
     setMsgs([]);
@@ -129,7 +143,7 @@ export function ConductorApp() {
             html:
               h.role === "user"
                 ? esc(h.content)
-                : renderMarkdown(h.content),
+                : renderMarkdown(cleanReply(h.content)),
             meta: h.role === "assistant" ? "earlier" : undefined,
           }))
         );
@@ -156,16 +170,30 @@ export function ConductorApp() {
         const m = (e as { message: ApiMessage }).message;
         const inThread =
           activeProject && m.metadata?.project_id === activeProject;
-        // Scenario steps already appear inside ScenarioCard via the
-        // synchronous POST response; suppress the WS-streamed duplicates.
-        const isScenarioMsg = (m.metadata?.tags || []).includes("scenario");
-        if (inThread && m.from !== "user" && !isScenarioMsg) {
+        // Scenario steps and tier-1 "routing" intermediaries are asides — they
+        // pulse the workforce sidebar (via message recency) but should NOT clutter
+        // the main chat thread, which stays = user prompts + the Brain's answers.
+        const tags = m.metadata?.tags || [];
+        const isAside = tags.includes("scenario") || tags.includes("routing");
+        // While a request is in flight, surface scenario/routing asides as live
+        // "what the agents are doing now" steps under the thinking indicator —
+        // real backend activity reads far better than three bouncing dots.
+        if (isAside && m.from !== "user" && sendingRef.current) {
+          const body = (m.content || "").trim();
+          if (body) {
+            const line = `${humanize(m.from || "agent")} · ${body}`;
+            setLiveSteps((p) =>
+              p[p.length - 1] === line ? p : [...p.slice(-4), line]
+            );
+          }
+        }
+        if (inThread && m.from !== "user" && !isAside) {
           setMsgs((p) => [
             ...p,
             {
               role: "conductor",
               meta: `${m.from || "agent"} · live`,
-              html: renderMarkdown(m.content || ""),
+              html: renderMarkdown(cleanReply(m.content || "")),
             },
           ]);
         }
@@ -199,51 +227,62 @@ export function ConductorApp() {
   // expires, even when no new WS frames arrive.
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    const i = setInterval(() => setTick((n) => n + 1), 10_000);
+    const i = setInterval(() => setTick((n) => n + 1), 4_000);
     return () => clearInterval(i);
   }, []);
+  // The workforce panel shows only the active company's roster, with proper
+  // display names for the snake_case role ids the API returns.
+  const roleSet = useMemo(() => new Set(cfg.roles), [cfg]);
+  const companyAgents = useMemo(
+    () =>
+      agents
+        .filter((a) => roleSet.has(a.role))
+        .map((a) => ({ ...a, name: a.name || cfg.roleNames[a.role] || a.role })),
+    [agents, roleSet, cfg]
+  );
   const wf = useMemo(
-    () => mapWorkforce(agents, pendingRoles, messages),
+    () => mapWorkforce(companyAgents, pendingRoles, messages),
     // tick intentionally included so we re-derive every 10s
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [agents, pendingRoles, messages, tick]
+    [companyAgents, pendingRoles, messages, tick]
   );
+  // Counts + briefing reflect just the company roster, matching the panel.
+  const epcAgents = companyAgents;
   const onlineCount = wf.filter((w) => w.state !== "offline").length;
-  const activeCount = agents.filter((a) => a.active).length;
+  const activeCount = epcAgents.filter((a) => a.active).length;
 
   const fires = useMemo(() => mapFires(messages), [messages]);
 
   const briefing: Briefing = useMemo(
-    () => composeBriefing(agents, messages, checkpoints),
+    () => composeBriefing(epcAgents, messages, checkpoints),
+    // epcAgents derives from agents
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [agents, messages, checkpoints]
   );
 
   async function send(message?: string) {
     const m = (message ?? text).trim();
-    if (!m || thinking) return;
+    if (!m || thinking || sendingRef.current) return; // ref-lock blocks the double-fire
+    sendingRef.current = true;
     setText("");
     setHasHistory(true);
     setMsgs((p) => [...p, { role: "user", html: esc(m) }]);
     setThinking(true);
-    const reply = await sendChat(m, convId);
-    setThinking(false);
-    const icon =
-      reply?.action === "create_project"
-        ? "🚀"
-        : reply?.action === "delegate"
-        ? "📌"
-        : reply?.action === "list_projects"
-        ? "📋"
-        : reply?.action === "project_status"
-        ? "📊"
-        : "🧠";
+    setLiveSteps([]);
+    let reply;
+    try {
+      reply = await sendChat(m, convId, cfg.scope);
+    } finally {
+      setThinking(false);
+      sendingRef.current = false;
+    }
     setMsgs((p) => [
       ...p,
       {
         role: "conductor",
         meta: reply?.action ? `routed · ${humanize(reply.action)}` : "offline · backend unreachable",
         html: reply?.response
-          ? renderMarkdown(`${icon} ${reply.response}`)
+          ? renderMarkdown(cleanReply(reply.response))
           : `<p>I'd classify this and dispatch to the right specialist, but <strong>the backend isn't reachable</strong> from this view. Start the Go server to route live.</p>`,
         reply: reply ?? undefined,
       },
@@ -259,10 +298,11 @@ export function ConductorApp() {
       <Chrome
         pageTitle="Conductor"
         active="conductor"
-        project="Agent House"
-        pack={agents.length > 0 ? "registry" : "—"}
-        packGlyph={agents.length > 0 ? "AG" : "··"}
-        packCount={agents.length > 0 ? `${agents.length} agents` : "no roster"}
+        project={cfg.label}
+        company={company}
+        pack={cfg.short}
+        packGlyph={cfg.glyph}
+        packCount={epcAgents.length > 0 ? `${epcAgents.length} agents` : "no roster"}
       />
 
       <main className="main">
@@ -279,11 +319,13 @@ export function ConductorApp() {
               </span>
             </h1>
             <div className="sub">
-              The brain of the house. Ask anything · I dispatch to the right
-              specialists.
+              {company === "software"
+                ? "Software Studio · describe an app and I'll run the team through the full build."
+                : "The brain of the house. Ask anything · I dispatch to the right specialists."}
             </div>
           </div>
           <div className="actions">
+            {company === "software" && <RunModeControl />}
             <button
               className="btn btn--secondary btn--sm"
               onClick={async () => {
@@ -346,23 +388,27 @@ export function ConductorApp() {
                     <span>{m.meta || "just now"}</span>
                   </div>
                   {m.reply &&
-                  ["delegate", "create_project", "escalate", "send_reply"].includes(
+                  ["delegate", "create_project", "escalate"].includes(
                     m.reply.action ?? ""
                   ) ? (
                     <ActionCard
                       reply={m.reply}
                       onPrimary={() => {
-                        if (m.reply?.action === "create_project")
+                        if (m.reply?.action === "escalate") {
+                          // Run the deep-dive in-thread: the Brain produces the
+                          // full cascading-impact mitigation plan (it has the
+                          // escalation context from this conversation).
+                          send(
+                            "Yes, proceed — give me the full mitigation plan now: how the C-7 slab delay cascades through the Project Alpha schedule, the recovery options, and your recommended actions."
+                          );
+                        } else {
+                          // create_project / delegate already started server-side;
+                          // jump to Mission to watch the team work it.
                           window.location.href = "/mission";
-                        if (m.reply?.action === "delegate")
-                          window.location.href = "/mission";
-                        if (m.reply?.action === "escalate")
-                          window.location.href = "/mission";
-                        if (m.reply?.action === "send_reply")
-                          window.location.href = "/mission";
+                        }
                       }}
                       onSecondary={() => {
-                        /* dismiss is visual-only in A2; A3 wires real dismiss */
+                        /* Skip = visual dismiss; the proposal simply isn't acted on. */
                       }}
                     />
                   ) : (
@@ -396,11 +442,32 @@ export function ConductorApp() {
           {thinking && (
             <div className="thinking-row">
               <div className="conductor-mark sm thinking" />
-              <div className="dots">
-                <span />
-                <span />
-                <span />
-              </div>
+              {liveSteps.length > 0 ? (
+                <div className="live-steps">
+                  {liveSteps.map((s, i) => {
+                    const dot = s.indexOf(" · ");
+                    const who = dot > 0 ? s.slice(0, dot) : "";
+                    const act = dot > 0 ? s.slice(dot + 3) : s;
+                    const last = i === liveSteps.length - 1;
+                    return (
+                      <div
+                        key={i}
+                        className={`live-step${last ? " live-step--active" : ""}`}
+                      >
+                        <span className="live-step__pip" />
+                        {who && <span className="live-step__who">{who}</span>}
+                        <span className="live-step__act">{act}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="dots">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              )}
             </div>
           )}
         </div>

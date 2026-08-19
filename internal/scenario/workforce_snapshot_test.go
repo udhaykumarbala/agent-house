@@ -49,6 +49,26 @@ func fakeHRMS(t *testing.T) *httptest.Server {
 		send(w, env(map[string]any{"summary": map[string]any{
 			"ratio": 15.58, "saudi": 132, "total": 847}}))
 	})
+	mux.HandleFunc("/api/v1/employees", func(w http.ResponseWriter, r *http.Request) {
+		// The real DB holds ZZTEST fixture employees that are newest by
+		// created_at (the API default sort) — searches must sort by name
+		// so demo output leads with real people.
+		if r.URL.Query().Get("sort_by") != "full_name" || r.URL.Query().Get("sort_dir") != "asc" {
+			send(w, map[string]any{"success": false,
+				"error": map[string]any{"code": "VALIDATION_FAILED", "message": "expected sort_by=full_name&sort_dir=asc"}})
+			return
+		}
+		if r.URL.Query().Get("nationality") != "Nepalese" {
+			send(w, env([]map[string]any{}))
+			return
+		}
+		resp := env([]map[string]any{
+			{"emp_code": "EMP-101", "full_name": "Hari Sharma", "designation": "Fitter", "nationality": "Nepalese", "project": "L & T", "status": "active"},
+			{"emp_code": "EMP-102", "full_name": "Bikram Rai", "designation": "Welder", "nationality": "Nepalese", "project": "NCMS", "status": "active"},
+		})
+		resp["meta"] = map[string]any{"total": 2}
+		send(w, resp)
+	})
 	mux.HandleFunc("/api/v1/reports/headcount-by-project", func(w http.ResponseWriter, r *http.Request) {
 		send(w, env(map[string]any{"rows": []map[string]any{
 			{"project": "NEOM Site A", "headcount": 120},
@@ -112,6 +132,44 @@ func TestWorkforceSnapshotLiveData(t *testing.T) {
 	}
 	if len(res.Suggestions) == 0 {
 		t.Fatal("504 expiring documents must produce at least one suggestion")
+	}
+}
+
+// A directory filter turns the snapshot into a focused live search: connect
+// + search_directory only, with real names surfaced in the summary so the
+// Conductor answers "list our Nepalese employees" with people, not totals.
+func TestWorkforceSnapshotDirectorySearch(t *testing.T) {
+	srv := fakeHRMS(t)
+	t.Setenv("WQ_API", srv.URL+"/api/v1")
+	t.Setenv("WQ_EMAIL", "demo@x.com")
+	t.Setenv("WQ_PASSWORD", "secret-pass")
+	capability.ResetHRMSForTest()
+	t.Cleanup(capability.ResetHRMSForTest)
+
+	res, err := WorkforceSnapshot{}.Run(Context{
+		Scope: "atlas-site",
+		Input: map[string]any{"nationality": "Nepalese"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.OK {
+		t.Fatalf("expected OK, got %#v", res)
+	}
+	var search *Step
+	for i := range res.Steps {
+		if res.Steps[i].Action == "search_directory" {
+			search = &res.Steps[i]
+		}
+		if res.Steps[i].Action == "report_saudization" {
+			t.Fatal("focused search must not run the full snapshot reports")
+		}
+	}
+	if search == nil || search.Agent != "hr" || !search.OK {
+		t.Fatalf("expected an OK hr/search_directory step, got %#v", res.Steps)
+	}
+	if !strings.Contains(res.Summary, "Hari Sharma") || !strings.Contains(res.Summary, "2") {
+		t.Fatalf("summary should name the live matches, got %q", res.Summary)
 	}
 }
 

@@ -2,6 +2,7 @@ package scenario
 
 import (
 	"fmt"
+	"strings"
 
 	"pty-claude-test/internal/capability"
 )
@@ -18,7 +19,7 @@ func (WorkforceSnapshot) Description() string {
 	return "Live workforce snapshot from the Worqplace HRMS (view-only): headcount, active projects, expiring documents, saudization ratio, per-project staffing."
 }
 func (WorkforceSnapshot) Example() map[string]any {
-	return map[string]any{}
+	return map[string]any{"q": "", "nationality": ""}
 }
 
 func (WorkforceSnapshot) Run(ctx Context) (Result, error) {
@@ -49,6 +50,15 @@ func (WorkforceSnapshot) Run(ctx Context) (Result, error) {
 		res.Summary = fmt.Sprintf("Could not reach the live HRMS: %v", st["error"])
 		res.OK = false
 		return res, nil
+	}
+
+	// A directory filter (q or nationality) turns the run into a focused
+	// live search instead of the full snapshot — this is how the Conductor
+	// answers "list our Nepalese employees" with actual people.
+	q := strFrom(ctx.Input, "q")
+	nationality := strFrom(ctx.Input, "nationality")
+	if q != "" || nationality != "" {
+		return runDirectorySearch(ctx, res, h, q, nationality)
 	}
 
 	// HR: headcount + org counters.
@@ -176,6 +186,81 @@ func (WorkforceSnapshot) Run(ctx Context) (Result, error) {
 	}
 	res.OK = true
 	return res, nil
+}
+
+// runDirectorySearch is the focused variant: one live /employees query with
+// the matches surfaced by name in the summary.
+func runDirectorySearch(ctx Context, res Result, h *capability.HRMS, q, nationality string) (Result, error) {
+	// Sort by name: the API default (created_at desc) leads with the
+	// client's ZZTEST fixture employees, which reads terribly in a demo.
+	params := map[string]string{"page_size": "10", "sort_by": "full_name", "sort_dir": "asc"}
+	label := []string{}
+	if q != "" {
+		params["q"] = q
+		label = append(label, fmt.Sprintf("q=%s", q))
+	}
+	if nationality != "" {
+		params["nationality"] = nationality
+		label = append(label, fmt.Sprintf("nationality=%s", nationality))
+	}
+	items, meta, err := h.Employees(params)
+	step := Step{
+		Agent: "hr", Action: "search_directory", OK: err == nil,
+		Input:  map[string]any{"q": q, "nationality": nationality},
+		Output: map[string]any{"employees": items, "meta": meta},
+	}
+	if err != nil {
+		step.Note = "live directory search failed: " + err.Error()
+		res.Steps = append(res.Steps, step)
+		HelpEmitStep(ctx.Emitter, ctx.Scope, res.Scenario, step)
+		res.Summary = "Could not search the live HRMS directory: " + err.Error()
+		res.OK = false
+		return res, nil
+	}
+	total := intVal(meta["total"])
+	if total == 0 {
+		total = len(items)
+	}
+	names := []string{}
+	for i, e := range items {
+		if i >= 5 {
+			break
+		}
+		name, _ := e["full_name"].(string)
+		code, _ := e["emp_code"].(string)
+		if name != "" {
+			names = append(names, fmt.Sprintf("%s (%s)", name, code))
+		}
+	}
+	step.Note = fmt.Sprintf("%d live match(es) for %s", total, strings.Join(label, ", "))
+	res.Steps = append(res.Steps, step)
+	HelpEmitStep(ctx.Emitter, ctx.Scope, res.Scenario, step)
+
+	res.Summary = fmt.Sprintf("Live HRMS directory: %d match(es) for %s — %s",
+		total, strings.Join(label, ", "), strings.Join(names, ", "))
+	if total > len(names) {
+		res.Summary += fmt.Sprintf(" (+%d more)", total-len(names))
+	}
+	res.Suggestions = append(res.Suggestions, Suggestion{
+		Title:  "Open the live directory with these filters",
+		Detail: "Full list with pagination via the HRMS employees endpoint.",
+		Action: "view_hrms_employees",
+		Payload: map[string]any{
+			"q": q, "nationality": nationality,
+		},
+	})
+	res.OK = true
+	return res, nil
+}
+
+func strFrom(input map[string]any, key string) string {
+	if input == nil {
+		return ""
+	}
+	if s, ok := input[key].(string); ok {
+		return strings.TrimSpace(s)
+	}
+	return ""
 }
 
 // intFrom digs data[section][key] and coerces the JSON float64 to int.

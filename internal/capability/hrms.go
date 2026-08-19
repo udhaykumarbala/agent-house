@@ -241,6 +241,9 @@ func (h *HRMS) doGet(path string, params map[string]string, tok string) (*hrmsEn
 
 // Report fetches one report by slug. Slugs are allowlisted so the demo
 // surface stays aggregates-only regardless of what the account can read.
+// Most reports return the uniform ReportResult object, but the idle-engine
+// ones (idle-by-project, idle-exposure) return a bare array — those get
+// wrapped as {"rows": [...]} so callers see one shape.
 func (h *HRMS) Report(slug string, params map[string]string) (map[string]any, error) {
 	if !hrmsReportAllow[slug] {
 		return nil, fmt.Errorf("report %q is not in the view-only allowlist", slug)
@@ -249,11 +252,18 @@ func (h *HRMS) Report(slug string, params map[string]string) (map[string]any, er
 	if err != nil {
 		return nil, err
 	}
-	var out map[string]any
-	if err := json.Unmarshal(env.Data, &out); err != nil {
+	var raw any
+	if err := json.Unmarshal(env.Data, &raw); err != nil {
 		return nil, err
 	}
-	return out, nil
+	switch v := raw.(type) {
+	case map[string]any:
+		return v, nil
+	case []any:
+		return map[string]any{"slug": slug, "rows": v}, nil
+	default:
+		return nil, fmt.Errorf("report %q: unexpected data shape %T", slug, raw)
+	}
 }
 
 // Employees returns one page of the org-wide directory plus pagination meta.

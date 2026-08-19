@@ -103,6 +103,14 @@ func newFakeWQ(t *testing.T) *fakeWQ {
 		writeJSON(w, 200, envelope(map[string]any{"badge": 7}))
 	}))
 
+	// The idle-engine reports break the uniform ReportResult shape: data is
+	// a bare array, not an object. The client must tolerate both.
+	mux.HandleFunc("/api/v1/reports/idle-by-project", authed(func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, 200, envelope([]map[string]any{
+			{"project_name": "HEAD OFFICE", "employee_count": 7, "total_idle_cost": "54900.00"},
+		}))
+	}))
+
 	mux.HandleFunc("/api/v1/employees", authed(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("page_size") != "2" {
 			writeJSON(w, 400, map[string]any{"success": false,
@@ -167,6 +175,23 @@ func TestHRMSRefreshOnExpiredToken(t *testing.T) {
 	}
 	if atomic.LoadInt32(&f.logins) != 1 {
 		t.Fatalf("expected no re-login (refresh should suffice), got %d logins", f.logins)
+	}
+}
+
+func TestHRMSReportToleratesArrayData(t *testing.T) {
+	f := newFakeWQ(t)
+	h := clientFor(f)
+	rep, err := h.Report("idle-by-project", nil)
+	if err != nil {
+		t.Fatalf("array-shaped report data must not error: %v", err)
+	}
+	rows, _ := rep["rows"].([]any)
+	if len(rows) != 1 {
+		t.Fatalf("expected array data wrapped as rows, got %#v", rep)
+	}
+	row, _ := rows[0].(map[string]any)
+	if row["project_name"] != "HEAD OFFICE" {
+		t.Fatalf("unexpected row: %#v", row)
 	}
 }
 

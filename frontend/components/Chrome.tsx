@@ -18,7 +18,7 @@ export function Chrome({
   pageTitle,
   active,
   showCmdk = false,
-  project = "Atlas Construction",
+  project = "Alredaa",
   company,
   pack = "EPC",
   packGlyph = "EP",

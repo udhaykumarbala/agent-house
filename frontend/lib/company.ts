@@ -1,6 +1,6 @@
 // Two-door company model. Agent House runs two companies behind one app: a
 // SOFTWARE studio (the agent-driven SDLC that builds apps) and the EPC
-// construction company (Atlas). The active company drives the workforce
+// construction company (Alredaa). The active company drives the workforce
 // roster, the scope sent to the Brain, and the chrome labels.
 
 export type Company = "software" | "epc";
@@ -48,9 +48,9 @@ export const COMPANIES: Record<Company, CompanyConfig> = {
   },
   epc: {
     id: "epc",
-    label: "Atlas Construction",
+    label: "Alredaa",
     short: "EPC",
-    glyph: "EP",
+    glyph: "AL",
     scope: "atlas-site",
     roles: [
       "ceo",

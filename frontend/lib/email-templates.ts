@@ -24,6 +24,36 @@ export interface EmailTemplate {
 
 export const EMAIL_TEMPLATES: EmailTemplate[] = [
   {
+    id: "client_estimation",
+    label: "Client — new project estimation request",
+    description:
+      "A prospective client asks for a manpower + cost estimation for a new build. Drives the estimate_project story: AI drafts the crew, HR checks live HRMS availability and costs it.",
+    scenarios: ["estimate_project"],
+    payload: {
+      from: "projects@newco-industrial.com",
+      from_name: "NewCo Industrial · Projects",
+      to: "estimation@alredaa.com",
+      subject: "Request for Estimation — Warehouse Construction, Dammam",
+      body: `Dear Alredaa team,
+
+We are planning a new 4,500 sqm warehouse (2 bays, mezzanine office block) at Dammam 2nd Industrial City and would like your manpower and cost estimation.
+
+Scope highlights:
+- Structural concrete + steel erection
+- MEP first fix and second fix
+- Target duration: 6 months from mobilization
+
+Please share your estimated crew composition, availability, and indicative monthly cost so we can shortlist contractors this month.
+
+Best regards,
+Projects Team
+NewCo Industrial`,
+      category: "client",
+      trust_status: "new_contact",
+      trust_reason: "First contact from @newco-industrial.com — no prior thread",
+    },
+  },
+  {
     id: "vendor_impersonation",
     label: "Vendor — impersonation (classic BEC)",
     description:

@@ -118,6 +118,10 @@ func TestStaffProjectEligiblePicking(t *testing.T) {
 	if !strings.Contains(res.Summary, "NCMS") || !strings.Contains(res.Summary, "WELDER IDLE") {
 		t.Fatalf("summary should tell the story with project + top pick, got %q", res.Summary)
 	}
+	// The chat UI renders GFM tables — picks must arrive as a markdown table.
+	if !strings.Contains(res.Summary, "| Name") || !strings.Contains(res.Summary, "|---") {
+		t.Fatalf("summary should carry a markdown picks table, got %q", res.Summary)
+	}
 	// Project context came from the live reports.
 	found := false
 	for _, s := range res.Steps {

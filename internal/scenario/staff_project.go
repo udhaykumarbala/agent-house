@@ -224,8 +224,22 @@ func (StaffProject) Run(ctx Context) (Result, error) {
 	HelpEmitStep(ctx.Emitter, ctx.Scope, res.Scenario, rec)
 
 	if len(picks) > 0 {
-		res.Summary = fmt.Sprintf("Staffing request %s: screened %d live records → %d %s(s) → %d eligible. Top pick(s): %s.",
-			want, len(all), len(matches), role, len(eligible), strings.Join(names, "; "))
+		// Markdown table — the Conductor chat renders GFM tables natively.
+		var b strings.Builder
+		fmt.Fprintf(&b, "Staffing request %s: screened %d live records → %d %s(s) → %d eligible.\n\n",
+			want, len(all), len(matches), role, len(eligible))
+		b.WriteString("| Name | Code | Designation | Idle 30d | Currently | Nationality |\n")
+		b.WriteString("|---|---|---|---|---|---|\n")
+		for _, p := range picks {
+			cur, _ := p["current_project"].(string)
+			if cur == "" {
+				cur = "unassigned"
+			}
+			fmt.Fprintf(&b, "| %v | %v | %v | %vd | %s | %v |\n",
+				p["full_name"], p["emp_code"], p["designation"], p["idle_30d"], cur, p["nationality"])
+		}
+		b.WriteString("\nIdle workers rank first — they are already on payroll, so mobilizing them erases idle cost.")
+		res.Summary = b.String()
 		res.Suggestions = append(res.Suggestions, Suggestion{
 			Title:  fmt.Sprintf("Assign %d pick(s) in Worqplace", len(picks)),
 			Detail: "Agent House is view-only on the HRMS — confirm the assignment in Worqplace itself.",

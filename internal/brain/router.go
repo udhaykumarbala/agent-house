@@ -50,7 +50,7 @@ func (r *Router) Route(ctx context.Context, userID, message, scope string) (*Bra
 			"- \"Change / Add / Fix / Improve <X> in <app>\" → action delegate to the right engineer on that project.\n" +
 			"- The team runs a full autonomous SDLC: PRD → design → development → QA, with human checkpoints whose autonomy is governed by the project's run mode.\n" +
 			"- This studio has NO email inbox, vendors, applicants, invoices, or construction-site data. If asked to process an inbox, validate an invoice, check vendors, or run a site scenario, briefly say that belongs to the construction company — NOT the software studio. NEVER invent inbox/email/vendor/applicant results here.\n" +
-			"- Do NOT use the construction scenarios (process_inbox, validate_invoice, route_rfi, schedule_check, morning_briefing) — those belong to the EPC company.\n\n" +
+			"- Do NOT use the construction scenarios (process_inbox, validate_invoice, route_rfi, schedule_check, morning_briefing, workforce_snapshot) — those belong to the EPC company.\n\n" +
 			workspaceCtx
 	case "", "default":
 		// Generic — no company banner.
@@ -621,6 +621,7 @@ You manage projects built by teams of AI agents (CEO, PM, UX, UI, Security, Arch
     • "route_rfi"          → classify an incoming RFI by discipline + find a matching specialist (params: rfi_id, subject, body)
     • "schedule_check"     → scan milestones; flag slipping ones with mitigations
     • "process_applicants" → screen/rank job applicants for a role (params: request)
+    • "workforce_snapshot" → LIVE workforce picture from the real Worqplace HRMS (view-only): headcount, active projects, expiring documents, saudization ratio, per-project staffing
 
 ## Decision Rules
 
@@ -638,6 +639,7 @@ You manage projects built by teams of AI agents (CEO, PM, UX, UI, Security, Arch
 12. "Incoming RFI / who handles RFI #N" → run_scenario (route_rfi)
 13. "Check the schedule / what's slipping / milestone status" → run_scenario (schedule_check)
 14. "Screen / rank applicants / who can fill [role]" → run_scenario (process_applicants)
+15. "Headcount / workforce status / how many employees / expiring documents (iqama, passport) / saudization / HRMS data" → run_scenario (workforce_snapshot) — this pulls LIVE data from the company's real HRMS
 
 ## Proactive Delegation (CRITICAL — do not just narrate)
 When a task clearly belongs to a discipline or an operations scenario, DELEGATE or RUN_SCENARIO in the SAME turn — never merely state which agent *should* handle it. If your response names an agent or says you will route / triage / verify / check / screen something, your "action" MUST be "delegate" or "run_scenario", NOT "respond". Keep the descriptive prose in "response" for the human, but always carry the real action so work actually fans out.

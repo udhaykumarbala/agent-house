@@ -42,6 +42,7 @@ func (s *Server) registerScenarios() {
 	s.scenarioEngine.Register(scenario.ProcessInbox{})
 	s.scenarioEngine.Register(scenario.MorningBriefing{})
 	s.scenarioEngine.Register(scenario.RouteRFI{})
+	s.scenarioEngine.Register(scenario.WorkforceSnapshot{})
 
 	// Wire the Brain's run_scenario action to the engine, so a typed prompt like
 	// "process my inbox" fans work out to specialist agents (steps stream to the

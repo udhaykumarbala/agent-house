@@ -290,12 +290,16 @@ func (s *Server) handleCapabilities(w http.ResponseWriter, r *http.Request) {
 			{
 				"role":  "hr",
 				"name":  "HR Lead",
-				"description": "Job applicant pipeline + HRMS integration.",
+				"description": "Job applicant pipeline + live Worqplace HRMS (view-only).",
 				"capabilities": []map[string]any{
 					{"name": "list_applicants", "method": "GET", "path": "/api/cap/hr/applicants"},
 					{"name": "store_applicant", "method": "POST", "path": "/api/cap/hr/applicants"},
 					{"name": "match_against_jd", "method": "POST", "path": "/api/cap/hr/match"},
 					{"name": "update_status", "method": "PATCH", "path": "/api/cap/hr/applicants/{id}"},
+					{"name": "hrms_status", "method": "GET", "path": "/api/cap/hrms/status"},
+					{"name": "hrms_counts", "method": "GET", "path": "/api/cap/hrms/counts"},
+					{"name": "hrms_employees", "method": "GET", "path": "/api/cap/hrms/employees"},
+					{"name": "hrms_report", "method": "GET", "path": "/api/cap/hrms/reports/{slug}"},
 				},
 			},
 			{

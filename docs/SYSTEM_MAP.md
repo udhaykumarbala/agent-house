@@ -80,6 +80,8 @@ go run ./cmd/agent-house --serve --port=8080 --project=./projects
 | `OPENAI_API_KEY` | Optional | Upgrades conversation search from lexical substring to semantic (cosine, `text-embedding-3-small`). Search-only — NOT used for routing. |
 | `OPENAI_EMBEDDING_MODEL` | Optional | Override embedding model. |
 | `RESEND_API_KEY` | Optional | Enables real outbound email. Without it `POST /api/email/send` returns `success:false` with a draft note (does not error, does not persist). |
+| `WQ_API` | Optional | Base URL of the live Worqplace HRMS, e.g. `http://worqplace.alredaa/api/v1`. MUST be the VPN hostname — Caddy on that box routes by Host header; the raw IP answers empty 200s. Unset → `/api/cap/hrms/*` and `workforce_snapshot` degrade gracefully (`configured:false`). |
+| `WQ_EMAIL` / `WQ_PASSWORD` | Optional (with `WQ_API`) | Worqplace login for the view-only client (`internal/capability/hrms.go`). Login is rate-limited to 5/min upstream, so the client is a process-wide singleton that caches the 15-min JWT and rotates via `/auth/refresh`. |
 
 The current `.env` contains only `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ONESHOT_MODEL`.
 
@@ -183,6 +185,10 @@ Single `http.ServeMux` + CORS wrapper (no router framework). Trailing-slash rout
 | GET | `/api/cap/schedule/slips` | Past-due milestones bucketed by severity | query `?scope=` |
 | GET/POST | `/api/cap/email/inbox` | **GLOBAL** inbox (not scoped) list / inject | POST Email |
 | GET | `/api/cap/email/summary` | Inbox triage stats (GLOBAL) | — |
+| GET | `/api/cap/hrms/status` | Live Worqplace HRMS connectivity + auth state (never 500s) | needs `WQ_*` env |
+| GET | `/api/cap/hrms/counts` | Composite org counters: employees tab-counts + compliance doc counts + triage | — |
+| GET | `/api/cap/hrms/employees` | One page of the live directory | allowlisted filters: `tab,q,status,nationality,department_id,project_id,page,page_size,sort_by,sort_dir` |
+| GET | `/api/cap/hrms/reports/{slug}` | One live report (uniform `summary/rows/series` shape) | allowlisted slugs only — per-employee compensation (`top-employees-by-cost`, payslips) is excluded by design; params `year,days,from,to,limit` |
 
 ### Scenario
 | Method | Path | Purpose | Key request fields |

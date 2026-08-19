@@ -260,6 +260,10 @@ func (s *Server) Start(port int) error {
 	mux.HandleFunc("/api/cap/schedule/slips", s.handleScheduleSlips)
 	mux.HandleFunc("/api/cap/email/inbox", s.handleInboxList)
 	mux.HandleFunc("/api/cap/email/summary", s.handleInboxSummary)
+	mux.HandleFunc("/api/cap/hrms/status", s.handleHRMSStatus)
+	mux.HandleFunc("/api/cap/hrms/counts", s.handleHRMSCounts)
+	mux.HandleFunc("/api/cap/hrms/employees", s.handleHRMSEmployees)
+	mux.HandleFunc("/api/cap/hrms/reports/", s.handleHRMSReport)
 
 	// Scenario engine — capability-composing multi-step flows
 	s.registerScenarios()

@@ -355,6 +355,33 @@ func (e *Executor) executeProjectStatus(decision *BrainDecision) *ExecutionResul
 	metaPath := e.projectsDir + "/" + projectID + "/project.json"
 	data, err := os.ReadFile(metaPath)
 	if err != nil {
+		// Discovery-only project (no build yet): summarize the pipeline and
+		// point at the Documents page instead of dead-ending on project.json.
+		if mraw, merr := os.ReadFile(e.projectsDir + "/" + projectID + "/discovery/manifest.json"); merr == nil {
+			var man struct {
+				Status string `json:"status"`
+				Client string `json:"client"`
+				Steps  []struct {
+					Agent  string `json:"agent"`
+					Action string `json:"action"`
+					OK     bool   `json:"ok"`
+				} `json:"steps"`
+			}
+			if json.Unmarshal(mraw, &man) == nil {
+				done := 0
+				for _, s := range man.Steps {
+					if s.OK {
+						done++
+					}
+				}
+				resp := fmt.Sprintf("**%s** is a discovery engagement (status: %s", projectID, man.Status)
+				if man.Client != "" {
+					resp += ", client " + man.Client
+				}
+				resp += fmt.Sprintf(") — %d of %d steps complete. The PRD, competitor research, compliance research, architecture and the client reply draft are on the **Documents** page (open \"docs\" in the top navigation and pick %s). Say \"approved — build it\" to hand the PRD to the build team.", done, len(man.Steps), projectID)
+				return &ExecutionResult{Response: resp, Action: ActionRespond, ProjectID: projectID, Success: true}
+			}
+		}
 		// Unknown project — usually "alpha/beta/gamma", which are work items on
 		// the active EPC site, not separate Agent House projects. Respond
 		// gracefully (success=true) instead of a hard error bubble.

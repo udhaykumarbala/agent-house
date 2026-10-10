@@ -38,7 +38,7 @@ func (r *Router) Route(ctx context.Context, userID, message, scope string) (*Bra
 	r.conversations.Add(userID, "user", message)
 
 	// Assemble workspace context
-	workspaceCtx := AssembleContext(r.projectsDir)
+	workspaceCtx := AssembleContextScoped(r.projectsDir, scope)
 
 	// Make the Brain company-aware. Agent House runs two companies; the scope
 	// selects which one so the Brain routes intents correctly (and never offers

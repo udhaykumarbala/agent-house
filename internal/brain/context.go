@@ -57,6 +57,18 @@ type ProjectSummary struct {
 // AssembleContext reads the workspace state and returns a formatted context string.
 // This is pure Go — no LLM calls. Takes <100ms.
 func AssembleContext(projectsDir string) string {
+	return AssembleContextScoped(projectsDir, "")
+}
+
+// AssembleContextScoped is AssembleContext with company-mailbox awareness:
+// scope "software" sees only the software studio's mail; any EPC scope
+// (or "") sees only EPC mail (legacy emails without a mailbox count as
+// EPC). Everything else in the context is scope-independent.
+func AssembleContextScoped(projectsDir, scope string) string {
+	wantBox := "epc"
+	if scope == "software" {
+		wantBox = "software"
+	}
 	ctx := WorkspaceContext{}
 
 	// Scan projects
@@ -166,9 +178,18 @@ func AssembleContext(projectsDir string) string {
 				TrustStatus string `json:"trust_status"`
 				TrustReason string `json:"trust_reason"`
 				Category    string `json:"category"`
+				Mailbox     string `json:"mailbox"`
 				Read        bool   `json:"read"`
 			}
 			if json.Unmarshal(data, &email) == nil {
+				// Company mailbox boundary: empty mailbox = legacy = epc.
+				box := "epc"
+				if email.Mailbox == "software" {
+					box = "software"
+				}
+				if box != wantBox {
+					continue
+				}
 				body := email.Body
 				if len(body) > 1000 {
 					body = body[:1000] + "... (truncated)"

@@ -61,7 +61,10 @@ type Manifest struct {
 	EmailID    string    `json:"email_id,omitempty"`
 	Request    string    `json:"request"`
 	Status     string    `json:"status"`
-	Steps      []Step    `json:"steps"`
+	// Current names the stage running right now ("pm · drafting the
+	// Product Requirements Document"), so pollers can show live progress.
+	Current string `json:"current,omitempty"`
+	Steps   []Step `json:"steps"`
 	StartedAt  time.Time `json:"started_at"`
 	FinishedAt time.Time `json:"finished_at,omitempty"`
 }
@@ -173,6 +176,7 @@ func (r *Runner) Run(ctx context.Context, in RunInput) (*Manifest, error) {
 	// to the later agents as shared context.
 	var prdContext string
 	for _, d := range pipelineDocs {
+		r.beginStage(man, dir, d.role, "working on the "+d.title)
 		start := time.Now()
 		prompt := r.docPrompt(d, in, prdContext)
 		text, err := r.LLM.Generate(ctx, r.systemPrompt(d.role), prompt)
@@ -187,7 +191,7 @@ func (r *Runner) Run(ctx context.Context, in RunInput) (*Manifest, error) {
 				step.Note = d.title + " write failed: " + werr.Error()
 			} else {
 				step.OK = true
-				step.Note = fmt.Sprintf("%s written (%d chars)", d.title, len(doc))
+				step.Note = fmt.Sprintf("%s ready%s", d.title, sectionSummary(doc))
 				if d.role == "pm" {
 					prdContext = trimTo(doc, 2500)
 				}
@@ -197,6 +201,7 @@ func (r *Runner) Run(ctx context.Context, in RunInput) (*Manifest, error) {
 	}
 
 	// Step 5: PM composes the client reply; draft goes to the outbox.
+	r.beginStage(man, dir, "pm", "working on the reply email to the client")
 	start := time.Now()
 	replyPrompt := fmt.Sprintf(
 		"The client sent us this request:\n\n%s\n\nOur team has completed discovery: a PRD, competitor research, compliance research, and a system architecture are ready.\n\nPRD summary for grounding:\n%s\n\nWrite the reply EMAIL to the client (markdown, starting with 'Subject: ...' on the first line): thank them, summarize in 4-6 bullet points what our discovery found (scope, differentiators, compliance posture, proposed architecture and phases), state that detailed documents are attached, and ask for approval to proceed to the build phase. Professional, warm, concise — no placeholder brackets.",
@@ -224,9 +229,49 @@ func (r *Runner) Run(ctx context.Context, in RunInput) (*Manifest, error) {
 			break
 		}
 	}
+	man.Current = ""
 	man.FinishedAt = time.Now().UTC()
 	r.saveManifest(man, dir)
 	return man, nil
+}
+
+// beginStage marks a stage as running (manifest.Current for pollers) and
+// broadcasts a "working" beat FROM the agent, so the workforce panel shows
+// them active while the model is generating, not only after.
+func (r *Runner) beginStage(man *Manifest, dir, agent, doing string) {
+	man.Current = agent + " · " + doing
+	r.saveManifest(man, dir)
+	if r.Emitter != nil {
+		content := fmt.Sprintf("[discovery:%s] %s · %s…", man.ProjectID, agent, doing)
+		m := message.NewMessage(message.TypeSystem, agent, "conductor", content)
+		m.Metadata.ProjectID = man.ProjectID
+		m.Metadata.Tags = []string{"discovery", man.ProjectID, agent}
+		r.Emitter.Emit(m)
+	}
+}
+
+// sectionSummary turns a doc's "## " headings into a short user-facing
+// summary (" — covers Goals, Personas, Scope …"), falling back to size.
+func sectionSummary(doc string) string {
+	heads := []string{}
+	for _, line := range strings.Split(doc, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "## ") {
+			h := strings.TrimSpace(strings.TrimPrefix(line, "## "))
+			// Strip numbering like "1. " so the summary reads naturally.
+			h = strings.TrimLeft(h, "0123456789. ")
+			if h != "" {
+				heads = append(heads, h)
+			}
+		}
+		if len(heads) == 5 {
+			break
+		}
+	}
+	if len(heads) == 0 {
+		return fmt.Sprintf(" (%d chars)", len(doc))
+	}
+	return " — covers " + strings.Join(heads, ", ")
 }
 
 func (r *Runner) docPrompt(d docSpec, in RunInput, prdContext string) string {

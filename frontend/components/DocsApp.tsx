@@ -32,6 +32,7 @@ interface ManifestStep {
 }
 interface Manifest {
   status: string;
+  current?: string;
   steps: ManifestStep[];
 }
 
@@ -228,7 +229,9 @@ export function DocsApp() {
                     <span className="docs-step-action">{s.action}</span>
                   </div>
                 ))}
-                {status === "running" && <div className="docs-step pending">⏳ next agent working…</div>}
+                {status === "running" && (
+                  <div className="docs-step pending">⏳ {manifest.current || "next agent working…"}</div>
+                )}
               </div>
             </>
           )}

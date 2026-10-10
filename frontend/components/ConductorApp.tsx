@@ -10,6 +10,7 @@ import {
   fetchMessages,
   fetchCheckpoints,
   connectWS,
+  API_BASE,
 } from "@/lib/api";
 import { mapWorkforce, mapFires, mapCheckpoints } from "@/lib/mapper";
 import { renderMarkdown, cleanReply } from "@/lib/md";
@@ -174,11 +175,20 @@ export function ConductorApp() {
         // pulse the workforce sidebar (via message recency) but should NOT clutter
         // the main chat thread, which stays = user prompts + the Brain's answers.
         const tags = m.metadata?.tags || [];
-        const isAside = tags.includes("scenario") || tags.includes("routing");
+        const isAside =
+          tags.includes("scenario") ||
+          tags.includes("routing") ||
+          tags.includes("discovery");
         // While a request is in flight, surface scenario/routing asides as live
         // "what the agents are doing now" steps under the thinking indicator —
         // real backend activity reads far better than three bouncing dots.
-        if (isAside && m.from !== "user" && sendingRef.current) {
+        // Only the ACTIVE COMPANY's agents may appear here: an EPC cron sweep
+        // (project_manager checking mail) must never paint the software studio.
+        const from = (m.from || "").toLowerCase();
+        const fromThisCompany =
+          from === "conductor" || from === "system" || from === "brain" ||
+          cfg.roles.includes(from);
+        if (isAside && m.from !== "user" && sendingRef.current && fromThisCompany) {
           const body = (m.content || "").trim();
           if (body) {
             const line = `${humanize(m.from || "agent")} · ${body}`;
@@ -207,9 +217,14 @@ export function ConductorApp() {
     }, setConnected);
   }, [refreshSidebar, activeProject]);
 
+  // Live discovery progress state (polled card in the thread).
+  interface DiscoStep { agent: string; action: string; note?: string; ok: boolean }
+  interface DiscoManifest { status: string; current?: string; steps: DiscoStep[] }
+  const [disco, setDisco] = useState<{ project: string; manifest: DiscoManifest | null } | null>(null);
+
   useEffect(() => {
     convRef.current?.scrollTo(0, convRef.current.scrollHeight);
-  }, [msgs, thinking]);
+  }, [msgs, thinking, disco]);
 
   useEffect(() => {
     const ta = taRef.current;
@@ -260,6 +275,54 @@ export function ConductorApp() {
     [agents, messages, checkpoints]
   );
 
+  // ── Live discovery progress ─────────────────────────────────────────
+  // While a discovery pipeline runs, poll its manifest every 3s and show
+  // a stage-by-stage card in the thread; when it finishes, replace the
+  // card with a per-agent summary + a Documents page link.
+  useEffect(() => {
+    if (!disco) return;
+    let stop = false;
+    const poll = async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/discovery/status?project=${encodeURIComponent(disco.project)}`);
+        if (!r.ok) return;
+        const man: DiscoManifest = await r.json();
+        if (stop) return;
+        if (man.status === "running") {
+          setDisco((d) => (d ? { ...d, manifest: man } : d));
+          return;
+        }
+        // Finished → final summary bubble with the per-agent results.
+        const lines = man.steps
+          .filter((s) => s.note)
+          .map((s) => `<li><strong>${esc(humanize(s.agent))}</strong> — ${s.ok ? "" : "⚠ "}${esc(s.note || "")}</li>`)
+          .join("");
+        setMsgs((p) => [
+          ...p,
+          {
+            role: "conductor",
+            meta: `discovery · ${man.status}`,
+            html:
+              `<p><strong>Discovery complete</strong> for <code>${esc(disco.project)}</code>:</p><ul>${lines}</ul>` +
+              `<p><a href="/docs?project=${encodeURIComponent(disco.project)}">Open the Documents page →</a> ` +
+              `then say <em>“approved — build it”</em> to hand the PRD to the build team.</p>`,
+          },
+        ]);
+        setDisco(null);
+        refreshSidebar();
+      } catch {
+        /* backend hiccup — keep polling */
+      }
+    };
+    poll();
+    const t = setInterval(poll, 3000);
+    return () => {
+      stop = true;
+      clearInterval(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disco?.project]);
+
   async function send(message?: string) {
     const m = (message ?? text).trim();
     if (!m || thinking || sendingRef.current) return; // ref-lock blocks the double-fire
@@ -290,6 +353,11 @@ export function ConductorApp() {
     if (reply?.suggestions && reply.suggestions.length > 0)
       setSuggest(reply.suggestions);
     if (reply?.project_id) setActiveProject(reply.project_id);
+    // A discovery kickoff gets a live progress card (polled) instead of
+    // a "come back in 4 minutes" ack.
+    if (reply?.action === "run_discovery" && reply.project_id) {
+      setDisco({ project: reply.project_id, manifest: null });
+    }
     refreshSidebar();
   }
 
@@ -437,6 +505,38 @@ export function ConductorApp() {
                 </div>
               </div>
             )
+          )}
+
+          {/* Live discovery pipeline card: stage-by-stage progress with
+              per-stage summaries, updated every 3s while agents work. */}
+          {disco && (
+            <div className="thinking-row" style={{ alignItems: "flex-start" }}>
+              <div className="conductor-mark sm thinking" />
+              <div className="live-steps" style={{ width: "100%" }}>
+                <div className="live-step" style={{ opacity: 0.7 }}>
+                  <span className="live-step__who">discovery · {disco.project}</span>
+                  <span className="live-step__act">
+                    {disco.manifest
+                      ? `${disco.manifest.steps.filter((s) => s.ok).length} of 6 stages complete`
+                      : "starting…"}
+                  </span>
+                </div>
+                {(disco.manifest?.steps ?? []).map((s, i) => (
+                  <div key={i} className="live-step">
+                    <span className="live-step__pip" />
+                    <span className="live-step__who">{s.ok ? "✓" : "⚠"} {humanize(s.agent)}</span>
+                    <span className="live-step__act">{s.note || s.action}</span>
+                  </div>
+                ))}
+                {disco.manifest?.current && (
+                  <div className="live-step live-step--active">
+                    <span className="live-step__pip" />
+                    <span className="live-step__who">{humanize(disco.manifest.current.split(" · ")[0])}</span>
+                    <span className="live-step__act">{disco.manifest.current.split(" · ").slice(1).join(" · ")}…</span>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
 
           {thinking && (

@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"pty-claude-test/internal/message"
 )
 
 // fakeLLM records every call and returns a canned rich-markdown doc.
@@ -22,8 +24,13 @@ func (f *fakeLLM) Generate(_ context.Context, system, user string) (string, erro
 	if f.failFor != "" && strings.Contains(user, f.failFor) {
 		return "", errors.New("llm boom")
 	}
-	return "# Generated Doc\n\n```mermaid\nflowchart TD\n  A-->B\n```\n\n| k | v |\n|---|---|\n| a | 1 |\n", nil
+	return "# Generated Doc\n\n## Goals\n\n```mermaid\nflowchart TD\n  A-->B\n```\n\n## Scope Table\n\n| k | v |\n|---|---|\n| a | 1 |\n", nil
 }
+
+// recordingEmitter captures everything the pipeline broadcasts.
+type recordingEmitter struct{ notes []string }
+
+func (r *recordingEmitter) Emit(m *message.Message) { r.notes = append(r.notes, m.Content) }
 
 func newRunner(t *testing.T, llm LLM) *Runner {
 	t.Helper()
@@ -140,6 +147,46 @@ func TestDiscoveryNoRequestAnywhere(t *testing.T) {
 	man, err := r.Run(context.Background(), RunInput{})
 	if err == nil && man.Status != StatusFailed {
 		t.Fatalf("expected failure without any request, got %#v", man)
+	}
+}
+
+// Live progress: a "working" beat streams BEFORE each agent's call (so the
+// workforce panel pulses during generation, not after), completion notes
+// carry a section summary, and the manifest exposes what is running now.
+func TestDiscoveryStreamsLiveProgress(t *testing.T) {
+	em := &recordingEmitter{}
+	r := newRunner(t, &fakeLLM{})
+	r.Emitter = em
+
+	man, err := r.Run(context.Background(), RunInput{
+		ProjectID: "p1", Client: "c@x.com", Request: "Build a fitness tracking app",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Started beats: one per agent doc + one for the reply.
+	started := 0
+	for _, n := range em.notes {
+		if strings.Contains(n, "working on") {
+			started++
+		}
+	}
+	if started < 5 {
+		t.Fatalf("expected a working beat before each of the 5 agent calls, got %d in %v", started, em.notes)
+	}
+	// Completion notes summarize the document's sections for the user.
+	var prdNote string
+	for _, s := range man.Steps {
+		if s.Action == "write_prd" {
+			prdNote = s.Note
+		}
+	}
+	if !strings.Contains(prdNote, "Goals") {
+		t.Fatalf("completion note should name the doc's sections, got %q", prdNote)
+	}
+	// Nothing is "current" once the pipeline finished.
+	if man.Current != "" {
+		t.Fatalf("current should clear on completion, got %q", man.Current)
 	}
 }
 

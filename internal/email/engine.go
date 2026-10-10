@@ -67,6 +67,14 @@ func (e *Engine) ReceiveEmail(from, fromName, to, subject, body string) (*Email,
 		Direction: "inbound",
 	}
 
+	// Route to a company mailbox by recipient: software-studio addresses
+	// belong to the software company, everything else to EPC.
+	if strings.Contains(strings.ToLower(to), "software-studio") {
+		email.Mailbox = "software"
+	} else {
+		email.Mailbox = "epc"
+	}
+
 	// Classify the email
 	email.Category = e.classify(subject, body, from)
 

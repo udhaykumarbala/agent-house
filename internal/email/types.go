@@ -20,6 +20,9 @@ type Email struct {
 	TrustReason string    `json:"trust_reason"`
 	Direction   string    `json:"direction"`    // inbound, outbound
 	ReplyTo     string    `json:"reply_to,omitempty"`
+	// Mailbox separates the two companies' mail: "software" | "epc".
+	// Empty (legacy) is treated as "epc" everywhere.
+	Mailbox string `json:"mailbox,omitempty"`
 }
 
 // Vendor represents a vendor with trusted email contacts.

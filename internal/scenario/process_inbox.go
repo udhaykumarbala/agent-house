@@ -31,7 +31,8 @@ func (ProcessInbox) Run(ctx Context) (Result, error) {
 
 	// 1. Conductor reads the global inbox.
 	inbox := capability.NewInbox(ctx.DataRoot)
-	unread, err := inbox.Unread()
+	// EPC-only sweep: the software studio's mailbox has its own pipeline.
+	unread, err := inbox.UnreadMailbox("epc")
 	if err != nil {
 		return res, err
 	}

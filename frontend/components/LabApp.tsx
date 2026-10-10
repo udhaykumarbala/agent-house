@@ -6,6 +6,7 @@ import { ScenarioPanel } from "./ScenarioPanel";
 import { ScenarioCard } from "./ScenarioCard";
 import { MockMailComposer } from "./MockMailComposer";
 import { API_BASE } from "@/lib/api";
+import { getCompany } from "@/lib/company";
 import { ATLAS_APPLICANTS, ATLAS_VENDORS, ATLAS_MILESTONES } from "@/lib/seed";
 import type { ScenarioResult, ScenarioSuggestion } from "@/lib/types";
 
@@ -183,8 +184,8 @@ export function LabApp() {
           </section>
         </div>
 
-        {/* Mock mail composer */}
-        <MockMailComposer onSent={refresh} />
+        {/* Mock mail composer — seeds the active company's own mailbox */}
+        <MockMailComposer onSent={refresh} mailbox={getCompany() === "software" ? "software" : "epc"} />
 
         {/* Results stack */}
         {results.length > 0 && (

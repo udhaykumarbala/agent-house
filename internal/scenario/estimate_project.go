@@ -334,6 +334,10 @@ func latestEstimationEmail() *capability.Email {
 		return nil
 	}
 	for i := range all {
+		// EPC flow: the software studio's mailbox is not ours to read.
+		if capability.MailboxOf(all[i]) != "epc" {
+			continue
+		}
 		hay := strings.ToLower(all[i].Subject + " " + all[i].Body)
 		for _, kw := range []string{"estimat", "quotation", "quote", "rfq", "proposal", "tender"} {
 			if strings.Contains(hay, kw) {

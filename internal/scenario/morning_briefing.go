@@ -88,7 +88,7 @@ func (MorningBriefing) Run(ctx Context) (Result, error) {
 
 	// Conductor: inbox snapshot
 	in := capability.NewInbox(ctx.DataRoot)
-	mailSummary, _ := in.Summary()
+	mailSummary, _ := in.SummaryMailbox("epc") // EPC briefing reads EPC mail only
 	mailStep := Step{
 		Agent: "conductor", Action: "report_inbox", OK: true,
 		Output: map[string]any{"inbox": mailSummary},

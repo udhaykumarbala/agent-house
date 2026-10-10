@@ -197,6 +197,15 @@ func TestEstimateProjectPicksUpInboxRequest(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
+	// A newer SOFTWARE-mailbox email with estimation keywords must be
+	// invisible to the EPC estimation flow.
+	if _, err := in.Inject(capability.Email{
+		ID: "mock_sw_1", From: "cto@fitflow.app", Subject: "App development proposal and estimation",
+		Body: "software quote please", Category: "client", Mailbox: "software",
+		Date: "2099-01-01T00:00:00Z",
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	res, err := EstimateProject{}.Run(Context{Scope: "atlas-site", Input: map[string]any{}})
 	if err != nil {

@@ -19,6 +19,8 @@ export interface EmailTemplate {
     trust_status?: "trusted" | "impersonation" | "new_contact";
     trust_reason?: string;
     vendor_id?: string;
+    /** Which company's mailbox this lands in; missing = "epc". */
+    mailbox?: "software" | "epc";
   };
 }
 
@@ -51,6 +53,7 @@ Dana — CTO, FitFlow`,
       category: "client",
       trust_status: "new_contact",
       trust_reason: "First contact from @fitflow.app — no prior thread",
+      mailbox: "software",
     },
   },
   {

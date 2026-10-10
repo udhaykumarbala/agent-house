@@ -16,15 +16,30 @@ import { humanize } from "@/lib/humanize";
  *  - Sends generate a stable, readable id like "mock_vendor_impersonation_<ts>"
  *    so the inbox stays scannable and re-runs don't collide.
  */
-export function MockMailComposer({ onSent }: { onSent?: () => void }) {
-  const [tplId, setTplId] = useState<string>(EMAIL_TEMPLATES[0].id);
+export function MockMailComposer({
+  onSent,
+  mailbox,
+}: {
+  onSent?: () => void;
+  /** Restrict templates + injection to one company's mailbox. */
+  mailbox?: "software" | "epc";
+}) {
+  // Each company only sees (and seeds) its own mailbox's templates.
+  const templates = useMemo(
+    () =>
+      mailbox
+        ? EMAIL_TEMPLATES.filter((t) => (t.payload.mailbox ?? "epc") === mailbox)
+        : EMAIL_TEMPLATES,
+    [mailbox]
+  );
+  const [tplId, setTplId] = useState<string>((templates[0] ?? EMAIL_TEMPLATES[0]).id);
   const [overlay, setOverlay] = useState<Partial<EmailTemplate["payload"]>>({});
   const [busy, setBusy] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
 
   const tpl = useMemo(
-    () => EMAIL_TEMPLATES.find((t) => t.id === tplId) ?? EMAIL_TEMPLATES[0],
-    [tplId]
+    () => templates.find((t) => t.id === tplId) ?? templates[0] ?? EMAIL_TEMPLATES[0],
+    [templates, tplId]
   );
   const fields = useMemo(
     () => ({ ...tpl.payload, ...overlay }),
@@ -76,7 +91,7 @@ export function MockMailComposer({ onSent }: { onSent?: () => void }) {
             value={tplId}
             onChange={(e) => onPickTemplate(e.target.value)}
           >
-            {EMAIL_TEMPLATES.map((t) => (
+            {templates.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.label}
               </option>

@@ -29,6 +29,18 @@ type Email struct {
 	TrustStatus string `json:"trust_status,omitempty"` // trusted | impersonation | new_contact
 	TrustReason string `json:"trust_reason,omitempty"`
 	Direction   string `json:"direction,omitempty"`
+	// Mailbox separates the two companies' mail: "software" | "epc".
+	// Empty means legacy/pre-split → treated as "epc".
+	Mailbox string `json:"mailbox,omitempty"`
+}
+
+// MailboxOf resolves an email's effective mailbox: anything not explicitly
+// "software" belongs to the EPC company (the pre-split default).
+func MailboxOf(e Email) string {
+	if e.Mailbox == "software" {
+		return "software"
+	}
+	return "epc"
 }
 
 // Inbox is the global inbox reader. There is one inbox shared across scopes
@@ -78,6 +90,60 @@ func (i *Inbox) List() ([]Email, error) {
 	return out, nil
 }
 
+// ListMailbox lists one company's mail. box "" means all mailboxes;
+// "epc" includes legacy emails that predate the split.
+func (i *Inbox) ListMailbox(box string) ([]Email, error) {
+	all, err := i.List()
+	if err != nil || box == "" {
+		return all, err
+	}
+	out := make([]Email, 0, len(all))
+	for _, e := range all {
+		if MailboxOf(e) == box {
+			out = append(out, e)
+		}
+	}
+	return out, nil
+}
+
+// UnreadMailbox is Unread scoped to one company's mailbox.
+func (i *Inbox) UnreadMailbox(box string) ([]Email, error) {
+	all, err := i.ListMailbox(box)
+	if err != nil {
+		return nil, err
+	}
+	out := []Email{}
+	for _, e := range all {
+		if !e.Read {
+			out = append(out, e)
+		}
+	}
+	return out, nil
+}
+
+// SummaryMailbox is Summary scoped to one company's mailbox.
+func (i *Inbox) SummaryMailbox(box string) (CategoryCounts, error) {
+	out := CategoryCounts{ByCategory: map[string]int{}}
+	all, err := i.ListMailbox(box)
+	if err != nil {
+		return out, err
+	}
+	for _, e := range all {
+		if e.Read {
+			continue
+		}
+		out.Total++
+		out.ByCategory[e.Category]++
+		if e.TrustStatus == "impersonation" {
+			out.Impersonations++
+		}
+		if e.TrustStatus == "new_contact" {
+			out.NewContacts++
+		}
+	}
+	return out, nil
+}
+
 // Inject writes a single email into the inbox directory as JSON. The
 // caller (Lab UI / seed scripts) uses this to simulate inbound mail
 // without going through a real SMTP/IMAP server. The file is named after
@@ -101,6 +167,15 @@ func (i *Inbox) Inject(e Email) (Email, error) {
 	}
 	if e.Category == "" {
 		e.Category = "internal"
+	}
+	// Route to a company mailbox: explicit wins, else infer from the
+	// recipient (software-studio addresses → software), else EPC.
+	if e.Mailbox == "" {
+		if strings.Contains(strings.ToLower(e.To), "software-studio") {
+			e.Mailbox = "software"
+		} else {
+			e.Mailbox = "epc"
+		}
 	}
 	if err := os.MkdirAll(i.path, 0o755); err != nil {
 		return e, err

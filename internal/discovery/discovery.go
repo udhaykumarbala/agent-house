@@ -282,6 +282,7 @@ type inboxEmail struct {
 	Subject  string `json:"subject"`
 	Body     string `json:"body"`
 	Category string `json:"category"`
+	Mailbox  string `json:"mailbox"`
 	Date     string `json:"date"`
 	Replied  bool   `json:"replied"`
 }
@@ -317,9 +318,16 @@ func (r *Runner) findRequirementsEmail(emailID string) *inboxEmail {
 	sort.Slice(all, func(a, b int) bool { return all[a].Date > all[b].Date })
 	for i := range all {
 		if emailID != "" {
+			// An explicitly named email is honored regardless of mailbox —
+			// the human pointed at it.
 			if all[i].ID == emailID {
 				return &all[i]
 			}
+			continue
+		}
+		// Auto-pickup only reads the software company's own mailbox; the
+		// EPC company's mail (incl. legacy pre-split emails) is invisible.
+		if all[i].Mailbox != "software" {
 			continue
 		}
 		if all[i].Category == "vendor" || all[i].Category == "job_application" || all[i].Category == "applicant" {

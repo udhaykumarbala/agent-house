@@ -243,7 +243,9 @@ func (s *Server) handleInboxList(w http.ResponseWriter, r *http.Request) {
 	in := capability.NewInbox(dataRoot)
 	switch r.Method {
 	case http.MethodGet:
-		mails, err := in.List()
+		// ?mailbox=software|epc scopes the listing to one company;
+		// omitted means all (legacy behavior).
+		mails, err := in.ListMailbox(r.URL.Query().Get("mailbox"))
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
@@ -272,7 +274,7 @@ func (s *Server) handleInboxSummary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	in := capability.NewInbox(dataRoot)
-	sum, err := in.Summary()
+	sum, err := in.SummaryMailbox(r.URL.Query().Get("mailbox"))
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return

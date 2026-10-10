@@ -105,7 +105,10 @@ func TestDiscoveryPicksNewestRequirementsEmail(t *testing.T) {
 	_ = os.MkdirAll(inboxDir, 0o755)
 	for i, e := range []map[string]any{
 		{"id": "email_old_vendor", "from": "ar@vendorxyz.com", "subject": "Invoice #42", "body": "please pay", "category": "vendor", "date": "2026-10-01T10:00:00Z"},
-		{"id": "email_req", "from": "cto@fitflow.app", "subject": "Requirements — FitFlow fitness app", "body": "We need you to build a mobile fitness tracking app. Requirements attached.", "category": "client", "date": "2026-10-09T10:00:00Z"},
+		{"id": "email_req", "from": "cto@fitflow.app", "subject": "Requirements — FitFlow fitness app", "body": "We need you to build a mobile fitness tracking app. Requirements attached.", "category": "client", "mailbox": "software", "date": "2026-10-09T10:00:00Z"},
+		// NEWER but in the EPC mailbox with requirements-y words — the
+		// software pipeline must never grab the other company's mail.
+		{"id": "email_epc_est", "from": "projects@newco.com", "subject": "Estimation — warehouse build", "body": "please build and develop our warehouse proposal", "category": "client", "mailbox": "epc", "date": "2026-10-10T10:00:00Z"},
 	} {
 		raw, _ := json.Marshal(e)
 		_ = os.WriteFile(filepath.Join(inboxDir, fmt.Sprintf("%v.json", e["id"])), raw, 0o644)

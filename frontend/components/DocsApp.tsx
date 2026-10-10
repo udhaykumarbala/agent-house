@@ -5,6 +5,7 @@ import { Chrome } from "./Chrome";
 import { API_BASE } from "@/lib/api";
 import { renderMarkdown } from "@/lib/md";
 import { getCompany, companyConfig } from "@/lib/company";
+import { ensureMermaid } from "@/lib/mermaid";
 
 /** Documents — rich agent-authored artifacts (PRDs, research, designs)
  *  rendered as real documents: GFM tables, code blocks, and live mermaid
@@ -34,30 +35,6 @@ interface Manifest {
   status: string;
   current?: string;
   steps: ManifestStep[];
-}
-
-// Pinned mermaid from cdnjs, loaded once on demand (same precedent as the
-// legacy dashboard's CDN marked.js). The Next bundle stays lean.
-const MERMAID_SRC =
-  "https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js";
-let mermaidLoading: Promise<unknown> | null = null;
-function ensureMermaid(): Promise<unknown> {
-  if (typeof window === "undefined") return Promise.resolve(null);
-  const w = window as unknown as { mermaid?: { initialize: (c: object) => void; run: (c: object) => Promise<void> } };
-  if (w.mermaid) return Promise.resolve(w.mermaid);
-  if (!mermaidLoading) {
-    mermaidLoading = new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = MERMAID_SRC;
-      s.onload = () => {
-        w.mermaid?.initialize({ startOnLoad: false, theme: "neutral", securityLevel: "strict" });
-        resolve(w.mermaid);
-      };
-      s.onerror = reject;
-      document.head.appendChild(s);
-    });
-  }
-  return mermaidLoading;
 }
 
 export function DocsApp() {

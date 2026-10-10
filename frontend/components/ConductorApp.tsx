@@ -13,6 +13,7 @@ import {
   API_BASE,
 } from "@/lib/api";
 import { mapWorkforce, mapFires, mapCheckpoints } from "@/lib/mapper";
+import { renderMermaidIn } from "@/lib/mermaid";
 import { renderMarkdown, cleanReply } from "@/lib/md";
 import { getCompany, companyConfig, type Company } from "@/lib/company";
 import { RunModeControl } from "./RunModeControl";
@@ -224,6 +225,9 @@ export function ConductorApp() {
 
   useEffect(() => {
     convRef.current?.scrollTo(0, convRef.current.scrollHeight);
+    // Any freshly-rendered ```mermaid fences in chat bubbles (e.g. the
+    // PRD's user-flow diagram) get drawn in place.
+    renderMermaidIn(convRef.current);
   }, [msgs, thinking, disco]);
 
   useEffect(() => {
@@ -292,11 +296,21 @@ export function ConductorApp() {
           setDisco((d) => (d ? { ...d, manifest: man } : d));
           return;
         }
-        // Finished → final summary bubble with the per-agent results.
+        // Finished → summary bubble with the per-agent results, then the
+        // PRD itself rendered in the thread (tables + mermaid flow).
         const lines = man.steps
           .filter((s) => s.note)
           .map((s) => `<li><strong>${esc(humanize(s.agent))}</strong> — ${s.ok ? "" : "⚠ "}${esc(s.note || "")}</li>`)
           .join("");
+        let prdHtml = "";
+        try {
+          const pr = await fetch(
+            `${API_BASE}/api/file-content?path=${encodeURIComponent(disco.project + "/discovery/01-prd.md")}`
+          );
+          if (pr.ok) prdHtml = renderMarkdown(await pr.text());
+        } catch {
+          /* PRD bubble is best-effort; the summary + link always post */
+        }
         setMsgs((p) => [
           ...p,
           {
@@ -304,9 +318,18 @@ export function ConductorApp() {
             meta: `discovery · ${man.status}`,
             html:
               `<p><strong>Discovery complete</strong> for <code>${esc(disco.project)}</code>:</p><ul>${lines}</ul>` +
-              `<p><a href="/docs?project=${encodeURIComponent(disco.project)}">Open the Documents page →</a> ` +
+              `<p><a href="/docs?project=${encodeURIComponent(disco.project)}">Open the Documents page →</a> for the research and architecture, ` +
               `then say <em>“approved — build it”</em> to hand the PRD to the build team.</p>`,
           },
+          ...(prdHtml
+            ? [
+                {
+                  role: "conductor" as const,
+                  meta: "pm · product requirements document",
+                  html: `<div class="chat-doc">${prdHtml}</div>`,
+                },
+              ]
+            : []),
         ]);
         setDisco(null);
         refreshSidebar();
@@ -363,6 +386,17 @@ export function ConductorApp() {
 
   return (
     <div className="app lay-conductor" data-screen-label="Conductor">
+      <style>{`
+        .bubble .chat-doc { max-width: 100%; font-size: 13.5px; line-height: 1.6; }
+        .bubble .chat-doc table { border-collapse: collapse; margin: 10px 0; width: 100%; font-size: 12.5px; }
+        .bubble .chat-doc th, .bubble .chat-doc td { border: 1px solid rgba(128,128,128,.35); padding: 4px 8px; text-align: left; vertical-align: top; }
+        .bubble .chat-doc th { background: rgba(128,128,128,.12); }
+        .bubble .chat-doc pre.codeblock { background: rgba(128,128,128,.12); border-radius: 6px; padding: 10px 12px; overflow-x: auto; font-size: 12px; }
+        .bubble .chat-doc .mermaid { background: #fff; border: 1px solid rgba(128,128,128,.25); border-radius: 8px; padding: 12px; margin: 12px 0; display: flex; justify-content: center; overflow-x: auto; }
+        .bubble .chat-doc h3 { font-size: 18px; margin: 8px 0 10px; }
+        .bubble .chat-doc h4 { font-size: 15px; margin: 14px 0 6px; }
+        .bubble .chat-doc h5 { font-size: 13.5px; margin: 12px 0 5px; }
+      `}</style>
       <Chrome
         pageTitle="Conductor"
         active="conductor"

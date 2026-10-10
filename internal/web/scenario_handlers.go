@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"pty-claude-test/internal/discovery"
 	"pty-claude-test/internal/message"
 	"pty-claude-test/internal/scenario"
 )
@@ -51,7 +53,54 @@ func (s *Server) registerScenarios() {
 	// workforce panel via the same emitter used by the HTTP scenario route).
 	if s.brainHandler != nil {
 		s.brainHandler.executor.OnRunScenario = s.runScenarioForBrain
+		s.brainHandler.executor.OnRunDiscovery = s.runDiscoveryForBrain
 	}
+}
+
+// runDiscoveryForBrain starts the software studio's discovery pipeline from
+// a chat decision and returns an immediate acknowledgement — the documents
+// take minutes and land on the Documents page as each agent finishes.
+func (s *Server) runDiscoveryForBrain(params map[string]string) (string, string, error) {
+	runner := s.discoveryRunner()
+	resolved, err := runner.Resolve(discovery.RunInput{
+		EmailID:   params["email_id"],
+		Request:   params["request"],
+		Client:    params["client"],
+		ProjectID: params["project_id"],
+	})
+	if err != nil {
+		return "", "", err
+	}
+
+	s.mu.Lock()
+	if s.discoveryRuns == nil {
+		s.discoveryRuns = map[string]bool{}
+	}
+	if s.discoveryRuns[resolved.ProjectID] {
+		s.mu.Unlock()
+		return fmt.Sprintf("Discovery for %q is already running — documents are appearing on the Documents page.", resolved.ProjectID), resolved.ProjectID, nil
+	}
+	s.discoveryRuns[resolved.ProjectID] = true
+	s.mu.Unlock()
+
+	go func() {
+		defer func() {
+			s.mu.Lock()
+			delete(s.discoveryRuns, resolved.ProjectID)
+			s.mu.Unlock()
+		}()
+		if _, err := runner.Run(context.Background(), resolved); err != nil {
+			fmt.Printf("[DISCOVERY] %s failed: %v\n", resolved.ProjectID, err)
+		}
+	}()
+
+	src := "your request"
+	if resolved.EmailID != "" {
+		src = fmt.Sprintf("the email from %s", resolved.Client)
+	}
+	ack := fmt.Sprintf("Discovery started for **%s** from %s. The PM is drafting the PRD; the senior engineer (competitor research), security engineer (compliance research) and architect (system design) follow, and a reply email draft goes back to the client. Watch the team work in the panel — documents appear on the **Documents** page as each one lands (~2-4 minutes).",
+		resolved.ProjectID, src)
+	return ack, resolved.ProjectID, nil
 }
 
 // runScenarioForBrain runs a capability scenario for the Brain's run_scenario

@@ -22,6 +22,11 @@ function inline(s: string): string {
   t = t.replace(/`([^`]+)`/g, "<code>$1</code>");
   t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   t = t.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+  // [text](https://…) — http(s) only, so javascript: can never sneak in.
+  t = t.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+  );
   return t;
 }
 
@@ -126,6 +131,29 @@ export function renderMarkdown(src: string): string {
 
     if (line === "") {
       flush();
+      continue;
+    }
+
+    // Fenced code block. ```mermaid becomes a div the Documents page
+    // hands to mermaid.js; everything else is a plain <pre>.
+    const fence = /^```([\w-]*)\s*$/.exec(line);
+    if (fence) {
+      flush();
+      const lang = fence[1].toLowerCase();
+      const buf: string[] = [];
+      i++;
+      while (i < lines.length && !/^```\s*$/.test(lines[i].trim())) {
+        buf.push(lines[i]);
+        i++;
+      }
+      const src = buf.join("\n");
+      if (lang === "mermaid") {
+        out.push(`<div class="mermaid">${esc(src)}</div>`);
+      } else {
+        out.push(
+          `<pre class="codeblock"${lang ? ` data-lang="${lang}"` : ""}><code>${esc(src)}</code></pre>`
+        );
+      }
       continue;
     }
 

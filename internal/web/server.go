@@ -43,6 +43,7 @@ type Server struct {
 	emailHandlers   *EmailHandlers     // Email engine handlers
 	scenarioEngine  *scenario.Engine   // Capability-composing scenario runners
 	agentRegistry   *agent.Registry    // File-based agent defs (incl. EPC roles) for handlers
+	discoveryRuns   map[string]bool    // projectID -> discovery pipeline running
 }
 
 // Config holds server configuration
@@ -107,6 +108,10 @@ func NewServer(config Config) *Server {
 	apiClient := session.NewAPIClient()
 	apiClient.JSONMode = true
 	server.brainHandler = NewBrainHandler(apiClient, server.orchestrator, config.Store, hub, config.ProjectDir)
+	// Chat-initiated builds go through the same wired launcher as /api/task
+	// (checkpoints + registry + orchestrator swap) instead of a private,
+	// unwired orchestrator.
+	server.brainHandler.LaunchBuild = server.launchBuild
 	// Tier-1 fast router (e.g. gemini-3.1-flash-lite) for instant intermediary
 	// feedback — same endpoint/key as the main client, just a faster model.
 	if rm := os.Getenv("ONESHOT_ROUTER_MODEL"); rm != "" {
@@ -260,6 +265,9 @@ func (s *Server) Start(port int) error {
 	mux.HandleFunc("/api/cap/schedule/slips", s.handleScheduleSlips)
 	mux.HandleFunc("/api/cap/email/inbox", s.handleInboxList)
 	mux.HandleFunc("/api/cap/email/summary", s.handleInboxSummary)
+	mux.HandleFunc("/api/discovery/run", s.handleDiscoveryRun)
+	mux.HandleFunc("/api/discovery/status", s.handleDiscoveryStatus)
+	mux.HandleFunc("/api/docs", s.handleDocs)
 	mux.HandleFunc("/api/cap/hrms/status", s.handleHRMSStatus)
 	mux.HandleFunc("/api/cap/hrms/counts", s.handleHRMSCounts)
 	mux.HandleFunc("/api/cap/hrms/employees", s.handleHRMSEmployees)
@@ -415,6 +423,68 @@ type TaskRequest struct {
 }
 
 // handleTask handles task submission
+// launchBuild runs the SDLC pipeline for one project on a freshly wired
+// orchestrator: checkpoint notify, websocket broadcast, and the file-based
+// agent registry all re-attached, then swapped in as s.orchestrator so
+// /api/checkpoints resolves against the orchestrator that is actually
+// waiting. Shared by /api/task and the Brain's create_project (the Brain
+// used to build a private, unwired orchestrator whose semi_auto gates hung
+// forever). Blocks until the pipeline finishes — callers run it in a
+// goroutine.
+func (s *Server) launchBuild(projectID, taskStr, parentTaskID, taskID string) {
+	projectDir := filepath.Join(s.projectDir, projectID)
+	_ = os.MkdirAll(projectDir, 0755)
+
+	config := orchestrator.Config{
+		ProjectDir:   projectDir,
+		MaxDepth:     5,
+		MaxTurns:     25, // Increased for 4-phase workflow
+		EnableFiles:  true,
+		Verbose:      true,
+		EnablePhases: true, // Enable multi-phase workflow
+	}
+	sm := s.orchestrator.GetSessionManager()
+	var o *orchestrator.Orchestrator
+	if sm != nil {
+		o = orchestrator.NewWithSessions(config, s.store, sm)
+	} else {
+		o = orchestrator.New(config, s.store)
+	}
+
+	o.OnMessage(func(msg *message.Message) {
+		s.hub.Broadcast(msg)
+	})
+	o.SetCheckpointNotify(func(cpID, cpType, summary string, phaseIndex int, resolved bool, decidedBy, action string) {
+		eventType := "checkpoint_reached"
+		if resolved {
+			if decidedBy == "ceo_auto" {
+				eventType = "checkpoint_auto_delegated"
+			} else {
+				eventType = "checkpoint_resolved"
+			}
+		}
+		s.hub.BroadcastCheckpointEvent(&CheckpointEvent{
+			EventType:      eventType,
+			CheckpointID:   cpID,
+			CheckpointType: cpType,
+			PhaseIndex:     phaseIndex,
+			Data: map[string]interface{}{
+				"artifact_summary": summary,
+				"decided_by":       decidedBy,
+				"action":           action,
+			},
+		})
+	})
+	// Without the registry the orchestrator falls back to hardcoded role
+	// prompts and ignores agents/<role>/agent.md.
+	if s.agentRegistry != nil {
+		o.SetAgentRegistry(s.agentRegistry)
+	}
+
+	s.orchestrator = o
+	o.ProcessTaskWithID(projectID, taskStr, parentTaskID, taskID)
+}
+
 func (s *Server) handleTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -479,50 +549,8 @@ func (s *Server) handleTask(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		// Update orchestrator project dir, preserving session manager
-		config := orchestrator.Config{
-			ProjectDir:   projectDir,
-			MaxDepth:     5,
-			MaxTurns:     25, // Increased for 4-phase workflow
-			EnableFiles:  true,
-			Verbose:      true,
-			EnablePhases: true, // Enable multi-phase workflow
-		}
-		sm := s.orchestrator.GetSessionManager()
-		if sm != nil {
-			s.orchestrator = orchestrator.NewWithSessions(config, s.store, sm)
-		} else {
-			s.orchestrator = orchestrator.New(config, s.store)
-		}
-
-		// Re-register WebSocket callbacks on new orchestrator
-		s.orchestrator.OnMessage(func(msg *message.Message) {
-			s.hub.Broadcast(msg)
-		})
-		s.orchestrator.SetCheckpointNotify(func(cpID, cpType, summary string, phaseIndex int, resolved bool, decidedBy, action string) {
-			eventType := "checkpoint_reached"
-			if resolved {
-				if decidedBy == "ceo_auto" {
-					eventType = "checkpoint_auto_delegated"
-				} else {
-					eventType = "checkpoint_resolved"
-				}
-			}
-			s.hub.BroadcastCheckpointEvent(&CheckpointEvent{
-				EventType:      eventType,
-				CheckpointID:   cpID,
-				CheckpointType: cpType,
-				PhaseIndex:     phaseIndex,
-				Data: map[string]interface{}{
-					"artifact_summary": summary,
-					"decided_by":       decidedBy,
-					"action":           action,
-				},
-			})
-		})
-
 		log.Printf("[TASK] Starting orchestration: id=%s project=%s", taskID, projectID)
-		s.orchestrator.ProcessTaskWithID(req.ProjectID, taskWithContext, parentTaskID, taskID)
+		s.launchBuild(req.ProjectID, taskWithContext, parentTaskID, taskID)
 		log.Printf("[TASK] Orchestration finished: id=%s project=%s", taskID, projectID)
 	}(taskID, req.ProjectID)
 
@@ -795,7 +823,7 @@ func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Embedded design-system pages (Next.js static export routes).
-	for _, p := range []string{"mission", "conductor", "triggers", "agents", "lab"} {
+	for _, p := range []string{"mission", "conductor", "docs", "triggers", "agents", "lab"} {
 		if r.URL.Path == "/"+p || r.URL.Path == "/"+p+"/" {
 			page, err := fs.ReadFile(webui.FS(), p+"/index.html")
 			if err != nil {

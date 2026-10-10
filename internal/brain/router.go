@@ -49,7 +49,8 @@ func (r *Router) Route(ctx context.Context, userID, message, scope string) (*Bra
 			"- \"Build / Create / Make <an app>\" → action create_project (pick a short, kebab-case project_id from the app's name).\n" +
 			"- \"Change / Add / Fix / Improve <X> in <app>\" → action delegate to the right engineer on that project.\n" +
 			"- The team runs a full autonomous SDLC: PRD → design → development → QA, with human checkpoints whose autonomy is governed by the project's run mode.\n" +
-			"- This studio has NO email inbox, vendors, applicants, invoices, or construction-site data. If asked to process an inbox, validate an invoice, check vendors, or run a site scenario, briefly say that belongs to the construction company — NOT the software studio. NEVER invent inbox/email/vendor/applicant results here.\n" +
+			"- CLIENT REQUIREMENTS EMAILS: when a client sends software requirements by email (or pastes them in chat) and the user wants the team to work on them, use action run_discovery — the PM writes the PRD, the senior engineer does competitor research, the security engineer does compliance research, the architect designs the system, and a reply email draft goes back to the client. Documents appear on the Documents page. Omit params.email_id/request to auto-pick the newest requirements email from the inbox.\n" +
+			"- Other than client requirements emails, this studio has NO vendors, applicants, invoices, or construction-site data. If asked to validate an invoice, check vendors, or run a site scenario, briefly say that belongs to the construction company — NOT the software studio. NEVER invent vendor/applicant results here.\n" +
 			"- Do NOT use the construction scenarios (process_inbox, validate_invoice, route_rfi, schedule_check, morning_briefing, workforce_snapshot, staff_project, estimate_project) — those belong to the EPC company (Alredaa).\n\n" +
 			workspaceCtx
 	case "", "default":
@@ -613,6 +614,9 @@ You manage projects built by teams of AI agents (CEO, PM, UX, UI, Security, Arch
 {"action": "archive_email", "params": {"email_id": "email_123"}, "response": "Email archived."}
   → Archive an email (move out of active inbox).
 
+{"action": "run_discovery", "params": {"email_id": "", "request": "", "project_id": ""}, "response": "Kicking off discovery — the PM, senior engineer, security engineer and architect are on it..."}
+  → SOFTWARE STUDIO ONLY: run the client-discovery pipeline on a requirements email or chat request. PM → PRD, senior engineer → competitor research, security → compliance research, architect → system design, then a reply email draft back to the client. All documents (with diagrams) appear on the Documents page. Params all optional: email_id (a specific inbox email), request (the verbatim ask when given in chat), project_id (kebab-case product name, e.g. "fitflow-app").
+
 {"action": "run_scenario", "params": {"scenario": "process_inbox"}, "response": "Sweeping the inbox and routing each item to the right specialist..."}
   → Run a multi-agent EPC operations scenario that FANS WORK OUT to specialist agents (procurement, hr, project_manager, site_engineer) — they pulse live in the workforce panel. Use this for EPC operations. Available scenarios (put the name in params.scenario):
     • "process_inbox"      → triage/sweep the whole inbox, route each email to a discipline
@@ -645,6 +649,7 @@ You manage projects built by teams of AI agents (CEO, PM, UX, UI, Security, Arch
 16. "List / find / show employees [by name or nationality]" → run_scenario (workforce_snapshot) WITH params q (name/code fragment) or nationality (e.g. "Nepalese", "Saudi", "Indian") — never answer employee questions from memory, always run the scenario
 17. "[Project] needs N [trade] / staff project X / who can we send to X / find eligible workers for X / mobilize workers" → run_scenario (staff_project) with params role, project, count — never invent candidates, always run the scenario
 18. "Estimation request / client wants a quote / prepare an estimate for [project] / respond to the estimation email" → run_scenario (estimate_project) with params request + manpower (generate the crew yourself, "trade:count" comma list) + months — the scenario does live availability + costing; never invent numbers yourself
+19. SOFTWARE STUDIO: "client sent requirements / work on the requirements email / prepare a PRD and proposal / have the team research and design this / respond to the client with our proposal" → run_discovery — never write the PRD or research yourself in chat, the pipeline produces the real documents
 
 ## Proactive Delegation (CRITICAL — do not just narrate)
 When a task clearly belongs to a discipline or an operations scenario, DELEGATE or RUN_SCENARIO in the SAME turn — never merely state which agent *should* handle it. If your response names an agent or says you will route / triage / verify / check / screen something, your "action" MUST be "delegate" or "run_scenario", NOT "respond". Keep the descriptive prose in "response" for the human, but always carry the real action so work actually fans out.

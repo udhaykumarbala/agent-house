@@ -64,6 +64,7 @@ const (
 	ActionShortlistApplicant = "shortlist_applicant" // Mark applicant as shortlisted
 	ActionArchiveEmail       = "archive_email"       // Archive (not delete) an email
 	ActionRunScenario        = "run_scenario"        // Run a multi-agent capability scenario (fans out to specialists)
+	ActionRunDiscovery       = "run_discovery"       // Software studio: client requirements → PRD + research + design + reply draft
 )
 
 // ChatMessage represents a message in the conversation.

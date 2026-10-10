@@ -24,6 +24,36 @@ export interface EmailTemplate {
 
 export const EMAIL_TEMPLATES: EmailTemplate[] = [
   {
+    id: "client_requirements",
+    label: "Client — software requirements (discovery)",
+    description:
+      "A client sends requirements for a new software product. Drives the software studio's discovery pipeline: PM → PRD, senior engineer → competitor research, security → compliance research, architect → system design, then a reply draft back to the client.",
+    scenarios: ["discovery"],
+    payload: {
+      from: "cto@fitflow.app",
+      from_name: "FitFlow · CTO",
+      to: "hello@software-studio.dev",
+      subject: "Requirements — FitFlow mobile fitness app",
+      body: `Hi team,
+
+We'd like you to build FitFlow, a mobile fitness tracking app. Requirements:
+
+- Workout tracking with wearable sync (Apple Watch, Garmin)
+- Social challenges: invite friends, weekly leaderboards
+- Personalized training plans that adapt to progress
+- In-app subscriptions (monthly/annual) with a 14-day trial
+- GDPR-compliant handling of health data, EU + GCC launch
+
+We want an MVP in roughly 3 months. Please come back with your product plan, how you'd position us against the big incumbents, the compliance picture for health data, and your proposed architecture.
+
+Thanks,
+Dana — CTO, FitFlow`,
+      category: "client",
+      trust_status: "new_contact",
+      trust_reason: "First contact from @fitflow.app — no prior thread",
+    },
+  },
+  {
     id: "client_estimation",
     label: "Client — new project estimation request",
     description:

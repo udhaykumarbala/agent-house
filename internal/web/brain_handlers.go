@@ -37,6 +37,11 @@ type BrainHandler struct {
 	hub          *Hub
 	routerClient *session.APIClient // fast tier-1 model (flash-lite) for instant intermediary feedback; nil disables it
 	emailEngine  interface{ MarkReplied(string); DeleteEmail(string) bool; UpdateApplicantStatus(string,string) bool }
+	// LaunchBuild runs the SDLC pipeline via the server's shared wiring
+	// (checkpoints + agent registry + orchestrator swap). When set, Brain
+	// create_project goes through it instead of building a private,
+	// unwired orchestrator whose gates could never be resolved.
+	LaunchBuild func(projectID, task, parentTaskID, taskID string)
 }
 
 // NewBrainHandler creates the Brain handler with all dependencies wired.
@@ -404,7 +409,19 @@ func (bh *BrainHandler) handleCreateProject(projectID, taskStr string) error {
 		}
 	}
 
-	// Start task in background (same as handleTask in server.go)
+	// Preferred path: the server's shared build launcher, which swaps the
+	// global orchestrator and wires checkpoints + the agent registry — the
+	// same wiring /api/task gets. The old private-orchestrator path left
+	// gates unresolvable (checkpoints resolved against s.orchestrator).
+	if bh.LaunchBuild != nil {
+		taskID := task.GenerateTaskID()
+		log.Printf("[BRAIN] Starting orchestration via shared launcher: project=%s task=%s", projectID, taskID)
+		go bh.LaunchBuild(projectID, taskStr, "", taskID)
+		return nil
+	}
+
+	// Legacy fallback (no launcher wired): background build with chat-only
+	// visibility. Gates only work in blitz/full_auto on this path.
 	go func() {
 		projDir := bh.projDir + "/" + projectID
 

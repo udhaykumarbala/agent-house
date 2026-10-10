@@ -8,6 +8,7 @@ import { COMPANIES, setCompany, type Company } from "@/lib/company";
 const CRUMBS: [string, string][] = [
   ["conductor", "/conductor"],
   ["mission", "/mission"],
+  ["docs", "/docs"],
   ["triggers", "/triggers"],
   ["agents", "/agents"],
   ["lab", "/lab"],
@@ -25,7 +26,7 @@ export function Chrome({
   packCount = "6 + 1",
 }: {
   pageTitle: string;
-  active: "conductor" | "mission" | "triggers" | "agents" | "lab";
+  active: "conductor" | "mission" | "docs" | "triggers" | "agents" | "lab";
   showCmdk?: boolean;
   /** Honest overrides — sample shells keep the EPC defaults. */
   project?: string;

@@ -34,6 +34,11 @@ type Executor struct {
 	// returns a human-readable summary + suggestion titles. Steps stream to the
 	// workforce panel via the engine's emitter (wired server-side).
 	OnRunScenario func(name, scope string, input map[string]string) (summary string, suggestions []string, err error)
+	// OnRunDiscovery starts the software studio's client-discovery pipeline
+	// (PRD, competitor research, compliance research, architecture, client
+	// reply). It returns an acknowledgement — the pipeline itself runs in
+	// the background for minutes and streams steps to the workforce panel.
+	OnRunDiscovery func(params map[string]string) (ack string, projectID string, err error)
 }
 
 // NewExecutor creates an executor with the given project directory.
@@ -49,6 +54,9 @@ func (e *Executor) Execute(decision *BrainDecision, scope string) *ExecutionResu
 	switch decision.Action {
 	case ActionRunScenario:
 		return e.executeRunScenario(decision, scope)
+
+	case ActionRunDiscovery:
+		return e.executeRunDiscovery(decision)
 
 	case ActionRespond:
 		return &ExecutionResult{
@@ -95,6 +103,27 @@ func (e *Executor) Execute(decision *BrainDecision, scope string) *ExecutionResu
 			Success:  true,
 		}
 	}
+}
+
+// executeRunDiscovery kicks off the software studio's discovery pipeline.
+// Unlike run_scenario it returns immediately: the agent documents take
+// minutes, stream as steps, and land on the Documents page.
+func (e *Executor) executeRunDiscovery(decision *BrainDecision) *ExecutionResult {
+	if e.OnRunDiscovery == nil {
+		return &ExecutionResult{Response: "Discovery pipeline is not wired up.", Action: ActionRespond, Success: false}
+	}
+	ack, projectID, err := e.OnRunDiscovery(decision.Params)
+	if err != nil {
+		return &ExecutionResult{
+			Response: fmt.Sprintf("%s\n\n(Could not start discovery: %v)", decision.Response, err),
+			Action:   ActionRespond, Success: false,
+		}
+	}
+	resp := ack
+	if resp == "" {
+		resp = decision.Response
+	}
+	return &ExecutionResult{Response: resp, Action: ActionRunDiscovery, ProjectID: projectID, Success: true}
 }
 
 // executeRunScenario dispatches a capability scenario (process_inbox,
